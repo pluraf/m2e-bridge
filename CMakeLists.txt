@@ -1,0 +1,1 @@
+find_package(google_cloud_cpp_pubsub REQUIRED)

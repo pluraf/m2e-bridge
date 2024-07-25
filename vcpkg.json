@@ -1,0 +1,8 @@
+{
+    "name": "m2e-brige",
+    "version-string": "1.0",
+    "description": "M2E Bridge",
+    "dependencies": [
+        {"name": "google-cloud-cpp", "default-features": false, "features": ["pubsub"]}
+    ]
+}

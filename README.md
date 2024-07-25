@@ -10,12 +10,9 @@ This README would normally document whatever steps are necessary to get your app
 
 ### How do I get set up? ###
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+##### [Setup VCPKG (C++ package manager)](https://learn.microsoft.com/en-us/vcpkg/get_started/get-started?pivots=shell-bash)
+
+* Make sure you use Clang++ 18 [https://clang.llvm.org/](https://clang.llvm.org/)
 
 ### Contribution guidelines ###
 
