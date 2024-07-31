@@ -1,3 +1,7 @@
+#ifndef __M2E_BRIDGE_GCP_PUBSUB_CONNECTOR_H__
+#define __M2E_BRIDGE_GCP_PUBSUB_CONNECTOR_H__
+
+
 #include <string>
 #include <map>
 
@@ -47,3 +51,6 @@ private:
 };
 
 };
+
+
+#endif

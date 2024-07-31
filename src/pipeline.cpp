@@ -3,8 +3,30 @@ Copyright Pluraf Embedded AB, 2024
 code@pluraf.com
 */
 
+#include <fstream>
+
+#include <nlohmann/json.hpp>
 
 #include "pipeline.h"
+
+
+Pipeline::Pipeline(const std::string &json_str) {
+    using json = nlohmann::json;
+
+    json parsed = json::parse(json_str);
+    for (auto filter_parsed : parsed["filters"]) {
+        Filter *filter = new Filter(filter_parsed);
+        filters_.push_back(filter);
+    }
+    for (auto transformer_parsed : parsed["transformers"]) {
+        Transformer *transformer = new Transformer(transformer_parsed);
+        transformers_.push_back(transformer);
+    }
+    for (auto mapper_parsed : parsed["mappers"]) {
+        Mapper *mapper = new Mapper(mapper_parsed);
+        mappers_.push_back(mapper);
+    }
+}
 
 
 void Pipeline::run() {
@@ -25,8 +47,8 @@ void Pipeline::run() {
 
 
 bool Pipeline::filter(MessageWrapper& msg_w) {
-    for (auto &filter : filters_) {
-        if (! filter.apply(MessageWrapper)) {
+    for (auto *filter : filters_) {
+        if (! filter->apply(msg_w)) {
             return false;
         }
     }
@@ -35,22 +57,22 @@ bool Pipeline::filter(MessageWrapper& msg_w) {
 
 
 void Pipeline::transform(MessageWrapper& msg_w) {
-    for (auto &transformer : transformers_) {
-        transformer.apply(MessageWrapper);
+    for (auto *transformer : transformers_) {
+        transformer->apply(msg_w);
     }
 }
 
 
 void Pipeline::map(MessageWrapper& msg_w) {
-    for (auto &mapper : mappers_) {
-        mapper.map(msg_w);
+    for (auto *mapper : mappers_) {
+        mapper->apply(msg_w);
     }
 }
 
 
 void Pipeline::start() {
     if (th_ == nullptr) {
-        th_ = new thread(&CANSender::sendCyclicly, this, fc_ptr);
+        th_ = new std::thread(&Pipeline::run, this);
     }
 }
 

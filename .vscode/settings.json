@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "tuple": "cpp",
+        "valarray": "cpp",
+        "thread": "cpp",
+        "*.inc": "cpp",
+        "*.tcc": "cpp",
+        "random": "cpp",
+        "functional": "cpp",
+        "mutex": "cpp",
+        "ranges": "cpp",
+        "streambuf": "cpp"
+    }
+}

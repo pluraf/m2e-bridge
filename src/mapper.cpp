@@ -1,9 +1,9 @@
 #include "mapper.h"
 
 
-Mapper::map(MessageWrapper const &msg_w) {
+void Mapper::apply(MessageWrapper const &msg_w) {
     if (condition_.isTrue(msg_w)) {
-        Route route = router.getRoute(msg_w);
-        connector_.send(msg_w.msg, route);
+        Route route = router_.getRoute(msg_w);
+        connector_out_.send(msg_w.msg, route);
     }
 }
