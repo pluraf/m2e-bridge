@@ -6,10 +6,9 @@
 #include <vector>
 #include <thread>
 
-#include "connector.h"
-#include "filter.h"
-#include "transformer.h"
-#include "mapper.h"
+#include "connectors/connector.h"
+#include "filters/filter.h"
+#include "transformers/transformer.h"
 #include "m2e_message/message_wrapper.h"
 
 
@@ -23,10 +22,10 @@ private:
     bool filter(MessageWrapper& msg_w);
     void transform(MessageWrapper& msg_w);
     void map(MessageWrapper& msg_w);
-    Connector connector_in_;
+    Connector* connector_in_;
+    Connector* connector_out_;
     std::vector<Filter*> filters_;
     std::vector<Transformer*> transformers_;
-    std::vector<Mapper*> mappers_;
 
     bool stop_ { false };
     std::thread *th_ { nullptr };

@@ -9,7 +9,7 @@ class MessageWrapper {
 public:
     MessageWrapper(const Message msg): msg(msg) { }
 
-    Message msg;
+    Message const msg;
 
 };
 

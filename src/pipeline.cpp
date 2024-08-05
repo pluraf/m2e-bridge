@@ -8,41 +8,41 @@ code@pluraf.com
 #include <nlohmann/json.hpp>
 
 #include "pipeline.h"
+#include "factories/filter_factory.h"
+#include "factories/transformer_factory.h"
+#include "factories/connector_factory.h"
 
 
 Pipeline::Pipeline(const std::string &json_str) {
     using json = nlohmann::json;
 
     json parsed = json::parse(json_str);
+    connector_in_ = ConnectorFactory::create(parsed["connector_in"]);
     for (auto filter_parsed : parsed["filters"]) {
-        Filter *filter = new Filter(filter_parsed);
+        Filter *filter = FilterFactory::create(filter_parsed);
         filters_.push_back(filter);
     }
     for (auto transformer_parsed : parsed["transformers"]) {
-        Transformer *transformer = new Transformer(transformer_parsed);
+        Transformer *transformer = TransformerFactory::create(transformer_parsed);
         transformers_.push_back(transformer);
     }
-    for (auto mapper_parsed : parsed["mappers"]) {
-        Mapper *mapper = new Mapper(mapper_parsed);
-        mappers_.push_back(mapper);
-    }
+    connector_out_ = ConnectorFactory::create(parsed["connector_out"]);
 }
 
 
 void Pipeline::run() {
-    connector_in_.start();
+    connector_in_->connect();
 
     while (!stop_) {
-        Message msg = connector_in_.receive();
-        MessageWrapper msg_w = MessageWrapper(msg);
+        MessageWrapper msg_w = connector_in_->receive();
         if (! filter(msg_w)) {
             continue;
         }
         transform(msg_w);
-        map(msg_w);
+        connector_out_->send(msg_w);
     }
 
-    connector_in_.stop();
+    connector_in_->disconnect();
 }
 
 
@@ -59,13 +59,6 @@ bool Pipeline::filter(MessageWrapper& msg_w) {
 void Pipeline::transform(MessageWrapper& msg_w) {
     for (auto *transformer : transformers_) {
         transformer->apply(msg_w);
-    }
-}
-
-
-void Pipeline::map(MessageWrapper& msg_w) {
-    for (auto *mapper : mappers_) {
-        mapper->apply(msg_w);
     }
 }
 
