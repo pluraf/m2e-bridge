@@ -14,6 +14,12 @@ This README would normally document whatever steps are necessary to get your app
 
 * Make sure you use Clang++ 18 [https://clang.llvm.org/](https://clang.llvm.org/)
 
+
+cd build
+
+cmake --preset default ..
+make -j6
+
 ### Contribution guidelines ###
 
 * Writing tests

@@ -4,6 +4,7 @@ code@pluraf.com
 */
 
 #include <fstream>
+#include <iostream>
 
 #include <nlohmann/json.hpp>
 
@@ -17,7 +18,7 @@ Pipeline::Pipeline(const std::string &json_str) {
     using json = nlohmann::json;
 
     json parsed = json::parse(json_str);
-    connector_in_ = ConnectorFactory::create(parsed["connector_in"]);
+    connector_in_ = ConnectorFactory::create(parsed["connector_in"], "connector_in");
     for (auto filter_parsed : parsed["filters"]) {
         Filter *filter = FilterFactory::create(filter_parsed);
         filters_.push_back(filter);
@@ -26,20 +27,22 @@ Pipeline::Pipeline(const std::string &json_str) {
         Transformer *transformer = TransformerFactory::create(transformer_parsed);
         transformers_.push_back(transformer);
     }
-    connector_out_ = ConnectorFactory::create(parsed["connector_out"]);
+    connector_out_ = ConnectorFactory::create(parsed["connector_out"], "connector_out" );
 }
 
 
 void Pipeline::run() {
+    
     connector_in_->connect();
-
     while (!stop_) {
-        MessageWrapper msg_w = connector_in_->receive();
-        if (! filter(msg_w)) {
+        MessageWrapper* msg_w = connector_in_->receive();
+        // if no message received, continue till thread is stopped
+        if (msg_w == NULL) continue;
+        if (! filter(*msg_w)) {
             continue;
         }
-        transform(msg_w);
-        connector_out_->send(msg_w);
+        transform(*msg_w);
+        connector_out_->send(*msg_w);
     }
 
     connector_in_->disconnect();
