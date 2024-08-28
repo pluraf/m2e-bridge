@@ -1,4 +1,8 @@
 
+#ifndef __M2E_BRIDGE_TRFMR_FACTORY__
+#define __M2E_BRIDGE_TRFMR_FACTORY__
+
+
 #include "nlohmann/json.hpp"
 #include <iostream>
 
@@ -11,3 +15,5 @@ public:
         return new Transformer(json_descr);
     }
 };
+
+#endif

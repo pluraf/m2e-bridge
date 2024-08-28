@@ -1,14 +1,11 @@
 #ifndef __M2E_BRIDGE_MQTT_CONNECTOR_H__
 #define __M2E_BRIDGE_MQTT_CONNECTOR_H__
 
-
 #include <string>
 #include <atomic>
 #include <stdexcept> 
 #include <random>
-#include <ctime>
 
-#include "nlohmann/json.hpp"
 #include "mqtt/async_client.h"
 
 #include "connector.h"
@@ -21,17 +18,28 @@ const auto TIMEOUT = std::chrono::seconds(10);
 
 using std::string;
 
-std::string generateRandomID(size_t length) {
-    const std::string characters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    std::string randomID;
-    std::default_random_engine generator(static_cast<unsigned long>(std::time(0)));  // Seed with current time
-    std::uniform_int_distribution<> distribution(0, characters.size() - 1);
+inline std::string generate_random_id(size_t length) {
+    const string CHARACTERS
+        = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv"
+          "wxyz0123456789";
 
-    for (size_t i = 0; i < length; ++i) {
-        randomID += characters[distribution(generator)];
+    // Create a random number generator
+    std::random_device rd;
+    std::mt19937 generator(rd());
+
+    // Create a distribution to uniformly select from all
+    // characters
+    std::uniform_int_distribution<> distribution(
+        0, CHARACTERS.size() - 1);
+
+    // Generate the random string
+    string random_string;
+    for (int i = 0; i < length; ++i) {
+        random_string
+            += CHARACTERS[distribution(generator)];
     }
 
-    return randomID;
+    return random_string;
 }
 
 class ActionListener : public virtual mqtt::iaction_listener
@@ -63,19 +71,9 @@ public:
 class MqttConnector: virtual public Connector {
 
 private:
-    string server_;
-    string client_id_;
-    mqtt::async_client_ptr  client_ptr_;
-	string connector_type_;
-	string topic_;
-	int n_retry_attempts_;
-    int qos_;
-	mqtt::connect_options conn_opts_;
-	mqtt::thread_queue<string> *msg_queue_;
-
 
 	class Callback : public virtual mqtt::callback,
-						public virtual mqtt::iaction_listener
+					public virtual mqtt::iaction_listener
 
 	{
 		// Counter for the number of connection retries
@@ -96,7 +94,7 @@ private:
 
 		// Re-connection failure
 		void on_failure(const mqtt::token& tok) override {
-			std::cout << "Connection attempt failed" << std::endl;
+			std::cout << "Connection attempt failed " <<connector_ptr_->connector_type_<< std::endl;
 			if (++nretry_ > connector_ptr_->n_retry_attempts_)
 				exit(1);
 			reconnect();
@@ -108,13 +106,21 @@ private:
 
 		// (Re)connection success
 		void connected(const std::string& cause) override {
-			std::cout << "\nConnection success" << std::endl;
+
+			std::cout << "\nConnection success "  <<connector_ptr_->connector_type_<< std::endl;
 
 			if( connector_ptr_->connector_type_ == "connector_in" ){
 				std::cout << "\nSubscribing to topic '" << connector_ptr_->topic_ << "'\n"
 					<< " using QoS" << connector_ptr_->qos_ << std::endl;
 
-				connector_ptr_->client_ptr_->subscribe(connector_ptr_->topic_, connector_ptr_->qos_, nullptr, subListener_);
+				try {
+					connector_ptr_->client_ptr_->subscribe(connector_ptr_->topic_, connector_ptr_->qos_, nullptr, subListener_);
+				}
+				catch (const mqtt::exception& exc) {
+					std::cerr << exc << std::endl;
+					throw std::runtime_error("Unable to subscribe\n");
+				}			
+				std::cout << "Subscribed"<<std::endl;
 			}
 			
 		}
@@ -148,6 +154,19 @@ private:
 		subListener_("Subscription")
 		{}
 	};
+
+    string server_;
+    string client_id_;
+    mqtt::async_client_ptr  client_ptr_;
+	string connector_type_;
+	string topic_;
+	int n_retry_attempts_;
+    int qos_;
+	mqtt::connect_options conn_opts_;
+	mqtt::thread_queue<string> *msg_queue_;
+	Callback* callback_ptr_;
+	
+
 public:
     MqttConnector(nlohmann::json json_descr, std::string type):
      Connector(json_descr, type) {
@@ -161,27 +180,26 @@ public:
         }
         server_ = json_descr["server"];
 		topic_ = json_descr["topic"];
-		client_id_ = json_descr["client_id"].is_null() ?  generateRandomID(10) : json_descr["client_id"].get<std::string>();;
+		client_id_ = json_descr["client_id"].is_null() ?  generate_random_id(10) : json_descr["client_id"].get<std::string>();;
 		n_retry_attempts_ = json_descr["n_retry_attempts"].is_null() ?  N_RETRY_ATTEMPTS: json_descr["n_retry_attempts"].get<int>();
 		qos_ = json_descr["qos"].is_null() ?  QOS : json_descr["qos"].get<int>();
 
         std::cout<<"server "<<server_<<std::endl;
 
         std::cout<<"client id  "<<client_id_<<std::endl;
-
-        client_ptr_ = std::make_shared<mqtt::async_client>(server_, client_id_);
 		msg_queue_ = new mqtt::thread_queue<string>(1000);
+		client_ptr_ = std::make_shared<mqtt::async_client>(server_, client_id_);
     }
 
     void connect() override {
 		conn_opts_.set_clean_session(false);
 
         // Install the callback(s) before connecting.
-        Callback cb(this);
-        client_ptr_->set_callback(cb);
+        callback_ptr_ = new Callback(this);
+        client_ptr_->set_callback(*callback_ptr_);
 		try {
-			std::cout << "Connecting to the MQTT server..." << std::flush;
-			client_ptr_->connect(conn_opts_, nullptr, cb)->wait();
+			std::cout << "Connecting to the MQTT server... for " <<connector_type_<< std::endl;
+			client_ptr_->connect(conn_opts_, nullptr, *callback_ptr_)->wait();
 		}
 		catch (const mqtt::exception& exc) {
 			std::cerr << "\nERROR: Unable to connect to MQTT server: '"
@@ -226,7 +244,7 @@ public:
     MessageWrapper* receive() override{
 		string msg_text;
 		// try to receive for 5 seconds. if not received, return null
-		bool res = msg_queue_->try_get_for(&msg_text, std::chrono::seconds(5));
+		bool res = msg_queue_->try_get(&msg_text);
 		if(!res) {
 			return NULL;
 		}
@@ -237,6 +255,5 @@ public:
 
 
 };
-
 
 #endif

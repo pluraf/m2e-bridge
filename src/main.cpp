@@ -33,8 +33,10 @@ int main(int argc, char* argv[]) {
     buffer << file.rdbuf();
 
     file.close();
-
     std::string json_str = buffer.str();
+
+    long ctr = 1;
+
     Pipeline myPipeline(json_str);
     myPipeline.start();
     std::cout<<"started pipeline"<<std::endl;

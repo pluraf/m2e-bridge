@@ -34,6 +34,7 @@ Pipeline::Pipeline(const std::string &json_str) {
 void Pipeline::run() {
     
     connector_in_->connect();
+    connector_out_-> connect();
     while (!stop_) {
         MessageWrapper* msg_w = connector_in_->receive();
         // if no message received, continue till thread is stopped
@@ -46,6 +47,7 @@ void Pipeline::run() {
     }
 
     connector_in_->disconnect();
+    connector_out_-> disconnect();
 }
 
 

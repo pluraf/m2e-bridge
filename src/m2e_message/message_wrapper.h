@@ -10,6 +10,7 @@ public:
     MessageWrapper(const Message msg): msg(msg) { }
 
     Message const msg;
+    
 
 };
 

@@ -1,4 +1,7 @@
 
+#ifndef __M2E_BRIDGE_CONNECTOR_FACTORY__
+#define __M2E_BRIDGE_CONNECTOR_FACTORY__
+
 #include "nlohmann/json.hpp"
 #include <iostream>
 
@@ -19,3 +22,5 @@ public:
         }     
     }
 };
+
+#endif
