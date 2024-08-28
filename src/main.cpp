@@ -20,8 +20,13 @@ int main(int argc, char* argv[]) {
      // Set up signal handler for Ctrl+C (SIGINT)
     std::signal(SIGINT, signalHandler);
 
+    std::string pipeline_json_path = "/pipeline_test.json";
 
-    std::string file_path = PROJECT_SOURCE_DIR + std::string("/pipeline_test.json");
+    if(argc == 2){
+        pipeline_json_path = std::string(argv[1]);
+    }
+
+    std::string file_path = PROJECT_SOURCE_DIR + pipeline_json_path;
 
     std::ifstream file(file_path);
     if (!file) {
