@@ -19,6 +19,7 @@ add_executable(m2e-bridge ${SOURCES})
 
 target_link_libraries(m2e-bridge PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(m2e-bridge PRIVATE PahoMqttCpp::paho-mqttpp3-static)
+target_link_libraries(m2e-bridge PRIVATE google-cloud-cpp::pubsub)
 
 #target_link_libraries(MyProject PRIVATE fmt::fmt)
 

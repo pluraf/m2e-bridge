@@ -158,7 +158,6 @@ private:
     string server_;
     string client_id_;
     mqtt::async_client_ptr  client_ptr_;
-	string connector_type_;
 	string topic_;
 	int n_retry_attempts_;
     int qos_;
@@ -170,8 +169,6 @@ private:
 public:
     MqttConnector(nlohmann::json json_descr, std::string type):
      Connector(json_descr, type) {
-        
-		connector_type_ = type;
         if(json_descr["server"].is_null()){
             throw std::runtime_error("Server url cannot be null for mqtt connector\n");
         }

@@ -9,9 +9,10 @@
   "filters": [],
   "transformers": [],
   "connector_out": {
-    "type": "mqtt",
-    "topic": "/topic2",
-    "server": "mqtt://localhost:1883",
-    "client_id": "xyz"
+    "type": "gcp_pubsub",
+    "key_path":"feisty-enigma-416319-93e0c8cd70ff.json",
+    "project_id": "feisty-enigma-416319",
+    "topic_id": "m2e-topic1",
+    "subscription_id" : "m2e-topic1-sub"
   }
   }
