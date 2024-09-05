@@ -7,6 +7,7 @@
 #include <iostream>
 #include <stdexcept> 
 #include <cstdlib> 
+#include <sstream>
 
 #include "google/cloud/pubsub/publisher.h"
 #include "google/cloud/pubsub/subscriber.h"
@@ -29,6 +30,7 @@ private:
     string topic_id_;
     string subscription_id_;
     string key_path_;
+    
     const char* KEY_ENV_VARIABLE = "GOOGLE_APPLICATION_CREDENTIALS";
     pubsub::Publisher* publisher_ptr_;
     pubsub::Subscriber* subscriber_ptr_;
@@ -76,29 +78,20 @@ public:
     }
     void disconnect() {}
     MessageWrapper* receive() {
-        // try{
-        //     auto session =
-        // subscriber.Subscribe([&](pubsub::Message const& m, pubsub::AckHandler h) {
-        //     std::cout << "Received message " << m << "\n";
-        //     std::move(h).ack();
-        // });
-
-        //     std::cout << "Waiting for messages on " + subscription_id_ + "...\n";
-
-        //     // Blocks until the timeout is reached.
-        //     auto result = session.wait_for(kWaitTimeout);
-        //     if (result == std::future_status::timeout) {
-        //         std::cout << "timeout reached, ending session\n";
-        //         session.cancel();
-        //     }
-
-        //     return 0;
-
-
-        // }catch (google::cloud::Status const& status) {
-        //     std::cerr << "google::cloud::Status thrown: " << status << "\n";
-        //     return 1;
-        // }
+        try{
+            auto response = subscriber_ptr_->Pull();
+            if (!response) throw std::move(response).status();
+            std::stringstream buffer;
+            buffer << response->message;
+            string msg_text = buffer.str();
+            std::cout << "Received message " << response->message << "\n";
+            std::move(response->handler).ack();
+            Message msg(msg_text, subscription_id_);
+		    return new MessageWrapper(msg);
+        }catch (google::cloud::Status const& status) {
+            std::cerr << "google::cloud::Status thrown: " << status << "\n";
+            throw std::runtime_error("Error pulling messages from gcp pubsub\n");
+        }
     }
     void send(const MessageWrapper &msg_w) {
         try{
