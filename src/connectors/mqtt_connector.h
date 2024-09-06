@@ -238,13 +238,9 @@ public:
 		}
     }
 
-    MessageWrapper* receive() override{
+    MessageWrapper * receive() override {
 		string msg_text;
-		// try to receive for 5 seconds. if not received, return null
-		bool res = msg_queue_->try_get(&msg_text);
-		if(!res) {
-			return NULL;
-		}
+		msg_queue_->get(&msg_text);  // blocking call
 		Message msg(msg_text, topic_);
 		return new MessageWrapper(msg);
     }

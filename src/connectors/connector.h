@@ -10,14 +10,14 @@
 class Connector {
 
 protected:
-    std::string connector_type_; 
+    std::string connector_type_;
 public:
     Connector(nlohmann::json json_descr, std::string type) {
         connector_type_ = type;
     }
     virtual void connect() {}
     virtual void disconnect() {}
-    virtual MessageWrapper* receive() {}
+    virtual MessageWrapper* receive() { return nullptr; }
     virtual void send(const MessageWrapper &msg_w) {}
 };
 
