@@ -14,6 +14,20 @@ This README would normally document whatever steps are necessary to get your app
 
 * Make sure you use Clang++ 18 [https://clang.llvm.org/](https://clang.llvm.org/)
 
+
+cd build
+
+cmake --preset default ..
+make -j6
+
+### Integrations ###
+
+#### GCP Pub/Sub
+
+https://cloud.google.com/pubsub/docs/publish-receive-messages-client-library#pubsub-client-libraries-cpp
+
+To get service key: In the Google Cloud Console, go to IAM & Admin > Service Accounts
+ and create a new service account or download key from an existing service account
 ### Contribution guidelines ###
 
 * Writing tests
