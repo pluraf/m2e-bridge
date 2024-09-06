@@ -6,8 +6,7 @@
 #include <map>
 #include <iostream>
 #include <stdexcept> 
-#include <cstdlib> 
-#include <sstream>
+#include <cstdlib>
 
 #include "google/cloud/pubsub/publisher.h"
 #include "google/cloud/pubsub/subscriber.h"
@@ -79,12 +78,14 @@ public:
     void disconnect() {}
     MessageWrapper* receive() {
         try{
-            auto response = subscriber_ptr_->Pull();
-            if (!response) throw std::move(response).status();
-            std::stringstream buffer;
-            buffer << response->message;
-            string msg_text = buffer.str();
-            std::cout << "Received message " << response->message << "\n";
+            auto opts = google::cloud::Options{}
+                .set<pubsub::RetryPolicyOption>(pubsub::LimitedTimeRetryPolicy(
+                                              std::chrono::milliseconds(500))
+                                              .clone());
+            auto response = subscriber_ptr_->Pull(opts);
+            if (!response) return NULL;
+            string msg_text = response->message.data();
+            std::cout << "Received message " << msg_text << "\n";
             std::move(response->handler).ack();
             Message msg(msg_text, subscription_id_);
 		    return new MessageWrapper(msg);
