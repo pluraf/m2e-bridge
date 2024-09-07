@@ -240,13 +240,18 @@ public:
 
     MessageWrapper * receive() override {
         string msg_text;
-        msg_queue_->get(&msg_text);  // blocking call
+        try{
+            msg_queue_->get(&msg_text);  // blocking call
+        }catch(const std::underflow_error){
+            return nullptr;
+        }
         Message msg(msg_text, topic_);
         return new MessageWrapper(msg);
     }
 
-
-
+    void stop()override{
+        msg_queue_->handle_exit();
+    }
 };
 
 #endif

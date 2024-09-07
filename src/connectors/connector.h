@@ -17,6 +17,7 @@ public:
     }
     virtual void connect() {}
     virtual void disconnect() {}
+    virtual void stop() {}
     virtual MessageWrapper* receive() { return nullptr; }
     virtual void send(const MessageWrapper &msg_w) {}
 };

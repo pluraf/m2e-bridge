@@ -10,7 +10,6 @@
         "pubsub"
       ]
     },
-    "nlohmann-json",
-    "paho-mqttpp3"
+    "nlohmann-json"
   ]
 }

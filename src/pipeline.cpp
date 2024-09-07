@@ -8,6 +8,7 @@ code@pluraf.com
 
 #include <nlohmann/json.hpp>
 
+#include "global_state.h"
 #include "pipeline.h"
 #include "factories/filter_factory.h"
 #include "factories/transformer_factory.h"
@@ -32,13 +33,14 @@ Pipeline::Pipeline(const std::string &json_str) {
 
 
 void Pipeline::run() {
-    
+    gs.register_exit_cb([this]{connector_in_->stop();});
+
     connector_in_->connect();
     connector_out_-> connect();
     while (!stop_) {
         MessageWrapper* msg_w = connector_in_->receive();
         // if no message received, continue till thread is stopped
-        if (msg_w == NULL) continue;
+        if(msg_w == nullptr)continue;
         if (! filter(*msg_w)) {
             continue;
         }

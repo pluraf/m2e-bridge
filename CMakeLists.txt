@@ -8,18 +8,23 @@ set(SOURCE_DIR "${CMAKE_SOURCE_DIR}/src")
 add_definitions(-DPROJECT_SOURCE_DIR=\"${SOURCE_DIR}\")
 
 file(GLOB_RECURSE SOURCES "${SOURCE_DIR}/*.cpp")
+file(GLOB MQTT_SOURCES "${CMAKE_SOURCE_DIR}/external/paho.mqtt.cpp/src/*.cpp")
 
-include_directories(${SOURCE_DIR})
+include_directories(
+    ${SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/external/paho.mqtt.cpp/include
+    ${CMAKE_SOURCE_DIR}/external/paho.mqtt.cpp/externals/paho-mqtt-c/src
+)
 
 find_package(google_cloud_cpp_pubsub REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
-find_package(PahoMqttCpp REQUIRED)
 
-add_executable(m2e-bridge ${SOURCES})
+add_executable(m2e-bridge ${SOURCES} ${MQTT_SOURCES})
 
 target_link_libraries(m2e-bridge PRIVATE nlohmann_json::nlohmann_json)
-target_link_libraries(m2e-bridge PRIVATE PahoMqttCpp::paho-mqttpp3-static)
 target_link_libraries(m2e-bridge PRIVATE google-cloud-cpp::pubsub)
+target_link_libraries(m2e-bridge PRIVATE "${CMAKE_SOURCE_DIR}/external/paho.mqtt.cpp/externals/paho-mqtt-c/build/src/libpaho-mqtt3as.a")
+target_link_libraries(m2e-bridge PRIVATE "${CMAKE_SOURCE_DIR}/external/paho.mqtt.cpp/externals/paho-mqtt-c/build/src/libpaho-mqtt3cs.a")
 
 #target_link_libraries(MyProject PRIVATE fmt::fmt)
 

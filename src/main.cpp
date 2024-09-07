@@ -6,12 +6,17 @@
 #include <csignal>
 
 #include "pipeline.h"
+#include "global_state.h"
+
+
+GlobalState gs;
 
 std::atomic<bool> running(true);
 
 void signalHandler(int signal) {
     std::cout << "\nCaught signal " << signal << ". Ending call..." << std::endl;
     running = false;
+    gs.notify_exit();
 }
 
 
