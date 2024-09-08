@@ -6,6 +6,7 @@
 #include <vector>
 #include <thread>
 
+#include "aliases.h"
 #include "connectors/connector.h"
 #include "filters/filter.h"
 #include "transformers/transformer.h"
@@ -14,7 +15,7 @@
 
 class Pipeline {
 public:
-    Pipeline(const std::string &json_str);
+    Pipeline(std::string const & pipeid, json const & pjson);
     void start();
     void stop();
 private:
@@ -26,6 +27,7 @@ private:
     Connector* connector_out_;
     std::vector<Filter*> filters_;
     std::vector<Transformer*> transformers_;
+    std::string pipeid_;
 
     bool stop_ { false };
     std::thread *th_ { nullptr };

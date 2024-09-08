@@ -6,8 +6,6 @@ code@pluraf.com
 #include <fstream>
 #include <iostream>
 
-#include <nlohmann/json.hpp>
-
 #include "global_state.h"
 #include "pipeline.h"
 #include "factories/filter_factory.h"
@@ -15,20 +13,18 @@ code@pluraf.com
 #include "factories/connector_factory.h"
 
 
-Pipeline::Pipeline(const std::string &json_str) {
-    using json = nlohmann::json;
-
-    json parsed = json::parse(json_str);
-    connector_in_ = ConnectorFactory::create(parsed["connector_in"], "connector_in");
-    for (auto filter_parsed : parsed["filters"]) {
+Pipeline::Pipeline(std::string const & pipeid, json const & pjson){
+    pipeid_ = pipeid;
+    connector_in_ = ConnectorFactory::create(pjson["connector_in"], ConnectorMode::IN);
+    for (auto filter_parsed : pjson["filters"]) {
         Filter *filter = FilterFactory::create(filter_parsed);
         filters_.push_back(filter);
     }
-    for (auto transformer_parsed : parsed["transformers"]) {
+    for (auto transformer_parsed : pjson["transformers"]) {
         Transformer *transformer = TransformerFactory::create(transformer_parsed);
         transformers_.push_back(transformer);
     }
-    connector_out_ = ConnectorFactory::create(parsed["connector_out"], "connector_out" );
+    connector_out_ = ConnectorFactory::create(pjson["connector_out"], ConnectorMode::OUT);
 }
 
 

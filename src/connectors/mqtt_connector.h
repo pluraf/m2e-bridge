@@ -94,7 +94,7 @@ private:
 
         // Re-connection failure
         void on_failure(const mqtt::token& tok) override {
-            std::cout << "Connection attempt failed " <<connector_ptr_->connector_type_<< std::endl;
+            std::cout << "Connection attempt failed" << std::endl;
             if (++nretry_ > connector_ptr_->n_retry_attempts_)
                 exit(1);
             reconnect();
@@ -107,9 +107,9 @@ private:
         // (Re)connection success
         void connected(const std::string& cause) override {
 
-            std::cout << "\nConnection success "  <<connector_ptr_->connector_type_<< std::endl;
+            std::cout << "\nConnection success"  << std::endl;
 
-            if( connector_ptr_->connector_type_ == "connector_in" ){
+            if(connector_ptr_->mode_ == ConnectorMode::IN){
                 std::cout << "\nSubscribing to topic '" << connector_ptr_->topic_ << "'\n"
                     << " using QoS" << connector_ptr_->qos_ << std::endl;
 
@@ -167,8 +167,7 @@ private:
 
 
 public:
-    MqttConnector(nlohmann::json json_descr, std::string type):
-     Connector(json_descr, type) {
+    MqttConnector(nlohmann::json json_descr, ConnectorMode mode):Connector(json_descr, mode){
         if(json_descr["server"].is_null()){
             throw std::runtime_error("Server url cannot be null for mqtt connector\n");
         }
@@ -195,7 +194,7 @@ public:
         callback_ptr_ = new Callback(this);
         client_ptr_->set_callback(*callback_ptr_);
         try {
-            std::cout << "Connecting to the MQTT server... for " <<connector_type_<< std::endl;
+            std::cout << "Connecting to the MQTT server..." << std::endl;
             client_ptr_->connect(conn_opts_, nullptr, *callback_ptr_)->wait();
         }
         catch (const mqtt::exception& exc) {

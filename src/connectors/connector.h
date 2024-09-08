@@ -7,13 +7,20 @@
 #include "m2e_message/message_wrapper.h"
 #include "route.h"
 
+
+enum class ConnectorMode {
+    IN,
+    OUT
+};
+
+
 class Connector {
 
 protected:
-    std::string connector_type_;
+    ConnectorMode mode_;
 public:
-    Connector(nlohmann::json json_descr, std::string type) {
-        connector_type_ = type;
+    Connector(nlohmann::json json_descr, ConnectorMode mode) {
+        mode_ = mode;
     }
     virtual void connect() {}
     virtual void disconnect() {}

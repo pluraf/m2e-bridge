@@ -4,14 +4,20 @@
 #include <string>
 #include <atomic>
 #include <csignal>
+#include <format>
 
+#include "aliases.h"
 #include "pipeline.h"
 #include "global_state.h"
+
+
+using namespace std;
 
 
 GlobalState gs;
 
 std::atomic<bool> running(true);
+
 
 void signalHandler(int signal) {
     std::cout << "\nCaught signal " << signal << ". Ending call..." << std::endl;
@@ -20,42 +26,48 @@ void signalHandler(int signal) {
 }
 
 
-int main(int argc, char* argv[]) {
-
-
+int main(int argc, char* argv[]){
      // Set up signal handler for Ctrl+C (SIGINT)
-    std::signal(SIGINT, signalHandler);
+    signal(SIGINT, signalHandler);
+    vector<Pipeline> pipelines;
 
-    std::string pipeline_json_path = "/pipeline_test.json";
+    std::string config_path {std::format("{}/{}", PROJECT_SOURCE_DIR, "pipeline_test.json")};
 
     if(argc == 2){
-        pipeline_json_path = std::string(argv[1]);
+        config_path = std::string(argv[1]);
     }
 
-    std::string file_path = PROJECT_SOURCE_DIR + pipeline_json_path;
-
-    std::ifstream file(file_path);
+    std::ifstream file(config_path);
     if (!file) {
-        std::cerr << "Failed to open file: " << file_path << std::endl;
+        std::cerr << "Failed to open file: " << config_path << std::endl;
         return 1;
     }
-
     std::stringstream buffer;
     buffer << file.rdbuf();
-
     file.close();
+
     std::string json_str = buffer.str();
+    json parsed = json::parse(json_str);
 
-    long ctr = 1;
+    json config_pipelines = parsed["pipelines"];
 
-    Pipeline myPipeline(json_str);
-    myPipeline.start();
-    std::cout<<"started pipeline"<<std::endl;
+    // Iterate over the array of pipelines
+    for(auto it = config_pipelines.begin(); it != config_pipelines.end(); ++it){
+        pipelines.emplace_back(it.key(), *it);
+    }
+
+    for(auto & pipeline: pipelines){
+        pipeline.start();
+    }
+
     while(running){
         std::this_thread::sleep_for(std::chrono::seconds(1));
-
     }
-    myPipeline.stop();
+
+    for(auto & pipeline: pipelines){
+        pipeline.stop();
+    }
+
     std::cout << "end of pipeline"<<std::endl;
     return 0;
 }

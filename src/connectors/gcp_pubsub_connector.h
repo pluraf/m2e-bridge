@@ -5,7 +5,7 @@
 #include <string>
 #include <map>
 #include <iostream>
-#include <stdexcept> 
+#include <stdexcept>
 #include <cstdlib>
 
 #include "google/cloud/pubsub/publisher.h"
@@ -29,14 +29,14 @@ private:
     string topic_id_;
     string subscription_id_;
     string key_path_;
-    
+
     const char* KEY_ENV_VARIABLE = "GOOGLE_APPLICATION_CREDENTIALS";
     pubsub::Publisher* publisher_ptr_;
     pubsub::Subscriber* subscriber_ptr_;
 
 
 public:
-    PubSubConnector(nlohmann::json json_descr, std::string type) :Connector(json_descr, type)  {
+    PubSubConnector(nlohmann::json json_descr, ConnectorMode mode):Connector(json_descr, mode){
         if(json_descr["key_path"].is_null()){
             throw std::runtime_error("key_path cannot be null for pubsub connector\n");
         }
@@ -48,34 +48,34 @@ public:
         if (setenv(KEY_ENV_VARIABLE, key_path_.c_str(), 1) != 0) {
             throw std::runtime_error("Error setting environment variable.\n");
         }
-        if (connector_type_ == "connector_in" ){
+        if(mode_ == ConnectorMode::IN){
             if(json_descr["subscription_id"].is_null()){
-                throw std::runtime_error("Subscription ID cannot be null for pubsub connector_in\n");
+                throw std::runtime_error("Subscription ID cannot be null for pubsub connector_in");
             }
             subscription_id_ = json_descr["subscription_id"];
-        }
-          if (connector_type_ == "connector_out" ){
+        }else if(mode_ == ConnectorMode::OUT){
             if(json_descr["topic_id"].is_null()){
-                throw std::runtime_error("Topic ID cannot be null for pubsub connector_out\n");
+                throw std::runtime_error("Topic ID cannot be null for pubsub connector_out");
             }
             topic_id_ = json_descr["topic_id"];
+        }else{
+            throw std::runtime_error("Unsupported connector mode!");
         }
     }
 
     void connect() {
-
-        if (connector_type_ == "connector_in" ){
+        if(mode_ == ConnectorMode::IN){
             subscriber_ptr_ = new pubsub::Subscriber(pubsub::MakeSubscriberConnection(
                 pubsub::Subscription(project_id_, subscription_id_))
             );
-        }
-        if (connector_type_ == "connector_out" ){
+        }else if(mode_ == ConnectorMode::OUT){
             publisher_ptr_ = new pubsub::Publisher(
                 pubsub::MakePublisherConnection(pubsub::Topic(project_id_, topic_id_))
             );
         }
     }
     void disconnect() {}
+
     MessageWrapper* receive() {
         try{
             auto opts = google::cloud::Options{}
