@@ -33,6 +33,23 @@
         "project_id": "feisty-enigma-416319",
         "topic_id": "sensor-state"
       }
+    },
+    "commands":{
+      "connector_in": {
+        "type": "gcp_pubsub",
+        "key_path":"/all/mine/pluraf/iotplan/repos/m2e-bridge/feisty-enigma-416319-44f4fddc898c.json",
+        "project_id": "feisty-enigma-416319",
+        "subscription_id": "commands"
+      },
+      "connector_out": {
+        "type": "mqtt",
+        "topic": "/devices/{{node_id}}/commands",
+        "server": "mqtt://localhost:1883",
+        "qos": 1,
+        "retry_attempts": 5
+      },
+      "filters": [],
+      "transformers": []
     }
   }
 }

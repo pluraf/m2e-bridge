@@ -76,7 +76,7 @@ public:
     }
     void disconnect() {}
 
-    MessageWrapper* receive() {
+    MessageWrapper* receive(){
         try{
             auto opts = google::cloud::Options{}
                 .set<pubsub::RetryPolicyOption>(pubsub::LimitedTimeRetryPolicy(
@@ -108,7 +108,6 @@ public:
             throw std::runtime_error("Unable to publish to gcp pub/sub\n");
         }
     }
-
 };
 
 };

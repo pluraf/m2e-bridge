@@ -5,6 +5,8 @@
 #include <atomic>
 #include <stdexcept>
 #include <random>
+#include <regex>
+#include <format>
 
 #include "mqtt/async_client.h"
 
@@ -69,9 +71,7 @@ public:
 
 
 class MqttConnector: virtual public Connector {
-
 private:
-
     class Callback : public virtual mqtt::callback,
                     public virtual mqtt::iaction_listener
 
@@ -110,11 +110,11 @@ private:
             std::cout << "\nConnection success"  << std::endl;
 
             if(connector_ptr_->mode_ == ConnectorMode::IN){
-                std::cout << "\nSubscribing to topic '" << connector_ptr_->topic_ << "'\n"
+                std::cout << "\nSubscribing to topic '" << connector_ptr_->topic_template_ << "'\n"
                     << " using QoS" << connector_ptr_->qos_ << std::endl;
 
                 try {
-                    connector_ptr_->client_ptr_->subscribe(connector_ptr_->topic_, connector_ptr_->qos_, nullptr, subListener_);
+                    connector_ptr_->client_ptr_->subscribe(connector_ptr_->topic_template_, connector_ptr_->qos_, nullptr, subListener_);
                 }
                 catch (const mqtt::exception& exc) {
                     std::cerr << exc << std::endl;
@@ -158,7 +158,8 @@ private:
     string server_;
     string client_id_;
     mqtt::async_client_ptr  client_ptr_;
-    string topic_;
+    string topic_template_;
+    bool is_topic_template_ {false};
     int n_retry_attempts_;
     int qos_;
     mqtt::connect_options conn_opts_;
@@ -175,7 +176,7 @@ public:
             throw std::runtime_error("Topic cannot be null for mqtt connector\n");
         }
         server_ = json_descr["server"];
-        topic_ = json_descr["topic"];
+        topic_template_ = json_descr["topic"];
         client_id_ = json_descr["client_id"].is_null() ?  generate_random_id(10) : json_descr["client_id"].get<std::string>();;
         n_retry_attempts_ = json_descr["n_retry_attempts"].is_null() ?  N_RETRY_ATTEMPTS: json_descr["n_retry_attempts"].get<int>();
         qos_ = json_descr["qos"].is_null() ?  QOS : json_descr["qos"].get<int>();
@@ -185,6 +186,10 @@ public:
         std::cout<<"client id  "<<client_id_<<std::endl;
         msg_queue_ = new mqtt::thread_queue<string>(1000);
         client_ptr_ = std::make_shared<mqtt::async_client>(server_, client_id_);
+
+        std::smatch match;
+        std::regex pattern("\\{\\{(.*?)\\}\\}");
+        is_topic_template_ = std::regex_search(topic_template_.cbegin(), topic_template_.cend(), match, pattern);
     }
 
     void connect() override {
@@ -215,12 +220,25 @@ public:
         }
     }
 
-    void send(const MessageWrapper &msg_w) override {
+    void send(MessageWrapper & msg_w)override{
+        using namespace std;
+
+        string derived_topic;
+        if(is_topic_template_){
+            try{
+                derived_topic = derive_topic(msg_w);
+            }catch(runtime_error const & e){
+                cerr<<e.what()<<endl;
+                return;
+            }
+        }
+
+        string const & topic = is_topic_template_ ? derived_topic : topic_template_;
         try {
-            std::cout << "\nSending next message..." << std::endl;
             mqtt::delivery_token_ptr pubtok;
+            cout<<"\nSending next message... topic: "<<topic<<std::endl;
             pubtok = client_ptr_->publish(
-                topic_,
+                topic,
                 msg_w.msg.get_msg_text().c_str(),
                 msg_w.msg.get_msg_text().length(),
                 qos_,
@@ -244,12 +262,38 @@ public:
         }catch(const std::underflow_error){
             return nullptr;
         }
-        Message msg(msg_text, topic_);
+        Message msg(msg_text, topic_template_);
         return new MessageWrapper(msg);
     }
 
     void stop()override{
         msg_queue_->handle_exit();
+    }
+
+    std::string derive_topic(MessageWrapper & msg_w){
+        using namespace std;
+
+        regex pattern("\\{\\{(.*?)\\}\\}");
+        smatch match;
+
+        string topic = topic_template_;
+        try{
+            json const & payload = msg_w.get_payload();
+            auto pos = topic.cbegin();
+            while(regex_search(pos, topic.cend(), match, pattern)){
+                string vname = match[1].str();
+                try{
+                    string vvalue = payload.at(vname);
+                    topic.replace(match.position(), match.length(), vvalue);
+                    pos = pos + match.position() + vvalue.size();
+                }catch(json::exception){
+                    throw runtime_error(format("Topic template variable {} not found!", vname));
+                }
+            }
+        }catch(json::exception){
+            throw runtime_error("Message payload is not a valid JSON!");
+        }
+        return topic;
     }
 };
 

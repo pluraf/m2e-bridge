@@ -6,7 +6,7 @@
 #include <csignal>
 #include <format>
 
-#include "aliases.h"
+#include "m2e_aliases.h"
 #include "pipeline.h"
 #include "global_state.h"
 

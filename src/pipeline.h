@@ -6,7 +6,7 @@
 #include <vector>
 #include <thread>
 
-#include "aliases.h"
+#include "m2e_aliases.h"
 #include "connectors/connector.h"
 #include "filters/filter.h"
 #include "transformers/transformer.h"
