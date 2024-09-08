@@ -63,7 +63,7 @@ public:
         }
     }
 
-    void connect() {
+    void connect()override{
         if(mode_ == ConnectorMode::IN){
             subscriber_ptr_ = new pubsub::Subscriber(pubsub::MakeSubscriberConnection(
                 pubsub::Subscription(project_id_, subscription_id_))
@@ -74,9 +74,8 @@ public:
             );
         }
     }
-    void disconnect() {}
 
-    MessageWrapper* receive(){
+    MessageWrapper* receive()override{
         try{
             auto opts = google::cloud::Options{}
                 .set<pubsub::RetryPolicyOption>(pubsub::LimitedTimeRetryPolicy(
@@ -91,21 +90,25 @@ public:
 		    return new MessageWrapper(msg);
         }catch (google::cloud::Status const& status) {
             std::cerr << "google::cloud::Status thrown: " << status << "\n";
-            throw std::runtime_error("Error pulling messages from gcp pubsub\n");
+            throw std::runtime_error("Error pulling messages from gcp pubsub");
         }
     }
-    void send(const MessageWrapper &msg_w) {
+
+    void send(MessageWrapper & msg_w)override{
         try{
             auto id = publisher_ptr_->Publish(
-                    pubsub::MessageBuilder{}.SetData(msg_w.msg.get_msg_text()).Build()
-                ).get();
-            if (!id) throw std::move(id).status();
-            std::cout << " published message "<< msg_w.msg.get_msg_text()<< " with id= " << *id << "\n";
+                pubsub::MessageBuilder{}
+                    .SetData(msg_w.msg.get_msg_text())
+                    .SetAttribute("deviceId", "deviceId")
+                    .Build()
+            ).get();
+            if(!id) throw std::move(id).status();
+            std::cout<<" published message "<<msg_w.msg.get_msg_text()<<" with id= "<<*id<<std::endl;
 
         }
         catch (google::cloud::Status const& status) {
-            std::cerr << "google::cloud::Status thrown: " << status << "\n";
-            throw std::runtime_error("Unable to publish to gcp pub/sub\n");
+            std::cerr<<"google::cloud::Status thrown: "<< status<<std::endl;
+            throw std::runtime_error("Unable to publish to gcp pub/sub");
         }
     }
 };
