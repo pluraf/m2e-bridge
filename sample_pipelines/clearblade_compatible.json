@@ -3,7 +3,7 @@
     "sensor-data":{
       "connector_in": {
         "type": "mqtt",
-        "topic": "/topic1",
+        "topic": "/topic/+/event",
         "server": "mqtt://localhost:1883",
         "qos": 1,
         "retry_attempts": 5
@@ -14,7 +14,10 @@
         "type": "gcp_pubsub",
         "key_path":"KEY.json",
         "project_id": "feisty-enigma-416319",
-        "topic_id": "sensor-data"
+        "topic_id":"sensor-data",
+        "attributes":{
+          "deviceId":"{{topic[1]}}"
+        }
       }
     },
     "sensor-state":{

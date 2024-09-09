@@ -19,7 +19,7 @@ class Connector {
 protected:
     ConnectorMode mode_;
 public:
-    Connector(nlohmann::json json_descr, ConnectorMode mode) {
+    Connector(json const & json_descr, ConnectorMode mode) {
         mode_ = mode;
     }
     virtual void connect() {}

@@ -142,7 +142,7 @@ private:
             std::cout << "Message arrived" << std::endl;
             std::cout << "\ttopic: '" << msg->get_topic() << "'" << std::endl;
             std::cout << "\tpayload: '" << msg->to_string() << "'\n" << std::endl;
-            connector_ptr_->msg_queue_->put(msg->to_string());
+            connector_ptr_->msg_queue_->put(*msg);
         }
 
         void delivery_complete(mqtt::delivery_token_ptr token) override {}
@@ -163,12 +163,12 @@ private:
     int n_retry_attempts_;
     int qos_;
     mqtt::connect_options conn_opts_;
-    mqtt::thread_queue<string> *msg_queue_;
+    mqtt::thread_queue<mqtt::message> * msg_queue_;
     Callback* callback_ptr_;
 
 
 public:
-    MqttConnector(nlohmann::json json_descr, ConnectorMode mode):Connector(json_descr, mode){
+    MqttConnector(json const & json_descr, ConnectorMode mode):Connector(json_descr, mode){
         if(json_descr["server"].is_null()){
             throw std::runtime_error("Server url cannot be null for mqtt connector\n");
         }
@@ -177,14 +177,26 @@ public:
         }
         server_ = json_descr["server"];
         topic_template_ = json_descr["topic"];
-        client_id_ = json_descr["client_id"].is_null() ?  generate_random_id(10) : json_descr["client_id"].get<std::string>();;
-        n_retry_attempts_ = json_descr["n_retry_attempts"].is_null() ?  N_RETRY_ATTEMPTS: json_descr["n_retry_attempts"].get<int>();
-        qos_ = json_descr["qos"].is_null() ?  QOS : json_descr["qos"].get<int>();
+        try{
+            client_id_ = json_descr.at("client_id").get<string>();
+        }catch(json::exception){
+            client_id_ = generate_random_id(10);
+        }
+        try{
+            n_retry_attempts_ = json_descr.at("n_retry_attempts").get<int>();
+        }catch(json::exception){
+            n_retry_attempts_ = N_RETRY_ATTEMPTS;
+        }
+        try{
+            qos_ = json_descr.at("qos").get<int>();
+        }catch(json::exception){
+            qos_ = QOS;
+        }
 
         std::cout<<"server "<<server_<<std::endl;
 
         std::cout<<"client id  "<<client_id_<<std::endl;
-        msg_queue_ = new mqtt::thread_queue<string>(1000);
+        msg_queue_ = new mqtt::thread_queue<mqtt::message>(1000);
         client_ptr_ = std::make_shared<mqtt::async_client>(server_, client_id_);
 
         std::smatch match;
@@ -239,8 +251,8 @@ public:
             cout<<"\nSending next message... topic: "<<topic<<std::endl;
             pubtok = client_ptr_->publish(
                 topic,
-                msg_w.msg.get_msg_text().c_str(),
-                msg_w.msg.get_msg_text().length(),
+                msg_w.msg.get_text().c_str(),
+                msg_w.msg.get_text().length(),
                 qos_,
                 false);
             std::cout << "  ...with token: " << pubtok->get_message_id() << std::endl;
@@ -256,13 +268,13 @@ public:
     }
 
     MessageWrapper * receive() override {
-        string msg_text;
+        mqtt::message mqtt_msg;
         try{
-            msg_queue_->get(&msg_text);  // blocking call
+            msg_queue_->get(&mqtt_msg);  // blocking call
         }catch(const std::underflow_error){
             return nullptr;
         }
-        Message msg(msg_text, topic_template_);
+        Message msg(mqtt_msg.to_string(), mqtt_msg.get_topic());
         return new MessageWrapper(msg);
     }
 

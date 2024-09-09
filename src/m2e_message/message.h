@@ -14,11 +14,11 @@ public:
          msg_topic_(topic){
     }
 
-    std::string const & get_msg_text()const{
+    std::string const & get_text()const{
         return msg_text_;
     }
 
-    std::string const & get_msg_topic()const{
+    std::string const & get_topic()const{
         return msg_topic_;
     }
 

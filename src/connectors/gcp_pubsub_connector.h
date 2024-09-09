@@ -5,8 +5,10 @@
 #include <string>
 #include <map>
 #include <iostream>
+#include <utility>
 #include <stdexcept>
 #include <cstdlib>
+#include <regex>
 
 #include "google/cloud/pubsub/publisher.h"
 #include "google/cloud/pubsub/subscriber.h"
@@ -34,9 +36,10 @@ private:
     pubsub::Publisher* publisher_ptr_;
     pubsub::Subscriber* subscriber_ptr_;
 
+    map<string, std::pair<bool,string>> attributes_;
 
 public:
-    PubSubConnector(nlohmann::json json_descr, ConnectorMode mode):Connector(json_descr, mode){
+    PubSubConnector(json const & json_descr, ConnectorMode mode):Connector(json_descr, mode){
         if(json_descr["key_path"].is_null()){
             throw std::runtime_error("key_path cannot be null for pubsub connector\n");
         }
@@ -60,6 +63,18 @@ public:
             topic_id_ = json_descr["topic_id"];
         }else{
             throw std::runtime_error("Unsupported connector mode!");
+        }
+
+        if(json_descr.contains("attributes")){
+            std::smatch match;
+            std::regex pattern("\\{\\{(.*?)\\}\\}");
+
+            json const & attributes = json_descr["attributes"];
+            for(auto it = attributes.begin(); it != attributes.end(); ++it){
+                string v = (*it).get<string>();
+                bool is_dynamic = std::regex_search(v.cbegin(), v.cend(), match, pattern);
+                attributes_[it.key()] = std::pair(is_dynamic, v);
+            }
         }
     }
 
@@ -96,20 +111,48 @@ public:
 
     void send(MessageWrapper & msg_w)override{
         try{
-            auto id = publisher_ptr_->Publish(
-                pubsub::MessageBuilder{}
-                    .SetData(msg_w.msg.get_msg_text())
-                    .SetAttribute("deviceId", "deviceId")
-                    .Build()
-            ).get();
-            if(!id) throw std::move(id).status();
-            std::cout<<" published message "<<msg_w.msg.get_msg_text()<<" with id= "<<*id<<std::endl;
+            auto mb = pubsub::MessageBuilder{}.SetData(msg_w.msg.get_text());
+            for(auto const & attribute : attributes_){
+                if(attribute.second.first){
+                    string av = derive_attribute(msg_w, attribute.second.second);
+                    mb.InsertAttribute(attribute.first, av);
+                }else{
+                    mb.InsertAttribute(attribute.first, attribute.second.second);
+                }
+            }
 
+            auto id = publisher_ptr_->Publish(std::move(mb).Build()).get();
+            if(!id) throw std::move(id).status();
+            std::cout<<" published message "<<msg_w.msg.get_text()<<" with id= "<<*id<<std::endl;
         }
         catch (google::cloud::Status const& status) {
             std::cerr<<"google::cloud::Status thrown: "<< status<<std::endl;
             throw std::runtime_error("Unable to publish to gcp pub/sub");
         }
+    }
+
+    string derive_attribute(MessageWrapper & msg_w, string const & atemplate){
+        using namespace std;
+
+        regex pattern_variable("\\{\\{(.*?)\\}\\}");
+        regex pattern_expression("topic\\[(.*?)\\]");
+
+        string attribute = atemplate;
+        auto pos = attribute.cbegin();
+        smatch match1;
+        while(regex_search(pos, attribute.cend(), match1, pattern_variable)){
+            string ve = match1[1].str();
+            smatch match2;
+            if(regex_search(ve.cbegin(), ve.cend(), match2, pattern_expression)){
+                int topic_level = stoi(match2[1].str());
+                string vvalue = msg_w.get_topic_level(topic_level);
+                attribute.replace(match1.position(), match1.length(), vvalue);
+                pos = pos + match1.position() + vvalue.size();
+            }else{
+                pos = pos + match1.position() + ve.size();
+            }
+        }
+        return attribute;
     }
 };
 
