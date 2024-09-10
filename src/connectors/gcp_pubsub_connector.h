@@ -13,6 +13,9 @@
 #include "google/cloud/pubsub/publisher.h"
 #include "google/cloud/pubsub/subscriber.h"
 #include "google/cloud/pubsub/message.h"
+#include "google/cloud/pubsub/admin/topic_admin_client.h"
+#include "google/cloud/pubsub/topic.h"
+#include "google/cloud/status.h"
 
 #include "connector.h"
 
@@ -20,6 +23,7 @@
 namespace gcp {
 
 namespace pubsub = ::google::cloud::pubsub;
+namespace gcloud = ::google::cloud;
 
 using std::string;
 using std::map;
@@ -84,6 +88,18 @@ public:
                 pubsub::Subscription(project_id_, subscription_id_))
             );
         }else if(mode_ == ConnectorMode::OUT){
+            auto topic_admin_client = gcloud::pubsub_admin::TopicAdminClient(
+                gcloud::pubsub_admin::MakeTopicAdminConnection());
+            std::string topic_url = "projects/"+project_id_+"/topics/"+topic_id_;
+            auto topic_creation_response = topic_admin_client.CreateTopic(topic_url);
+            // Throw error if topic doesn't already exists
+            if (!topic_creation_response && 
+                topic_creation_response.status().code() != gcloud::StatusCode::kAlreadyExists
+            ) {
+                std::cerr << "Error creating topic: " << topic_creation_response.status() << "\n";
+                throw std::runtime_error("Error creating topic");
+                
+            }
             publisher_ptr_ = new pubsub::Publisher(
                 pubsub::MakePublisherConnection(pubsub::Topic(project_id_, topic_id_))
             );

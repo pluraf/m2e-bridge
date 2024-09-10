@@ -1,16 +1,21 @@
+
 {
-  "connector_in": {
-    "type": "gcp_pubsub",
-    "key_path":"/feisty-enigma-416319-93e0c8cd70ff.json",
-    "project_id": "feisty-enigma-416319",
-    "subscription_id" : "m2e-topic1-sub"
-  },
-  "filters": [],
-  "transformers": [],
-  "connector_out": {
-    "type": "gcp_pubsub",
-    "key_path":"/feisty-enigma-416319-93e0c8cd70ff.json",
-    "project_id": "feisty-enigma-416319",
-    "topic_id": "m2e-topic2"
+  "pipelines":{
+    "two-gcp-pipeline":{
+      "connector_in": {
+        "type": "gcp_pubsub",
+        "key_path":"/home/revathy/Downloads/feisty-enigma-416319-93e0c8cd70ff.json",
+        "project_id": "feisty-enigma-416319",
+        "subscription_id" : "m2e-topic1-sub"
+      },
+      "filters": [],
+      "transformers": [],
+      "connector_out": {
+        "type": "gcp_pubsub",
+        "key_path":"/home/revathy/Downloads/feisty-enigma-416319-93e0c8cd70ff.json",
+        "project_id": "feisty-enigma-416319",
+        "topic_id": "m2e-topic2"
+      }
+    }
   }
-  }
+}
