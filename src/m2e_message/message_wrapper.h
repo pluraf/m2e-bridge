@@ -26,10 +26,9 @@ public:
             sregex_token_iterator it(msg.get_topic().begin(), msg.get_topic().end(), r, -1);
             sregex_token_iterator end;
             topic_levels_ = vector<std::string>(it, end);
-            if(topic_levels_[0] == "") topic_levels_.erase(topic_levels_.begin());
             is_topic_levels_ = true;
         }
-        return topic_levels_[level];
+        return level < topic_levels_.size() ? topic_levels_[level] : empty_string_;
     }
 
     Message const msg;
@@ -39,6 +38,7 @@ private:
     bool is_payload_decoded_ {false};
     std::vector<std::string> topic_levels_;
     bool is_topic_levels_ {false};
+    std::string const empty_string_ {""};
 };
 
 

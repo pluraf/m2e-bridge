@@ -16,7 +16,8 @@
         "project_id": "feisty-enigma-416319",
         "topic_id":"sensor-data",
         "attributes":{
-          "deviceId":"{{topic[1]}}"
+          "deviceId":"U_{{topic[1]}}-{{topic[2]}}-{{topic[100]}}4ffff",
+          "projectId": "G-NODE"
         }
       }
     },
