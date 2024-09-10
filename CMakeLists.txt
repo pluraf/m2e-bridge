@@ -20,6 +20,14 @@ include_directories(
 
 find_package(google_cloud_cpp_pubsub REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(PahoMqttCpp REQUIRED)
+find_package(civetweb CONFIG REQUIRED)
+find_package(OpenSSL REQUIRED)
+
+find_path(JWT_CPP_INCLUDE_DIRS "jwt-cpp/jwt.h"
+            PATH_SUFFIXES include
+            PATHS ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET})
+
 
 add_executable(m2e-bridge ${SOURCES} ${MQTT_SOURCES})
 
@@ -27,6 +35,10 @@ target_link_libraries(m2e-bridge PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(m2e-bridge PRIVATE google-cloud-cpp::pubsub)
 target_link_libraries(m2e-bridge PRIVATE "${CMAKE_SOURCE_DIR}/external/paho.mqtt.cpp/externals/paho-mqtt-c/build/src/libpaho-mqtt3as.a")
 target_link_libraries(m2e-bridge PRIVATE "${CMAKE_SOURCE_DIR}/external/paho.mqtt.cpp/externals/paho-mqtt-c/build/src/libpaho-mqtt3cs.a")
+target_link_libraries(m2e-bridge PRIVATE civetweb::civetweb-cpp)
+target_link_libraries(m2e-bridge PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+
+target_include_directories(m2e-bridge PRIVATE ${JWT_CPP_INCLUDE_DIRS})
 
 #target_link_libraries(MyProject PRIVATE fmt::fmt)
 
