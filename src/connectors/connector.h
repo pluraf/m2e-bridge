@@ -3,6 +3,7 @@
 
 #include "nlohmann/json.hpp"
 #include<iostream>
+#include<string>
 
 #include "m2e_message/message_wrapper.h"
 #include "route.h"
@@ -18,9 +19,12 @@ class Connector {
 
 protected:
     ConnectorMode mode_;
+    std::string pipeid_;
+
 public:
-    Connector(json const & json_descr, ConnectorMode mode) {
+    Connector(json const & json_descr, ConnectorMode mode, std::string pipeid) {
         mode_ = mode;
+        pipeid_ = pipeid;
     }
     virtual void connect() {}
     virtual void disconnect() {}

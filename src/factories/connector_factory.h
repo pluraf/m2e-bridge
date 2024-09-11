@@ -3,6 +3,7 @@
 #define __M2E_BRIDGE_CONNECTOR_FACTORY__
 
 #include <iostream>
+#include<string>
 
 #include "nlohmann/json.hpp"
 
@@ -13,18 +14,18 @@
 
 class ConnectorFactory {
 public:
-    static Connector* create(nlohmann::json json_descr, ConnectorMode mode) {
+    static Connector* create(nlohmann::json json_descr, ConnectorMode mode, std::string pipeid) {
         std::cout<< "connector type: "<< json_descr["type"]<< std::endl;
         if (json_descr["type"] == "mqtt"){
-            return new MqttConnector(json_descr, mode);
+            return new MqttConnector(json_descr, mode, pipeid);
 
         }
         else if (json_descr["type"] == "gcp_pubsub"){
-            return new gcp::PubSubConnector(json_descr, mode);
+            return new gcp::PubSubConnector(json_descr, mode, pipeid);
 
         }
         else {
-            return new Connector(json_descr, mode);
+            return new Connector(json_descr, mode, pipeid);
         }
     }
 };

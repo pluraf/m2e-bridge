@@ -168,7 +168,9 @@ private:
 
 
 public:
-    MqttConnector(json const & json_descr, ConnectorMode mode):Connector(json_descr, mode){
+    MqttConnector(
+            json const & json_descr, ConnectorMode mode, std::string pipeid
+        ):Connector(json_descr, mode, pipeid){
         try{
             server_ = json_descr.at("server").get<string>();
         }catch(json::exception){

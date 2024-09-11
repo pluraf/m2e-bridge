@@ -15,7 +15,7 @@ code@pluraf.com
 
 Pipeline::Pipeline(std::string const & pipeid, json const & pjson){
     pipeid_ = pipeid;
-    connector_in_ = ConnectorFactory::create(pjson["connector_in"], ConnectorMode::IN);
+    connector_in_ = ConnectorFactory::create(pjson["connector_in"], ConnectorMode::IN, pipeid_);
     for (auto filter_parsed : pjson["filters"]) {
         Filter *filter = FilterFactory::create(filter_parsed);
         filters_.push_back(filter);
@@ -24,7 +24,7 @@ Pipeline::Pipeline(std::string const & pipeid, json const & pjson){
         Transformer *transformer = TransformerFactory::create(transformer_parsed);
         transformers_.push_back(transformer);
     }
-    connector_out_ = ConnectorFactory::create(pjson["connector_out"], ConnectorMode::OUT);
+    connector_out_ = ConnectorFactory::create(pjson["connector_out"], ConnectorMode::OUT, pipeid_);
 }
 
 
