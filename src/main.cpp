@@ -16,6 +16,8 @@ using namespace std;
 
 GlobalState gs;
 
+#include "rest_api.h"
+
 std::atomic<bool> running(true);
 
 
@@ -60,6 +62,11 @@ int main(int argc, char* argv[]){
         pipeline.start();
     }
 
+    CivetServer* server = start_server();
+    if (!server) {
+        return 1;
+    }  // FIXME: Notify threads
+
     while(running){
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
@@ -68,6 +75,9 @@ int main(int argc, char* argv[]){
         pipeline.stop();
     }
 
+    stop_server(server);
+
     std::cout << "end of pipeline"<<std::endl;
+
     return 0;
 }
