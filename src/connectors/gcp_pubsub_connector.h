@@ -162,10 +162,12 @@ public:
             if(regex_search(ve.cbegin(), ve.cend(), match2, pattern_expression)){
                 int topic_level = stoi(match2[1].str());
                 string vvalue = msg_w.get_topic_level(topic_level);
-                attribute.replace(match1.position(), match1.length(), vvalue);
-                pos = pos + match1.position() + vvalue.size();
+                unsigned int i = (pos - attribute.cbegin());
+                attribute.replace(i + match1.position(), match1.length(), vvalue);
+                // Restore iterator after string modification
+                pos = attribute.cbegin() + i + match1.position() + vvalue.size();
             }else{
-                pos = pos + match1.position() + ve.size();
+                pos = pos + match1.position() + match1[0].str().size();
             }
         }
         return attribute;

@@ -9,11 +9,11 @@
         "retry_attempts": 5
       },
       "filters": [],
-      "transformers": [],
-      "connector_out": {
-        "type": "gcp_pubsub",
+      "transformers":[],
+      "connector_out":{
+        "type":"gcp_pubsub",
         "key_path":"KEY.json",
-        "project_id": "feisty-enigma-416319",
+        "project_id":"feisty-enigma-416319",
         "topic_id":"sensor-data",
         "attributes":{
           "deviceId":"U_{{topic[1]}}-{{topic[2]}}-{{topic[100]}}4ffff",
@@ -41,7 +41,7 @@
     "commands":{
       "connector_in": {
         "type": "gcp_pubsub",
-        "key_path":"/all/mine/pluraf/iotplan/repos/m2e-bridge/feisty-enigma-416319-44f4fddc898c.json",
+        "key_path":"KEY.json",
         "project_id": "feisty-enigma-416319",
         "subscription_id": "commands"
       },
