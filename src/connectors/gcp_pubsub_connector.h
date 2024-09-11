@@ -44,27 +44,31 @@ private:
 
 public:
     PubSubConnector(json const & json_descr, ConnectorMode mode):Connector(json_descr, mode){
-        if(json_descr["key_path"].is_null()){
+        try{
+            key_path_ = json_descr.at("key_path").get<string>();
+        }catch(json::exception){
             throw std::runtime_error("key_path cannot be null for pubsub connector\n");
         }
-        if(json_descr["project_id"].is_null()){
+        try{
+            project_id_ = json_descr.at("project_id").get<string>();
+        }catch(json::exception){
             throw std::runtime_error("Project ID cannot be null for pubsub connector\n");
         }
-        key_path_ = json_descr["key_path"];
-        project_id_ = json_descr["project_id"];
         if (setenv(KEY_ENV_VARIABLE, key_path_.c_str(), 1) != 0) {
             throw std::runtime_error("Error setting environment variable.\n");
         }
         if(mode_ == ConnectorMode::IN){
-            if(json_descr["subscription_id"].is_null()){
+            try{
+                subscription_id_ = json_descr.at("subscription_id").get<string>();
+            }catch(json::exception){
                 throw std::runtime_error("Subscription ID cannot be null for pubsub connector_in");
             }
-            subscription_id_ = json_descr["subscription_id"];
         }else if(mode_ == ConnectorMode::OUT){
-            if(json_descr["topic_id"].is_null()){
+            try{
+                topic_id_ = json_descr.at("topic_id").get<string>();
+            }catch(json::exception){
                 throw std::runtime_error("Topic ID cannot be null for pubsub connector_out");
             }
-            topic_id_ = json_descr["topic_id"];
         }else{
             throw std::runtime_error("Unsupported connector mode!");
         }

@@ -169,14 +169,16 @@ private:
 
 public:
     MqttConnector(json const & json_descr, ConnectorMode mode):Connector(json_descr, mode){
-        if(json_descr["server"].is_null()){
+        try{
+            server_ = json_descr.at("server").get<string>();
+        }catch(json::exception){
             throw std::runtime_error("Server url cannot be null for mqtt connector\n");
         }
-        if(json_descr["topic"].is_null()){
-            throw std::runtime_error("Topic cannot be null for mqtt connector\n");
+        try{
+            topic_template_ = json_descr.at("topic").get<string>();
+        }catch(json::exception){
+           throw std::runtime_error("Topic cannot be null for mqtt connector\n");
         }
-        server_ = json_descr["server"];
-        topic_template_ = json_descr["topic"];
         try{
             client_id_ = json_descr.at("client_id").get<string>();
         }catch(json::exception){
