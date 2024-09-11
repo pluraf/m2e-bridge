@@ -20,7 +20,6 @@ include_directories(
 
 find_package(google_cloud_cpp_pubsub REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
-find_package(PahoMqttCpp REQUIRED)
 find_package(civetweb CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
 
