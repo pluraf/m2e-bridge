@@ -9,12 +9,14 @@
 #include "m2e_aliases.h"
 #include "pipeline.h"
 #include "global_state.h"
+#include "global_config.h"
 
 
 using namespace std;
 
 
 GlobalState gs;
+GlobalConfig gc;
 
 #include "rest_api.h"
 
@@ -29,30 +31,20 @@ void signalHandler(int signal) {
 
 
 int main(int argc, char* argv[]){
+    using namespace std;
+
      // Set up signal handler for Ctrl+C (SIGINT)
     signal(SIGINT, signalHandler);
     vector<Pipeline> pipelines;
 
-    std::string config_path {std::format("{}/{}", PROJECT_SOURCE_DIR, "pipeline_test.json")};
-
-    if(argc == 2){
-        config_path = std::string(argv[1]);
-    }
-
-    std::ifstream file(config_path);
-    if (!file) {
-        std::cerr << "Failed to open file: " << config_path << std::endl;
+    if(argc > 1){
+        gc.load(argv[1]);
+    }else{
+        std::cerr << "Please provide path to config file as the first argument!"<<std::endl;
         return 1;
     }
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    file.close();
 
-    std::string json_str = buffer.str();
-    json parsed = json::parse(json_str);
-
-    json config_pipelines = parsed["pipelines"];
-
+    json const & config_pipelines = gc.get_pipelines_config();
     // Iterate over the array of pipelines
     for(auto it = config_pipelines.begin(); it != config_pipelines.end(); ++it){
         pipelines.emplace_back(it.key(), *it);

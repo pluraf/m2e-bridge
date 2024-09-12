@@ -1,59 +1,57 @@
 {
-  "pipelines":{
-    "sensor-data":{
-      "connector_in": {
-        "type": "mqtt",
-        "topic": "/topic/+/event",
-        "server": "mqtt://localhost:1883",
-        "qos": 1,
-        "retry_attempts": 5
-      },
-      "filters": [],
-      "transformers":[],
-      "connector_out":{
-        "type":"gcp_pubsub",
-        "key_path":"KEY.json",
-        "project_id":"feisty-enigma-416319",
-        "topic_id":"sensor-data",
-        "attributes":{
-          "deviceId":"U_{{topic[1]}}-{{topic[2]}}-{{topic[100]}}4ffff",
-          "projectId": "G-NODE"
-        }
-      }
+  "sensor-data":{
+    "connector_in": {
+      "type": "mqtt",
+      "topic": "/topic/+/event",
+      "server": "mqtt://localhost:1883",
+      "qos": 1,
+      "retry_attempts": 5
     },
-    "sensor-state":{
-      "connector_in": {
-        "type": "mqtt",
-        "topic": "/topic2",
-        "server": "mqtt://localhost:1883",
-        "qos": 1,
-        "retry_attempts": 5
-      },
-      "filters": [],
-      "transformers": [],
-      "connector_out": {
-        "type": "gcp_pubsub",
-        "key_path":"KEY.json",
-        "project_id": "feisty-enigma-416319",
-        "topic_id": "sensor-state"
+    "filters": [],
+    "transformers":[],
+    "connector_out":{
+      "type":"gcp_pubsub",
+      "key_path":"KEY.json",
+      "project_id":"feisty-enigma-416319",
+      "topic_id":"sensor-data",
+      "attributes":{
+        "deviceId":"U_{{topic[1]}}-{{topic[2]}}-{{topic[100]}}4ffff",
+        "projectId": "G-NODE"
       }
-    },
-    "commands":{
-      "connector_in": {
-        "type": "gcp_pubsub",
-        "key_path":"KEY.json",
-        "project_id": "feisty-enigma-416319",
-        "subscription_id": "commands"
-      },
-      "connector_out": {
-        "type": "mqtt",
-        "topic": "/devices/{{node_id}}/commands",
-        "server": "mqtt://localhost:1883",
-        "qos": 1,
-        "retry_attempts": 5
-      },
-      "filters": [],
-      "transformers": []
     }
+  },
+  "sensor-state":{
+    "connector_in": {
+      "type": "mqtt",
+      "topic": "/topic2",
+      "server": "mqtt://localhost:1883",
+      "qos": 1,
+      "retry_attempts": 5
+    },
+    "filters": [],
+    "transformers": [],
+    "connector_out": {
+      "type": "gcp_pubsub",
+      "key_path":"KEY.json",
+      "project_id": "feisty-enigma-416319",
+      "topic_id": "sensor-state"
+    }
+  },
+  "commands":{
+    "connector_in": {
+      "type": "gcp_pubsub",
+      "key_path":"KEY.json",
+      "project_id": "feisty-enigma-416319",
+      "subscription_id": "commands"
+    },
+    "connector_out": {
+      "type": "mqtt",
+      "topic": "/devices/{{node_id}}/commands",
+      "server": "mqtt://localhost:1883",
+      "qos": 1,
+      "retry_attempts": 5
+    },
+    "filters": [],
+    "transformers": []
   }
 }

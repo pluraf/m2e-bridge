@@ -2,9 +2,10 @@
 #include <cstring>
 #include <fstream>
 
-#include "rest_api.h"
-#include <jwt-cpp/jwt.h>
+#include "jwt-cpp/jwt.h"
 
+#include "global_config.h"
+#include "rest_api.h"
 #include "jwt_helpers.h"
 
 class authHandler:public CivetAuthHandler {
@@ -18,7 +19,7 @@ class authHandler:public CivetAuthHandler {
 
                 if (jwt_verify(token, *public_key_)) {
                     return 1;
-                }       
+                }
             }
 
             mg_send_http_error(conn, 401, "");
@@ -31,14 +32,14 @@ class authHandler:public CivetAuthHandler {
 
 
 CivetServer* start_server() {
-    static std::string public_key = load_public_key("../public_key.pem");
+    static std::string public_key = load_public_key(gc.get_jwt_public_key_path());
 
     CivetServer* server = new CivetServer(NULL);
 
     authHandler* auth_handler = new authHandler(&public_key);
 
     server->addAuthHandler("/**", auth_handler);
-    
+
     return server;
 }
 
