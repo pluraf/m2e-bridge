@@ -296,8 +296,10 @@ public:
                 string vname = match[1].str();
                 try{
                     string vvalue = payload.at(vname);
-                    topic.replace(match.position(), match.length(), vvalue);
-                    pos = pos + match.position() + vvalue.size();
+                    unsigned int i = (pos - topic.cbegin());
+                    topic.replace(i + match.position(), match.length(), vvalue);
+                    // Restore iterator after string modification
+                    pos = topic.cbegin() + i + match.position() + vvalue.size();
                 }catch(json::exception){
                     throw runtime_error(format("Topic template variable {} not found!", vname));
                 }
