@@ -15,7 +15,7 @@
       "project_id":"feisty-enigma-416319",
       "topic_id":"sensor-data",
       "attributes":{
-        "deviceId":"U_{{topic[1]}}-{{topic[2]}}-{{topic[100]}}4ffff",
+        "deviceId":"{{topic[2]}}",
         "projectId": "G-NODE"
       }
     }
@@ -34,7 +34,11 @@
       "type": "gcp_pubsub",
       "key_path":"/etc/m2e-bridge/connectors/auth/feisty-enigma-416319-44f4fddc898c.json",
       "project_id": "feisty-enigma-416319",
-      "topic_id": "sensor-state"
+      "topic_id": "sensor-state",
+      "attributes":{
+        "deviceId":"{{topic[2]}}",
+        "projectId": "G-NODE"
+      }
     }
   },
   "commands":{
