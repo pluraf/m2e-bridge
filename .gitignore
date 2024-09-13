@@ -1,3 +1,9 @@
+#KEY file
+KEY.json
+
+#sample configs
+sample_configs/
+
 #vscode
 .vscode/
 
