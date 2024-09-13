@@ -1,21 +1,19 @@
 {
-  "pipelines":{
-    "two-mqtt-pipeline":{
-      "connector_in": {
-        "type": "mqtt",
-        "topic": "/topic1",
-        "server": "mqtt://localhost:1883",
-        "qos": 1,
-        "retry_attempts": 5
-      },
-      "filters": [],
-      "transformers": [],
-      "connector_out": {
-        "type": "mqtt",
-        "topic": "/topic2",
-        "server": "mqtt://localhost:1883",
-        "client_id": "xyz"
-      }
+  "connector_id_1":{
+    "connector_in":{
+      "type":"mqtt",
+      "topic":"/topic1",
+      "server":"mqtt://localhost:1883",
+      "qos":1,
+      "retry_attempts":5
+    },
+    "filters":[],
+    "transformers":[],
+    "connector_out":{
+      "type":"mqtt",
+      "topic":"/topic2",
+      "server":"mqtt://localhost:1883",
+      "client_id":"xyz"
     }
   }
 }

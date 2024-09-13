@@ -1,0 +1,4 @@
+{
+  "pipelines_path": "pipelines.json",
+  "jwt_public_key_path": "public_key.pem"
+}

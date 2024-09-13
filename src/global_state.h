@@ -1,3 +1,7 @@
+#ifndef __M2E_BRIDGE_GLOBAL_STATE_H__
+#define __M2E_BRIDGE_GLOBAL_STATE_H__
+
+
 #include <vector>
 #include <mutex>
 #include <functional>
@@ -25,3 +29,6 @@ private:
 
 
 extern GlobalState gs;
+
+
+#endif  // __M2E_BRIDGE_GLOBAL_STATE_H__
