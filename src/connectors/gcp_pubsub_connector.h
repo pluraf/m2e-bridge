@@ -17,7 +17,7 @@
 #include "google/cloud/pubsub/topic.h"
 #include "google/cloud/status.h"
 #include "google/cloud/pubsub/admin/subscription_admin_client.h"
-#include "google/pubsub/v1/pubsub.pb.h" 
+#include "google/pubsub/v1/pubsub.pb.h"
 
 #include "connector.h"
 
@@ -62,29 +62,33 @@ public:
             throw std::runtime_error("Error setting environment variable.\n");
         }
         if(mode_ == ConnectorMode::IN){
-            // For connector IN, either topic Id or subscription ID should be provided
-            // If subscription Id is provided without topic Id , it is assumed that the subscription
-            // is already created
-            // If topic id is provided without subscription ID, we try to create a subscription for
-            // that topic whose name is <pipeid>-<topicid>-sub or resuse subscription if it's already present
-            // If both topic ID and subscription ID are given, we try to create subscription with given subscription ID
-            // for that topic or else  or resuse subscription if it's already present
+            // For connector IN, either topic Id or subscription Id should be provided
+            // If subscription Id is provided without topic Id, it is assumed that the subscription
+            // is already created.
+            // If topic Id is provided without subscription Id, we try to create a subscription for
+            // that topic whose name is <pipeid>-<topicid>-sub or resuse subscription if
+            // it's already present.
+            // If both topic Id and subscription Id are given, we try to create subscription
+            // with given subscription Id for that topic or else resuse subscription
+            // if it's already present
             try{
                 subscription_id_ = json_descr.at("subscription_id").get<string>();
             }catch(json::exception){
                 subscription_id_ = "";
             }
             try{
-                topic_id_ = json_descr.at("topic_id").get<string>();               
+                topic_id_ = json_descr.at("topic_id").get<string>();
             }catch(json::exception){
                 topic_id_ = "";
             }
             if (topic_id_ == "" && subscription_id_ == ""){
-                throw std::runtime_error("Either Topic ID or Subscription ID must be present for pubsub connector_in");
+                throw std::runtime_error(
+                    "Either Topic ID or Subscription ID must be present for pubsub connector_in"
+                );
             }
-            if (subscription_id_ == ""){
-                subscription_id_ = pipeid_ + "-"+topic_id_+"-sub";
-            } 
+            if(subscription_id_ == ""){
+                subscription_id_ = pipeid_ + "-" + topic_id_ + "-sub";
+            }
         }else if(mode_ == ConnectorMode::OUT){
             try{
                 topic_id_ = json_descr.at("topic_id").get<string>();
@@ -109,41 +113,42 @@ public:
     }
 
     void connect()override{
-        if(mode_ == ConnectorMode::IN){
-            if(topic_id_ != ""){
-                auto subscription_admin_client = gcloud::pubsub_admin::SubscriptionAdminClient(
+        auto sub_admin = gcloud::pubsub_admin::SubscriptionAdminClient(
                     gcloud::pubsub_admin::MakeSubscriptionAdminConnection());
-                std::string subscription_url = "projects/"+project_id_+"/subscriptions/"+subscription_id_;
-                std::string topic_url = "projects/"+project_id_+"/topics/"+topic_id_;
+
+        if(mode_ == ConnectorMode::IN){
+            // We always have subscription_id here, either from config or created in the
+            // constructor
+            auto subscription = pubsub::Subscription(project_id_, subscription_id_);
+            auto resp = sub_admin.GetSubscription(subscription.FullName());
+            if(resp.status().code() == google::cloud::StatusCode::kNotFound){
+                if(topic_id_ == ""){
+                    throw std::runtime_error(
+                        "Subscription doesn't exist and topic_id is not provided to create one"
+                    );
+                }
+                create_topic(); // make sure topic exist
+                std::string subscription_url = (
+                    "projects/" + project_id_ + "/subscriptions/" + subscription_id_
+                );
+                std::string topic_url = "projects/" + project_id_ + "/topics/" + topic_id_;
                 google::pubsub::v1::PushConfig push_config;
                 std::int32_t ack_deadline_seconds = 10;
-                auto create_subscription_response = subscription_admin_client.CreateSubscription(
-                    subscription_url, topic_url, push_config, ack_deadline_seconds);
-                if (!create_subscription_response && 
-                    create_subscription_response.status().code() != gcloud::StatusCode::kAlreadyExists
-                ) {
-                    std::cerr << "Error creating subscription: " << create_subscription_response.status() << "\n";
+                auto create_sub_resp = sub_admin.CreateSubscription(
+                    subscription_url, topic_url, push_config, ack_deadline_seconds
+                );
+                if (!create_sub_resp &&
+                        create_sub_resp.status().code() != gcloud::StatusCode::kAlreadyExists){
+                    std::cerr << "Error creating subscription: "<<create_sub_resp.status()<<"\n";
                     throw std::runtime_error("Error creating subscription");
-                    
                 }
             }
-            
+
             subscriber_ptr_ = new pubsub::Subscriber(pubsub::MakeSubscriberConnection(
                 pubsub::Subscription(project_id_, subscription_id_))
             );
         }else if(mode_ == ConnectorMode::OUT){
-            auto topic_admin_client = gcloud::pubsub_admin::TopicAdminClient(
-                gcloud::pubsub_admin::MakeTopicAdminConnection());
-            std::string topic_url = "projects/"+project_id_+"/topics/"+topic_id_;
-            auto topic_creation_response = topic_admin_client.CreateTopic(topic_url);
-            // Throw error if topic doesn't already exists
-            if (!topic_creation_response && 
-                topic_creation_response.status().code() != gcloud::StatusCode::kAlreadyExists
-            ) {
-                std::cerr << "Error creating topic: " << topic_creation_response.status() << "\n";
-                throw std::runtime_error("Error creating topic");
-                
-            }
+            create_topic();
             publisher_ptr_ = new pubsub::Publisher(
                 pubsub::MakePublisherConnection(pubsub::Topic(project_id_, topic_id_))
             );
@@ -215,6 +220,20 @@ public:
             }
         }
         return attribute;
+    }
+
+private:
+    void create_topic(){
+        auto topic_admin = gcloud::pubsub_admin::TopicAdminClient(
+            gcloud::pubsub_admin::MakeTopicAdminConnection()
+        );
+        std::string topic_url = "projects/" + project_id_ + "/topics/" + topic_id_;
+        auto res = topic_admin.CreateTopic(topic_url);
+        // Throw error if topic doesn't already exists
+        if (! res && res.status().code() != gcloud::StatusCode::kAlreadyExists){
+            std::cerr << "Error creating topic: "<<res.status()<<std::endl;
+            throw std::runtime_error("Error creating topic");
+        }
     }
 };
 
