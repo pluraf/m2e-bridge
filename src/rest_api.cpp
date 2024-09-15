@@ -34,7 +34,11 @@ class authHandler:public CivetAuthHandler {
 CivetServer* start_server() {
     static std::string public_key = load_public_key(gc.get_jwt_public_key_path());
 
-    char const * options[] = {"listening_ports", "8002", NULL};
+    char const * options[] = {
+        "listening_ports", "8002",
+        "num_threads", "1",
+        NULL
+    };
     CivetServer* server = new CivetServer(options);
 
     authHandler* auth_handler = new authHandler(&public_key);

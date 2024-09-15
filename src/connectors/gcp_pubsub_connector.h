@@ -145,13 +145,19 @@ public:
             }
 
             subscriber_ptr_ = new pubsub::Subscriber(pubsub::MakeSubscriberConnection(
-                pubsub::Subscription(project_id_, subscription_id_))
-            );
+                pubsub::Subscription(project_id_, subscription_id_),
+                ::google::cloud::Options{}
+                    .set<pubsub::MaxConcurrencyOption>(1)
+                    .set<::google::cloud::GrpcBackgroundThreadPoolSizeOption>(2)
+            ));
         }else if(mode_ == ConnectorMode::OUT){
             create_topic();
-            publisher_ptr_ = new pubsub::Publisher(
-                pubsub::MakePublisherConnection(pubsub::Topic(project_id_, topic_id_))
-            );
+            publisher_ptr_ = new pubsub::Publisher(pubsub::MakePublisherConnection(
+                pubsub::Topic(project_id_, topic_id_),
+                ::google::cloud::Options{}
+                    .set<pubsub::MaxConcurrencyOption>(1)
+                    .set<::google::cloud::GrpcBackgroundThreadPoolSizeOption>(2)
+            ));
         }
     }
 
