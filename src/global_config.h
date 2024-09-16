@@ -17,8 +17,27 @@ public:
         return config_.at("jwt_public_key_path").get<std::string>();
     }
 
-    json const & get_pipelines_config(){
+    ordered_json const & get_pipelines_config(){
         return pipelines_;
+    }
+
+    bool add_pipeline(const std::string &pipeid, const json &pipelineData) {
+        if(pipelines_.contains(pipeid)) {
+            return 1;
+        }
+        pipelines_[pipeid] = pipelineData;
+        return save_pipelines();
+    }
+
+    bool save_pipelines() {
+        std::string pipelines_path = config_.at("pipelines_path").get<std::string>();
+        std::ofstream ofs(pipelines_path);
+        if(! ofs.is_open()) { 
+            return 1;
+        }
+        ofs << pipelines_.dump(4);  
+        ofs.close();  
+        return 0; 
     }
 
     void load(std::string const & config_path){
@@ -50,7 +69,7 @@ public:
 
 private:
     json config_;
-    json pipelines_;
+    ordered_json pipelines_;
 };
 
 

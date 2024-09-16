@@ -6,6 +6,7 @@
 
 
 using json = nlohmann::json;
+using ordered_json = nlohmann::ordered_json;
 
 
 #endif  // __M2E_BRIDGE_ALIASES_H__
