@@ -8,9 +8,15 @@
 #include "rest_api.h"
 #include "jwt_helpers.h"
 
-class authHandler:public CivetAuthHandler {
+#include "pipeline.h"
+#include "rest_api_helpers.h"
+
+#include "global_config.h"
+
+
+class AuthHandler:public CivetAuthHandler {
     public:
-        authHandler(std::string* public_key):public_key_(public_key) {}
+        AuthHandler(std::string* public_key):public_key_(public_key) {}
 
         bool authorize(CivetServer *server, struct mg_connection *conn) override {
             const char* auth_token = mg_get_header(conn, "Authorization");
@@ -30,6 +36,26 @@ class authHandler:public CivetAuthHandler {
         std::string* public_key_;
 };
 
+class CreatePipelineHandler:public CivetHandler {
+    public:
+        bool handlePost(CivetServer *server, struct mg_connection * conn) override {
+            std::string pipeid;
+            json pipeline_data;
+
+            if(parse_request_body(conn, pipeid, pipeline_data) != 0) {
+                mg_send_http_error(conn, 400, "Could not parse request!");
+                return 0;
+            }
+        
+            if(gc.add_pipeline(pipeid, pipeline_data) != 0) {
+                mg_send_http_error(conn, 500, "Failed to add pipeline!");
+                return 0;
+            }
+
+            return 1;
+        }
+};
+
 
 CivetServer* start_server() {
     static std::string public_key = load_public_key(gc.get_jwt_public_key_path());
@@ -41,9 +67,11 @@ CivetServer* start_server() {
     };
     CivetServer* server = new CivetServer(options);
 
-    authHandler* auth_handler = new authHandler(&public_key);
-
+    AuthHandler* auth_handler = new AuthHandler(&public_key);
     server->addAuthHandler("/**", auth_handler);
+
+    CreatePipelineHandler* create_pipeline_handler = new CreatePipelineHandler();
+    server->addHandler("/pipeline/create", create_pipeline_handler);
 
     return server;
 }
