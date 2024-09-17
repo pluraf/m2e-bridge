@@ -29,15 +29,14 @@ Pipeline::Pipeline(std::string const & pipeid, json const & pjson){
 
 
 void Pipeline::run() {
-    gs.register_exit_cb([this]{connector_in_->stop();});
-
     connector_in_->connect();
     connector_out_-> connect();
-    while (!stop_) {
+    while(! stop_){
         MessageWrapper* msg_w = connector_in_->receive();
+        std::cout<<pipeid_<<" "<<stop_<<std::endl;
         // if no message received, continue till thread is stopped
         if(msg_w == nullptr)continue;
-        if (! filter(*msg_w)) {
+        if(! filter(*msg_w)){
             continue;
         }
         transform(*msg_w);
@@ -67,15 +66,16 @@ void Pipeline::transform(MessageWrapper& msg_w) {
 
 
 void Pipeline::start() {
-    if (th_ == nullptr) {
+    if(th_ == nullptr){
         th_ = new std::thread(&Pipeline::run, this);
     }
 }
 
 
-void Pipeline::stop() {
-    if (th_ != nullptr) {
-        stop_ = true;
+void Pipeline::stop(){
+    stop_ = true;
+    connector_in_->stop();
+    if(th_ != nullptr){
         th_->join();
         delete th_;
         th_ = nullptr;

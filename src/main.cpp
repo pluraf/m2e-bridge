@@ -20,13 +20,12 @@ GlobalConfig gc;
 
 #include "rest_api.h"
 
-std::atomic<bool> running(true);
+std::atomic<bool> g_running(true);
 
 
 void signalHandler(int signal) {
     std::cout << "\nCaught signal " << signal << ". Ending call..." << std::endl;
-    running = false;
-    gs.notify_exit();
+    g_running = false;
 }
 
 
@@ -55,13 +54,13 @@ int main(int argc, char* argv[]){
     }
 
     CivetServer* server = start_server();
-    if (!server) {
-        return 1;
-    }  // FIXME: Notify threads
+    if(! server) g_running = false;
 
-    while(running){
+    while(g_running){
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
+
+    gs.notify_exit();
 
     for(auto & pipeline: pipelines){
         pipeline.stop();
