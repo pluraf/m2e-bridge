@@ -56,6 +56,26 @@ class CreatePipelineHandler:public CivetHandler {
         }
 };
 
+class EditPipelineHandler:public CivetHandler {
+    public:
+        bool handlePost(CivetServer *server, struct mg_connection * conn) override {
+            std::string pipeid;
+            json pipeline_data;
+
+            if(parse_request_body(conn, pipeid, pipeline_data) != 0) {
+                mg_send_http_error(conn, 400, "Could not parse request!");
+                return 0;
+            }
+        
+            if(gc.edit_pipeline(pipeid, pipeline_data) != 0) {
+                mg_send_http_error(conn, 500, "Failed to edit pipeline!");
+                return 0;
+            }
+
+            return 1;
+        }
+};
+
 
 CivetServer* start_server() {
     static std::string public_key = load_public_key(gc.get_jwt_public_key_path());
@@ -72,6 +92,9 @@ CivetServer* start_server() {
 
     CreatePipelineHandler* create_pipeline_handler = new CreatePipelineHandler();
     server->addHandler("/pipeline/create", create_pipeline_handler);
+
+    EditPipelineHandler* edit_pipeline_handler = new EditPipelineHandler();
+    server->addHandler("/pipeline/edit", edit_pipeline_handler);
 
     return server;
 }
