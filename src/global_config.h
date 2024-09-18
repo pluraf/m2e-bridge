@@ -37,6 +37,14 @@ public:
         return save_pipelines();
     }
 
+    bool delete_pipeline(const std::string &pipeid) {
+        if(! pipelines_.contains(pipeid)) {
+            return 1;
+        }
+        pipelines_.erase(pipeid);
+        return save_pipelines();
+    }
+
     bool save_pipelines() {
         std::string pipelines_path = config_.at("pipelines_path").get<std::string>();
         std::ofstream ofs(pipelines_path);
