@@ -76,6 +76,27 @@ class EditPipelineHandler:public CivetHandler {
         }
 };
 
+class DeletePipelineHandler:public CivetHandler {
+    public:
+        bool handlePost(CivetServer *server, struct mg_connection * conn) override {
+            std::vector<std::string> pipeline_ids;
+
+            if(parse_pipeline_ids(conn, pipeline_ids) != 0) {
+                mg_send_http_error(conn, 400, "Could not parse request!");
+                return 0;
+            }
+
+            for(const auto &pipeid : pipeline_ids) {
+                if(gc.delete_pipeline(pipeid) != 0) {
+                    mg_send_http_error(conn, 500, "Failed to delete pipeline!");
+                    return 0;
+                }
+            }
+        
+            return 1;
+        }
+};
+
 
 CivetServer* start_server() {
     static std::string public_key = load_public_key(gc.get_jwt_public_key_path());
@@ -95,6 +116,9 @@ CivetServer* start_server() {
 
     EditPipelineHandler* edit_pipeline_handler = new EditPipelineHandler();
     server->addHandler("/pipeline/edit", edit_pipeline_handler);
+
+    DeletePipelineHandler* delete_pipeline_handler = new DeletePipelineHandler();
+    server->addHandler("/pipeline/delete", delete_pipeline_handler);
 
     return server;
 }
