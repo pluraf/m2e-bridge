@@ -29,6 +29,14 @@ public:
         return save_pipelines();
     }
 
+    bool edit_pipeline(const std::string &pipeid, const json &pipelineData) {
+        if(! pipelines_.contains(pipeid)) {
+            return 1;
+        }
+        pipelines_[pipeid] = pipelineData;
+        return save_pipelines();
+    }
+
     bool save_pipelines() {
         std::string pipelines_path = config_.at("pipelines_path").get<std::string>();
         std::ofstream ofs(pipelines_path);
@@ -64,7 +72,7 @@ public:
         buffer << file.rdbuf();
         file.close();
 
-        pipelines_ = json::parse(buffer.str());
+        pipelines_ = ordered_json::parse(buffer.str());
     }
 
 private:
