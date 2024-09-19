@@ -9,6 +9,8 @@
 #include <stdexcept>
 #include <cstdlib>
 #include <regex>
+#include <fstream>                                 
+#include <iterator>
 
 #include "google/cloud/pubsub/publisher.h"
 #include "google/cloud/pubsub/subscriber.h"
@@ -18,6 +20,8 @@
 #include "google/cloud/status.h"
 #include "google/cloud/pubsub/admin/subscription_admin_client.h"
 #include "google/pubsub/v1/pubsub.pb.h"
+#include "google/cloud/options.h"                 
+#include "google/cloud/credentials.h" 
 
 #include "connector.h"
 
@@ -38,9 +42,9 @@ private:
     string subscription_id_;
     string key_path_;
 
-    const char* KEY_ENV_VARIABLE = "GOOGLE_APPLICATION_CREDENTIALS";
     pubsub::Publisher* publisher_ptr_;
     pubsub::Subscriber* subscriber_ptr_;
+    gcloud::Options auth_options_;
 
     map<string, std::pair<bool,string>> attributes_;
 
@@ -58,9 +62,7 @@ public:
         }catch(json::exception){
             throw std::runtime_error("Project ID cannot be null for pubsub connector\n");
         }
-        if (setenv(KEY_ENV_VARIABLE, key_path_.c_str(), 1) != 0) {
-            throw std::runtime_error("Error setting environment variable.\n");
-        }
+
         if(mode_ == ConnectorMode::IN){
             // For connector IN, either topic Id or subscription Id should be provided
             // If subscription Id is provided without topic Id, it is assumed that the subscription
@@ -99,6 +101,9 @@ public:
             throw std::runtime_error("Unsupported connector mode!");
         }
 
+        auth_options_ = gcloud::Options{}.set<gcloud::UnifiedCredentialsOption>(
+            gcloud::MakeServiceAccountCredentials(get_key_contents(key_path_)));
+
         if(json_descr.contains("attributes")){
             std::smatch match;
             std::regex pattern("\\{\\{(.*?)\\}\\}");
@@ -113,9 +118,9 @@ public:
     }
 
     void connect()override{
-        auto sub_admin = gcloud::pubsub_admin::SubscriptionAdminClient(
-                    gcloud::pubsub_admin::MakeSubscriptionAdminConnection());
 
+        auto sub_admin = gcloud::pubsub_admin::SubscriptionAdminClient(
+                    gcloud::pubsub_admin::MakeSubscriptionAdminConnection(auth_options_));
         if(mode_ == ConnectorMode::IN){
             // We always have subscription_id here, either from config or created in the
             // constructor
@@ -149,6 +154,8 @@ public:
                 ::google::cloud::Options{}
                     .set<pubsub::MaxConcurrencyOption>(1)
                     .set<::google::cloud::GrpcBackgroundThreadPoolSizeOption>(2)
+                    .set<gcloud::UnifiedCredentialsOption>(
+                        gcloud::MakeServiceAccountCredentials(get_key_contents(key_path_)))
             ));
         }else if(mode_ == ConnectorMode::OUT){
             create_topic();
@@ -157,6 +164,8 @@ public:
                 ::google::cloud::Options{}
                     .set<pubsub::MaxConcurrencyOption>(1)
                     .set<::google::cloud::GrpcBackgroundThreadPoolSizeOption>(2)
+                    .set<gcloud::UnifiedCredentialsOption>(
+                        gcloud::MakeServiceAccountCredentials(get_key_contents(key_path_)))
             ));
         }
     }
@@ -231,7 +240,7 @@ public:
 private:
     void create_topic(){
         auto topic_admin = gcloud::pubsub_admin::TopicAdminClient(
-            gcloud::pubsub_admin::MakeTopicAdminConnection()
+            gcloud::pubsub_admin::MakeTopicAdminConnection(auth_options_)
         );
         std::string topic_url = "projects/" + project_id_ + "/topics/" + topic_id_;
         auto res = topic_admin.CreateTopic(topic_url);
@@ -240,6 +249,14 @@ private:
             std::cerr << "Error creating topic: "<<res.status()<<std::endl;
             throw std::runtime_error("Error creating topic");
         }
+    }
+
+    std::string get_key_contents(std::string const& keyfile){
+        auto is = std::ifstream(keyfile);
+        is.exceptions(std::ios::badbit);
+        auto contents = std::string(std::istreambuf_iterator<char>(is.rdbuf()), {});
+        return contents;
+
     }
 };
 
