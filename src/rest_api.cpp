@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstring>
 #include <fstream>
+#include <string>
 
 #include "jwt-cpp/jwt.h"
 
@@ -37,7 +38,7 @@ private:
 };
 
 
-class CreatePipelineHandler:public CivetHandler {
+class PipelineCreateHandler:public CivetHandler {
 public:
     bool handlePost(CivetServer *server, struct mg_connection * conn) override {
         std::string pipeid;
@@ -58,9 +59,32 @@ public:
 };
 
 
-class EditPipelineHandler:public CivetHandler {
+class PipelineGetHandler:public CivetHandler{
 public:
-    bool handlePost(CivetServer *server, struct mg_connection * conn) override {
+    bool handleGet(CivetServer * server, struct mg_connection * conn) override {
+        std::string pipeid;
+        json pipeline_data;
+
+        const struct mg_request_info * req_info = mg_get_request_info(conn);
+
+        const char * last_segment = strrchr(req_info->request_uri, '/');
+        if (last_segment && strlen(last_segment) > 1) {
+            const char * pipeline_id = last_segment + 1;
+
+            ordered_json pipelines = gc.get_pipelines_config();
+            std::string serialized = pipelines[pipeline_id].dump(4);
+            mg_send_http_ok(conn, "application/json", serialized.size());
+            mg_write(conn, serialized.c_str(), serialized.size());
+            return 1;
+        }
+        return 0;
+    }
+};
+
+
+class PipelineEditHandler:public CivetHandler{
+public:
+    bool handlePut(CivetServer *server, struct mg_connection * conn) override {
         std::string pipeid;
         json pipeline_data;
 
@@ -79,9 +103,9 @@ public:
 };
 
 
-class DeletePipelineHandler:public CivetHandler {
+class PipelineDeleteHandler:public CivetHandler {
 public:
-    bool handlePost(CivetServer *server, struct mg_connection * conn) override {
+    bool handleDelete(CivetServer *server, struct mg_connection * conn)override{
         std::vector<std::string> pipeline_ids;
 
         if(parse_pipeline_ids(conn, pipeline_ids) != 0) {
@@ -101,6 +125,18 @@ public:
 };
 
 
+class PipelineListHandler:public CivetHandler {
+public:
+    bool handleGet(CivetServer * server, struct mg_connection * conn)override{
+        ordered_json pipelines = gc.get_pipelines_config();
+        std::string serialized = pipelines.dump(4);
+        mg_send_http_ok(conn, "application/json", serialized.size());
+        mg_write(conn, serialized.c_str(), serialized.size());
+        return 1;
+    }
+};
+
+
 CivetServer* start_server() {
     static std::string public_key = load_public_key(gc.get_jwt_public_key_path());
 
@@ -109,19 +145,16 @@ CivetServer* start_server() {
         "num_threads", "1",
         NULL
     };
+
     CivetServer* server = new CivetServer(options);
 
-    AuthHandler* auth_handler = new AuthHandler(&public_key);
-    server->addAuthHandler("/**", auth_handler);
+    server->addAuthHandler("/**", new AuthHandler(&public_key));
 
-    CreatePipelineHandler* create_pipeline_handler = new CreatePipelineHandler();
-    server->addHandler("/pipeline/create", create_pipeline_handler);
-
-    EditPipelineHandler* edit_pipeline_handler = new EditPipelineHandler();
-    server->addHandler("/pipeline/edit", edit_pipeline_handler);
-
-    DeletePipelineHandler* delete_pipeline_handler = new DeletePipelineHandler();
-    server->addHandler("/pipeline/delete", delete_pipeline_handler);
+    server->addHandler("/pipeline/", new PipelineCreateHandler());
+    server->addHandler("/pipeline/", new PipelineEditHandler());
+    server->addHandler("/pipeline/", new PipelineDeleteHandler());
+    server->addHandler("/pipeline/", new PipelineListHandler());
+    server->addHandler("/pipeline/*", new PipelineGetHandler());
 
     return server;
 }
