@@ -7,6 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <format>
 
 #include "m2e_aliases.h"
 
@@ -23,23 +24,23 @@ public:
 
     bool add_pipeline(const std::string &pipeid, const json &pipelineData) {
         if(pipelines_.contains(pipeid)) {
-            return 1;
+            throw std::invalid_argument(format("Pipeline [ {} ] already exist!", pipeid));
         }
         pipelines_[pipeid] = pipelineData;
         return save_pipelines();
     }
 
-    bool edit_pipeline(const std::string &pipeid, const json &pipelineData) {
+    bool edit_pipeline(const std::string &pipeid, const json &pipelineData){
         if(! pipelines_.contains(pipeid)) {
-            return 1;
+            throw std::invalid_argument(format("Pipeline [ {} ] doesn't exist!", pipeid));
         }
         pipelines_[pipeid] = pipelineData;
         return save_pipelines();
     }
 
-    bool delete_pipeline(const std::string &pipeid) {
+    bool delete_pipeline(const std::string &pipeid){
         if(! pipelines_.contains(pipeid)) {
-            return 1;
+            throw std::invalid_argument(format("Pipeline [ {} ] doesn't exist!", pipeid));
         }
         pipelines_.erase(pipeid);
         return save_pipelines();
@@ -48,12 +49,12 @@ public:
     bool save_pipelines() {
         std::string pipelines_path = config_.at("pipelines_path").get<std::string>();
         std::ofstream ofs(pipelines_path);
-        if(! ofs.is_open()) { 
+        if(! ofs.is_open()) {
             return 1;
         }
-        ofs << pipelines_.dump(4);  
-        ofs.close();  
-        return 0; 
+        ofs << pipelines_.dump(4);
+        ofs.close();
+        return 0;
     }
 
     void load(std::string const & config_path){

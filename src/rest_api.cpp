@@ -2,16 +2,14 @@
 #include <cstring>
 #include <fstream>
 #include <string>
+#include <stdexcept>
 
 #include "jwt-cpp/jwt.h"
-
 #include "global_config.h"
 #include "rest_api.h"
 #include "jwt_helpers.h"
-
 #include "pipeline.h"
 #include "rest_api_helpers.h"
-
 #include "global_config.h"
 
 
@@ -45,17 +43,20 @@ public:
         std::string pipeid;
         json pipeline_data;
 
-        if(parse_request_body(conn, pipeid, pipeline_data) != 0) {
+        if(parse_request_body(conn, pipeid, pipeline_data) != 0){
             mg_send_http_error(conn, 400, "Could not parse request!");
-            return 0;
+        }else{
+            try{
+                if(gc.add_pipeline(pipeid, pipeline_data) != 0){
+                    mg_send_http_error(conn, 500, "Failed to add pipeline!");
+                }else{
+                    mg_send_http_ok(conn, "text/plain", 0);
+                }
+            }catch(std::invalid_argument const & e){
+                mg_send_http_error(conn, 422, "%s", e.what());
+            }
         }
-
-        if(gc.add_pipeline(pipeid, pipeline_data) != 0) {
-            mg_send_http_error(conn, 500, "Failed to add pipeline!");
-            return 0;
-        }
-
-        return 1;
+        return true;
     }
 
     bool handleGet(CivetServer * server, struct mg_connection * conn)override{
@@ -68,53 +69,67 @@ public:
 
         const char * last_segment = strrchr(req_info->request_uri, '/');
         if(last_segment && strlen(last_segment) > 1){
-            const char * pipeline_id = last_segment + 1;
-            std::string serialized = pipelines[pipeline_id].dump(4);
-            mg_send_http_ok(conn, "application/json", serialized.size());
-            mg_write(conn, serialized.c_str(), serialized.size());
-            return 1;
+            const char * pipeid = last_segment + 1;
+            try{
+               std::string serialized = pipelines.at(pipeid).dump(4);
+               mg_send_http_ok(conn, "application/json", serialized.size());
+               mg_write(conn, serialized.c_str(), serialized.size());
+            }catch(json::exception const & e){
+                mg_send_http_error(conn, 404, "%s", e.what());
+            }
         }else{
             std::string serialized = pipelines.dump(4);
             mg_send_http_ok(conn, "application/json", serialized.size());
             mg_write(conn, serialized.c_str(), serialized.size());
-            return 1;
-
         }
-        return 0;
+        return true;
     }
 
     bool handlePut(CivetServer * server, struct mg_connection * conn)override{
         std::string pipeid;
         json pipeline_data;
 
-        if(parse_request_body(conn, pipeid, pipeline_data) != 0) {
+        if(parse_request_body(conn, pipeid, pipeline_data) != 0){
             mg_send_http_error(conn, 400, "Could not parse request!");
-            return 0;
+        }else{
+            try{
+                if(gc.edit_pipeline(pipeid, pipeline_data) != 0){
+                    mg_send_http_error(conn, 500, "Failed to edit pipeline!");
+                }else{
+                    mg_send_http_ok(conn, "text/plain", 0);
+                }
+            }catch(std::invalid_argument const & e){
+                mg_send_http_error(conn, 404, "%s", e.what());
+            }
         }
-
-        if(gc.edit_pipeline(pipeid, pipeline_data) != 0) {
-            mg_send_http_error(conn, 500, "Failed to edit pipeline!");
-            return 0;
-        }
-        return 1;
+        return true;
     }
 
     bool handleDelete(CivetServer * server, struct mg_connection * conn)override{
         std::vector<std::string> pipeline_ids;
 
-        if(parse_pipeline_ids(conn, pipeline_ids) != 0) {
+        if(parse_pipeline_ids(conn, pipeline_ids) != 0){
             mg_send_http_error(conn, 400, "Could not parse request!");
-            return 0;
-        }
-
-        // TODO: Write changes to the disk in the end of the loop
-        for(const auto &pipeid : pipeline_ids) {
-            if(gc.delete_pipeline(pipeid) != 0) {
-                mg_send_http_error(conn, 500, "Failed to delete pipeline!");
-                return 0;
+        }else{
+            // TODO: Write changes to the disk in the end of the loop
+            json deleted;
+            deleted["deleted"] = json::array();
+            for(const auto &pipeid : pipeline_ids){
+                try{
+                    if(gc.delete_pipeline(pipeid) != 0) {
+                        mg_send_http_error(conn, 500, "Failed to delete pipeline!");
+                        return true;
+                    }
+                    deleted["deleted"].push_back(pipeid);
+                }catch(std::invalid_argument){
+                    continue;
+                }
             }
+            std::string serialized = deleted.dump();
+            mg_send_http_ok(conn, "application/json", serialized.size());
+            mg_write(conn, serialized.c_str(), serialized.size());
         }
-        return 1;
+        return true;
     }
 };
 
