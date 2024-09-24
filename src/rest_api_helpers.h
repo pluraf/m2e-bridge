@@ -8,7 +8,7 @@
 #include "m2e_aliases.h"
 
 
-int parse_request_body(struct mg_connection * conn, std::string & pipeid, json & pipelineData);
+int parse_request_body(struct mg_connection * conn, json & pipelineData);
 int parse_pipeline_ids(struct mg_connection * conn, std::vector<std::string> & pipeline_ids);
 
 

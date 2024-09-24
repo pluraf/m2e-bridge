@@ -40,29 +40,33 @@ private:
 class PipelineApiHandler:public CivetHandler {
 public:
     bool handlePost(CivetServer * server, struct mg_connection * conn)override{
-        std::string pipeid;
         json pipeline_data;
+        const struct mg_request_info * req_info = mg_get_request_info(conn);
 
-        if(parse_request_body(conn, pipeid, pipeline_data) != 0){
-            mg_send_http_error(conn, 400, "Could not parse request!");
-        }else{
-            try{
-                if(gc.add_pipeline(pipeid, pipeline_data) != 0){
-                    mg_send_http_error(conn, 500, "Failed to add pipeline!");
-                }else{
-                    mg_send_http_ok(conn, "text/plain", 0);
+        const char * last_segment = strrchr(req_info->request_uri, '/');
+        if(last_segment && strlen(last_segment) > 1){
+            if(parse_request_body(conn, pipeline_data) != 0){
+                mg_send_http_error(conn, 400, "Could not parse request!");
+            }else{
+                const char * pipeid = last_segment + 1;
+                try{
+                    if(gc.add_pipeline(pipeid, pipeline_data) != 0){
+                        mg_send_http_error(conn, 500, "Failed to add pipeline!");
+                    }else{
+                        mg_send_http_ok(conn, "text/plain", 0);
+                    }
+                }catch(std::invalid_argument const & e){
+                    mg_send_http_error(conn, 422, "%s", e.what());
                 }
-            }catch(std::invalid_argument const & e){
-                mg_send_http_error(conn, 422, "%s", e.what());
             }
+        }else{
+            mg_send_http_error(conn, 400, "Pipeline ID is missing in URI");
         }
         return true;
     }
 
     bool handleGet(CivetServer * server, struct mg_connection * conn)override{
-        std::string pipeid;
         json pipeline_data;
-
         const struct mg_request_info * req_info = mg_get_request_info(conn);
 
         ordered_json pipelines = gc.get_pipelines_config();
@@ -71,14 +75,14 @@ public:
         if(last_segment && strlen(last_segment) > 1){
             const char * pipeid = last_segment + 1;
             try{
-               std::string serialized = pipelines.at(pipeid).dump(4);
+               std::string serialized = pipelines.at(pipeid).dump();
                mg_send_http_ok(conn, "application/json", serialized.size());
                mg_write(conn, serialized.c_str(), serialized.size());
             }catch(json::exception const & e){
                 mg_send_http_error(conn, 404, "%s", e.what());
             }
         }else{
-            std::string serialized = pipelines.dump(4);
+            std::string serialized = pipelines.dump();
             mg_send_http_ok(conn, "application/json", serialized.size());
             mg_write(conn, serialized.c_str(), serialized.size());
         }
@@ -86,21 +90,27 @@ public:
     }
 
     bool handlePut(CivetServer * server, struct mg_connection * conn)override{
-        std::string pipeid;
         json pipeline_data;
+        const struct mg_request_info * req_info = mg_get_request_info(conn);
 
-        if(parse_request_body(conn, pipeid, pipeline_data) != 0){
-            mg_send_http_error(conn, 400, "Could not parse request!");
-        }else{
-            try{
-                if(gc.edit_pipeline(pipeid, pipeline_data) != 0){
-                    mg_send_http_error(conn, 500, "Failed to edit pipeline!");
-                }else{
-                    mg_send_http_ok(conn, "text/plain", 0);
+        const char * last_segment = strrchr(req_info->request_uri, '/');
+        if(last_segment && strlen(last_segment) > 1){
+            if(parse_request_body(conn, pipeline_data) != 0){
+                mg_send_http_error(conn, 400, "Could not parse request!");
+            }else{
+                const char * pipeid = last_segment + 1;
+                try{
+                    if(gc.edit_pipeline(pipeid, pipeline_data) != 0){
+                        mg_send_http_error(conn, 500, "Failed to edit pipeline!");
+                    }else{
+                        mg_send_http_ok(conn, "text/plain", 0);
+                    }
+                }catch(std::invalid_argument const & e){
+                    mg_send_http_error(conn, 404, "%s", e.what());
                 }
-            }catch(std::invalid_argument const & e){
-                mg_send_http_error(conn, 404, "%s", e.what());
             }
+        }else{
+            mg_send_http_error(conn, 400, "Pipeline ID is missing in URI");
         }
         return true;
     }
