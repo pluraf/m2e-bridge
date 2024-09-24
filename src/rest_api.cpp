@@ -113,6 +113,7 @@ public:
             return 0;
         }
 
+        // TODO: Write changes to the disk in the end of the loop
         for(const auto &pipeid : pipeline_ids) {
             if(gc.delete_pipeline(pipeid) != 0) {
                 mg_send_http_error(conn, 500, "Failed to delete pipeline!");
