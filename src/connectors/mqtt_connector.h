@@ -7,10 +7,12 @@
 #include <random>
 #include <regex>
 #include <format>
+#include <jwt-cpp/jwt.h>
 
 #include "mqtt/async_client.h"
 
 #include "connector.h"
+#include "database.h"
 
 const int QOS=1;
 const int	N_RETRY_ATTEMPTS = 5;
@@ -155,6 +157,52 @@ private:
         {}
     };
 
+    void parse_authbundle(){
+        Database db;
+        AuthBundle ab;
+        bool res = db.retrieve_AuthBundle(authbundle_id_, ab);
+        if(res){
+            print_authbundle(ab);
+            switch(ab.connector_type){
+                case ConnectorType::MQTT311: 
+                    conn_opts_.set_mqtt_version(MQTTVERSION_3_1_1);
+                    mqtt_version_ = MQTTVERSION_3_1_1;
+                    break;
+                case ConnectorType::MQTT50:
+                    conn_opts_.set_mqtt_version(MQTTVERSION_5);
+                    mqtt_version_ = MQTTVERSION_5;
+                    break;
+                default: 
+                    throw std::runtime_error("Incompatiable  authbundle connector type\n");
+            }
+            std::string token;
+            switch(ab.auth_type){
+                case AuthType::PASSWORD:
+                    conn_opts_.set_user_name(ab.username);
+                    conn_opts_.set_password(ab.password);
+                    break;
+                case AuthType::JWT_ES256:
+                    if(!ab.username.empty()){
+                        conn_opts_.set_user_name(ab.username);
+                    }               
+                    token = jwt::create()
+                        .set_issuer("m2e-bridge")
+                        .set_type("JWT")
+                        .set_issued_at(std::chrono::system_clock::now())
+                        .set_payload_claim("client_id", jwt::claim(std::string{client_id_}))
+                        .sign(jwt::algorithm::es256( "", ab.keydata, "", ""));
+                    conn_opts_.set_password(token);
+                    break;
+                default: 
+                    throw std::runtime_error("Incompatiable  authbundle auth type\n");             
+            }
+
+        }
+        else{
+            throw std::runtime_error("Not able to retreive bundle\n");
+        }
+    }
+
     string server_;
     string client_id_;
     mqtt::async_client_ptr  client_ptr_;
@@ -165,7 +213,8 @@ private:
     mqtt::connect_options conn_opts_;
     mqtt::thread_queue<mqtt::message> * msg_queue_;
     Callback* callback_ptr_;
-
+    string authbundle_id_;
+    int mqtt_version_ = MQTTVERSION_3_1_1;
 
 public:
     MqttConnector(
@@ -196,12 +245,16 @@ public:
         }catch(json::exception){
             qos_ = QOS;
         }
+        try{
+            authbundle_id_ = json_descr.at("authbundle_id").get<string>();
+        }catch(json::exception){
+            authbundle_id_ = "";
+        }
 
         std::cout<<"server "<<server_<<std::endl;
 
         std::cout<<"client id  "<<client_id_<<std::endl;
         msg_queue_ = new mqtt::thread_queue<mqtt::message>(1000);
-        client_ptr_ = std::make_shared<mqtt::async_client>(server_, client_id_);
 
         std::smatch match;
         std::regex pattern("\\{\\{(.*?)\\}\\}");
@@ -210,7 +263,11 @@ public:
 
     void connect() override {
         conn_opts_.set_clean_session(false);
-
+        if( !authbundle_id_.empty()){
+            parse_authbundle();
+        }
+        client_ptr_ = std::make_shared<mqtt::async_client>(server_, client_id_,
+            mqtt::create_options(mqtt_version_), nullptr);
         // Install the callback(s) before connecting.
         callback_ptr_ = new Callback(this);
         client_ptr_->set_callback(*callback_ptr_);
@@ -220,8 +277,8 @@ public:
         }
         catch (const mqtt::exception& exc) {
             std::cerr << "\nERROR: Unable to connect to MQTT server: '"
-                << server_ << "'" << exc << std::endl;
-            throw std::runtime_error("Unable to connect to MQTT server\n");
+                << server_ << "'" << exc.get_message() << std::endl;
+            throw std::runtime_error("Unable to connect to MQTT server. Ensure that connector authentication is proper.\n");
         }
     }
     void disconnect() override {

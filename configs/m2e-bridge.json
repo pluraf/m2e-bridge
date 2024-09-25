@@ -1,4 +1,5 @@
 {
   "pipelines_path": "pipelines.json",
-  "jwt_public_key_path": "public_key.pem"
+  "jwt_public_key_path": "public_key.pem",
+  "authbundles_db_path": "/api_app/db/authbundles.sqlite"
 }

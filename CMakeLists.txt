@@ -22,6 +22,7 @@ find_package(google_cloud_cpp_pubsub REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(civetweb CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
+find_package(SQLite3 REQUIRED)
 
 find_path(JWT_CPP_INCLUDE_DIRS "jwt-cpp/jwt.h"
             PATH_SUFFIXES include
@@ -36,6 +37,7 @@ target_link_libraries(m2e-bridge PRIVATE "${CMAKE_SOURCE_DIR}/external/paho.mqtt
 target_link_libraries(m2e-bridge PRIVATE "${CMAKE_SOURCE_DIR}/external/paho.mqtt.cpp/externals/paho-mqtt-c/build/src/libpaho-mqtt3cs.a")
 target_link_libraries(m2e-bridge PRIVATE civetweb::civetweb-cpp)
 target_link_libraries(m2e-bridge PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(m2e-bridge PRIVATE SQLite::SQLite3)
 
 target_include_directories(m2e-bridge PRIVATE ${JWT_CPP_INCLUDE_DIRS})
 

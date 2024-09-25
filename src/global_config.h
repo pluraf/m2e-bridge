@@ -17,6 +17,10 @@ public:
         return config_.at("jwt_public_key_path").get<std::string>();
     }
 
+    std::string get_authbundles_db_path(){
+        return config_.at("authbundles_db_path").get<std::string>();
+    }
+
     ordered_json const & get_pipelines_config(){
         return pipelines_;
     }
