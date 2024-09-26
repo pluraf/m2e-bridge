@@ -162,7 +162,6 @@ private:
         AuthBundle ab;
         bool res = db.retrieve_AuthBundle(authbundle_id_, ab);
         if(res){
-            print_authbundle(ab);
             switch(ab.connector_type){
                 case ConnectorType::MQTT311: 
                     conn_opts_.set_mqtt_version(MQTTVERSION_3_1_1);

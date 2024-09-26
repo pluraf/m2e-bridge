@@ -24,6 +24,7 @@
 #include "google/cloud/credentials.h" 
 
 #include "connector.h"
+#include "database.h"
 
 
 namespace gcp {
@@ -40,7 +41,8 @@ private:
     string project_id_;
     string topic_id_;
     string subscription_id_;
-    string key_path_;
+    string authbundle_id_;
+    string service_key_data_;
 
     pubsub::Publisher* publisher_ptr_;
     pubsub::Subscriber* subscriber_ptr_;
@@ -53,9 +55,10 @@ public:
             json const & json_descr, ConnectorMode mode, std::string pipeid
         ):Connector(json_descr, mode, pipeid){
         try{
-            key_path_ = json_descr.at("key_path").get<string>();
+            authbundle_id_ = json_descr.at("authbundle_id").get<string>();
+            parse_authbundle();
         }catch(json::exception){
-            throw std::runtime_error("key_path cannot be null for pubsub connector\n");
+            throw std::runtime_error("authbundle_id cannot be null for pubsub connector\n");
         }
         try{
             project_id_ = json_descr.at("project_id").get<string>();
@@ -102,7 +105,7 @@ public:
         }
 
         auth_options_ = gcloud::Options{}.set<gcloud::UnifiedCredentialsOption>(
-            gcloud::MakeServiceAccountCredentials(get_key_contents(key_path_)));
+            gcloud::MakeServiceAccountCredentials(service_key_data_));
 
         if(json_descr.contains("attributes")){
             std::smatch match;
@@ -155,7 +158,7 @@ public:
                     .set<pubsub::MaxConcurrencyOption>(1)
                     .set<::google::cloud::GrpcBackgroundThreadPoolSizeOption>(2)
                     .set<gcloud::UnifiedCredentialsOption>(
-                        gcloud::MakeServiceAccountCredentials(get_key_contents(key_path_)))
+                        gcloud::MakeServiceAccountCredentials(service_key_data_))
             ));
         }else if(mode_ == ConnectorMode::OUT){
             create_topic();
@@ -165,7 +168,7 @@ public:
                     .set<pubsub::MaxConcurrencyOption>(1)
                     .set<::google::cloud::GrpcBackgroundThreadPoolSizeOption>(2)
                     .set<gcloud::UnifiedCredentialsOption>(
-                        gcloud::MakeServiceAccountCredentials(get_key_contents(key_path_)))
+                        gcloud::MakeServiceAccountCredentials(service_key_data_))
             ));
         }
     }
@@ -251,12 +254,22 @@ private:
         }
     }
 
-    std::string get_key_contents(std::string const& keyfile){
-        auto is = std::ifstream(keyfile);
-        is.exceptions(std::ios::badbit);
-        auto contents = std::string(std::istreambuf_iterator<char>(is.rdbuf()), {});
-        return contents;
-
+    void parse_authbundle(){
+        Database db;
+        AuthBundle ab;
+        bool res = db.retrieve_AuthBundle(authbundle_id_, ab);
+        if(res){
+            if(ab.connector_type != ConnectorType::GCP_PUBSUB){
+                throw std::runtime_error("Incompatiable  authbundle connector type\n");
+            }
+            if(ab.auth_type != AuthType::SERVICE_KEY){
+                throw std::runtime_error("Incompatiable  authbundle auth type\n");
+            }
+            service_key_data_ = ab.keydata;
+        }
+        else{
+            throw std::runtime_error("Not able to retreive bundle\n");
+        }
     }
 };
 
