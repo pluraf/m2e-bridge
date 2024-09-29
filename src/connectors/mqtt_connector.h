@@ -15,7 +15,7 @@
 #include "database.h"
 
 const int QOS=1;
-const int	N_RETRY_ATTEMPTS = 5;
+const int N_RETRY_ATTEMPTS = 5;
 
 const auto TIMEOUT = std::chrono::seconds(10);
 
@@ -160,10 +160,10 @@ private:
     void parse_authbundle(){
         Database db;
         AuthBundle ab;
-        bool res = db.retrieve_AuthBundle(authbundle_id_, ab);
+        bool res = db.retrieve_authbundle(authbundle_id_, ab);
         if(res){
             switch(ab.connector_type){
-                case ConnectorType::MQTT311: 
+                case ConnectorType::MQTT311:
                     conn_opts_.set_mqtt_version(MQTTVERSION_3_1_1);
                     mqtt_version_ = MQTTVERSION_3_1_1;
                     break;
@@ -171,7 +171,7 @@ private:
                     conn_opts_.set_mqtt_version(MQTTVERSION_5);
                     mqtt_version_ = MQTTVERSION_5;
                     break;
-                default: 
+                default:
                     throw std::runtime_error("Incompatiable  authbundle connector type\n");
             }
             std::string token;
@@ -183,7 +183,7 @@ private:
                 case AuthType::JWT_ES256:
                     if(!ab.username.empty()){
                         conn_opts_.set_user_name(ab.username);
-                    }               
+                    }
                     token = jwt::create()
                         .set_issuer("m2e-bridge")
                         .set_type("JWT")
@@ -192,8 +192,8 @@ private:
                         .sign(jwt::algorithm::es256( "", ab.keydata, "", ""));
                     conn_opts_.set_password(token);
                     break;
-                default: 
-                    throw std::runtime_error("Incompatiable  authbundle auth type\n");             
+                default:
+                    throw std::runtime_error("Incompatiable  authbundle auth type\n");
             }
 
         }

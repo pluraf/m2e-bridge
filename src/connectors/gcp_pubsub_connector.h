@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <cstdlib>
 #include <regex>
-#include <fstream>                                 
+#include <fstream>
 #include <iterator>
 
 #include "google/cloud/pubsub/publisher.h"
@@ -20,8 +20,8 @@
 #include "google/cloud/status.h"
 #include "google/cloud/pubsub/admin/subscription_admin_client.h"
 #include "google/pubsub/v1/pubsub.pb.h"
-#include "google/cloud/options.h"                 
-#include "google/cloud/credentials.h" 
+#include "google/cloud/options.h"
+#include "google/cloud/credentials.h"
 
 #include "connector.h"
 #include "database.h"
@@ -257,13 +257,13 @@ private:
     void parse_authbundle(){
         Database db;
         AuthBundle ab;
-        bool res = db.retrieve_AuthBundle(authbundle_id_, ab);
+        bool res = db.retrieve_authbundle(authbundle_id_, ab);
         if(res){
             if(ab.connector_type != ConnectorType::GCP_PUBSUB){
-                throw std::runtime_error("Incompatiable  authbundle connector type\n");
+                throw std::runtime_error("Incompatiable authbundle connector type\n");
             }
             if(ab.auth_type != AuthType::SERVICE_KEY){
-                throw std::runtime_error("Incompatiable  authbundle auth type\n");
+                throw std::runtime_error("Incompatiable authbundle auth type\n");
             }
             service_key_data_ = ab.keydata;
         }

@@ -18,8 +18,8 @@ public:
         return config_.at("jwt_public_key_path").get<std::string>();
     }
 
-    std::string get_authbundles_db_path(){
-        return config_.at("authbundles_db_path").get<std::string>();
+    std::string const & get_authbundles_db_path(){
+        return authbundles_db_path_;
     }
 
     ordered_json const & get_pipelines_config(){
@@ -86,11 +86,16 @@ public:
         file.close();
 
         pipelines_ = ordered_json::parse(buffer.str());
+
+        // Load authbundles_db_path
+        authbundles_db_path_ = config_.at("authbundles_db_path").get<std::string>();
+
     }
 
 private:
     json config_;
     ordered_json pipelines_;
+    std::string authbundles_db_path_;
 };
 
 

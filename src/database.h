@@ -6,7 +6,6 @@
 #include <string>
 #include <vector>
 #include <sqlite3.h>
-#include <fcntl.h>
 #include <unistd.h>
 #include <sys/file.h>
 #include <stdexcept>
@@ -27,7 +26,7 @@ ConnectorType get_connector_type(std::string val){
         return ConnectorType::MQTT311;
     else if(val == "mqtt50")
         return ConnectorType::MQTT50;
-    else 
+    else
         return ConnectorType::NONE;
 }
 
@@ -55,7 +54,7 @@ AuthType get_auth_type(std::string val){
         return AuthType::PASSWORD;
     else if(val == "service_key")
         return AuthType::SERVICE_KEY;
-    else 
+    else
         return AuthType::NONE;
 }
 
@@ -85,7 +84,7 @@ void print_authbundle(const AuthBundle& bundle) {
     std::cout << "Connector Type: " << connector_type_to_string(bundle.connector_type) << std::endl;
     std::cout << "Auth Type: " << auth_type_to_string(bundle.auth_type) << std::endl;
     std::cout << "Username: " << bundle.username << std::endl;
-    std::cout << "Password: " << bundle.password << std::endl;  
+    std::cout << "Password: " << bundle.password << std::endl;
     std::cout << "Keyname: " << bundle.keyname << std::endl;
     std::cout << "Keydata: " << bundle.keydata << std::endl;
     std::cout << "Description: " << bundle.description << std::endl;
@@ -103,15 +102,15 @@ public:
         db_ = nullptr;
     }
 
-    bool retrieve_AuthBundle(std::string authbundle_id, AuthBundle& authbundle) {
+    bool retrieve_authbundle(std::string authbundle_id, AuthBundle& authbundle) {
         open_db(SQLITE_OPEN_READONLY);
         sqlite3_stmt* stmt;
         int res;
-        const char* sql = R"(SELECT authbundle_id, connector_type, 
+        const char * sql = R"(SELECT authbundle_id, connector_type,
                     auth_type, username, password,
                     keyname, description, keydata
                     FROM authbundles WHERE authbundle_id = ?;)";
-        
+
         res = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
         if (res != SQLITE_OK) {
             std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db_) << std::endl;
@@ -126,15 +125,15 @@ public:
             close_db();
             return false;
         }
-        // Execute the query 
+        // Execute the query
         if (sqlite3_step(stmt) == SQLITE_ROW) {
-            authbundle.authbundle_id = get_string(sqlite3_column_text(stmt, 0)); 
-            authbundle.connector_type = get_connector_type(get_string(sqlite3_column_text(stmt, 1))); 
-            authbundle.auth_type = get_auth_type(get_string(sqlite3_column_text(stmt, 2))); 
-            authbundle.username = get_string(sqlite3_column_text(stmt, 3)); 
-            authbundle.password = get_string(sqlite3_column_text(stmt, 4)); 
-            authbundle.keyname = get_string(sqlite3_column_text(stmt, 5)); 
-            authbundle.description = get_string(sqlite3_column_text(stmt, 6)); 
+            authbundle.authbundle_id = get_string(sqlite3_column_text(stmt, 0));
+            authbundle.connector_type = get_connector_type(get_string(sqlite3_column_text(stmt, 1)));
+            authbundle.auth_type = get_auth_type(get_string(sqlite3_column_text(stmt, 2)));
+            authbundle.username = get_string(sqlite3_column_text(stmt, 3));
+            authbundle.password = get_string(sqlite3_column_text(stmt, 4));
+            authbundle.keyname = get_string(sqlite3_column_text(stmt, 5));
+            authbundle.description = get_string(sqlite3_column_text(stmt, 6));
 
             // Retrieve the BLOB data
             const void* blobData = sqlite3_column_blob(stmt, 7);
@@ -143,7 +142,7 @@ public:
                 authbundle.keydata = std::string(static_cast<const char*>(blobData), blobSize);
             }
         }else {
-            std::cerr << "Authbundle not found." << std::endl;
+            std::cerr << format("Authbundle [ {} ] not found.", authbundle_id) << std::endl;
             sqlite3_finalize(stmt);
             close_db();
             return false;
