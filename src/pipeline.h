@@ -13,6 +13,13 @@
 #include "m2e_message/message_wrapper.h"
 
 
+enum class PipelineState{
+    STOPPED,
+    RUNNING,
+    FAILED
+};
+
+
 class Pipeline {
 public:
     Pipeline(std::string const & pipeid, json const & pjson);
@@ -29,8 +36,10 @@ private:
     std::vector<Transformer*> transformers_;
     std::string pipeid_;
 
-    bool stop_ { false };
-    std::thread *th_ { nullptr };
+    bool stop_ {false};
+    std::thread *th_ {nullptr};
+    PipelineState state_ {PipelineState::STOPPED};
+    std::string last_error_;
 };
 
 

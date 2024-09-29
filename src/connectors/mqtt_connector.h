@@ -85,20 +85,17 @@ private:
 
         void reconnect() {
             std::this_thread::sleep_for(std::chrono::milliseconds(2500));
-            try {
+            try{
                 connector_ptr_->client_ptr_->connect(connector_ptr_->conn_opts_, nullptr, *this);
-            }
-            catch (const mqtt::exception& exc) {
+            }catch(const mqtt::exception& exc){
                 std::cerr << "Error: " << exc.what() << std::endl;
-                exit(1);
             }
         }
 
         // Re-connection failure
         void on_failure(const mqtt::token& tok) override {
-            std::cout << "Connection attempt failed" << std::endl;
-            if (++nretry_ > connector_ptr_->n_retry_attempts_)
-                exit(1);
+            std::cerr<<"Connection attempt failed "<<std::endl;
+            if(++nretry_ > connector_ptr_->n_retry_attempts_) return;
             reconnect();
         }
 
