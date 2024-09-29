@@ -1,0 +1,5 @@
+{
+  "pipelines_path": "/etc/m2e-bridge/pipelines.json",
+  "jwt_public_key_path": "/etc/gnode/jwt/public_key.pem",
+  "authbundles_db_path": "/api_app/db/authbundles.sqlite"
+}
