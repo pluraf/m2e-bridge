@@ -2,7 +2,7 @@
   "connector_id_2":{
     "connector_in":{
       "type":"gcp_pubsub",
-      "key_path":"GCP-KEY.json",
+      "authbundle_id" :"95b0bfe15c05408c91ce6933ea85d904",
       "project_id":"feisty-enigma-416319",
       "topic_id":"m2e-topic1",
       "subscription_id":"m2e-topic1-sub"
@@ -11,10 +11,10 @@
     "transformers":[],
     "connector_out":{
       "type":"gcp_pubsub",
-      "key_path":"GCP-KEY.json",
-      "project_id":"feisty-enigma-416319",
-      "topic_id":"m2e-topic2",
-      "subscription_id":"m2e-topic2-sub"
+      "authbundle_id" :"70116bca719e464aaed63d827f88e8bf",
+      "project_id":"g-node2",
+      "topic_id":"m2e-topic-2",
+      "subscription_id":"m2e-topic-2-sub"
     }
   }
 }

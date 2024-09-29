@@ -9,6 +9,8 @@
 #include <stdexcept>
 #include <cstdlib>
 #include <regex>
+#include <fstream>                                 
+#include <iterator>
 
 #include "google/cloud/pubsub/publisher.h"
 #include "google/cloud/pubsub/subscriber.h"
@@ -18,8 +20,11 @@
 #include "google/cloud/status.h"
 #include "google/cloud/pubsub/admin/subscription_admin_client.h"
 #include "google/pubsub/v1/pubsub.pb.h"
+#include "google/cloud/options.h"                 
+#include "google/cloud/credentials.h" 
 
 #include "connector.h"
+#include "database.h"
 
 
 namespace gcp {
@@ -36,11 +41,12 @@ private:
     string project_id_;
     string topic_id_;
     string subscription_id_;
-    string key_path_;
+    string authbundle_id_;
+    string service_key_data_;
 
-    const char* KEY_ENV_VARIABLE = "GOOGLE_APPLICATION_CREDENTIALS";
     pubsub::Publisher* publisher_ptr_;
     pubsub::Subscriber* subscriber_ptr_;
+    gcloud::Options auth_options_;
 
     map<string, std::pair<bool,string>> attributes_;
 
@@ -49,18 +55,17 @@ public:
             json const & json_descr, ConnectorMode mode, std::string pipeid
         ):Connector(json_descr, mode, pipeid){
         try{
-            key_path_ = json_descr.at("key_path").get<string>();
+            authbundle_id_ = json_descr.at("authbundle_id").get<string>();
+            parse_authbundle();
         }catch(json::exception){
-            throw std::runtime_error("key_path cannot be null for pubsub connector\n");
+            throw std::runtime_error("authbundle_id cannot be null for pubsub connector\n");
         }
         try{
             project_id_ = json_descr.at("project_id").get<string>();
         }catch(json::exception){
             throw std::runtime_error("Project ID cannot be null for pubsub connector\n");
         }
-        if (setenv(KEY_ENV_VARIABLE, key_path_.c_str(), 1) != 0) {
-            throw std::runtime_error("Error setting environment variable.\n");
-        }
+
         if(mode_ == ConnectorMode::IN){
             // For connector IN, either topic Id or subscription Id should be provided
             // If subscription Id is provided without topic Id, it is assumed that the subscription
@@ -99,6 +104,9 @@ public:
             throw std::runtime_error("Unsupported connector mode!");
         }
 
+        auth_options_ = gcloud::Options{}.set<gcloud::UnifiedCredentialsOption>(
+            gcloud::MakeServiceAccountCredentials(service_key_data_));
+
         if(json_descr.contains("attributes")){
             std::smatch match;
             std::regex pattern("\\{\\{(.*?)\\}\\}");
@@ -113,9 +121,9 @@ public:
     }
 
     void connect()override{
-        auto sub_admin = gcloud::pubsub_admin::SubscriptionAdminClient(
-                    gcloud::pubsub_admin::MakeSubscriptionAdminConnection());
 
+        auto sub_admin = gcloud::pubsub_admin::SubscriptionAdminClient(
+                    gcloud::pubsub_admin::MakeSubscriptionAdminConnection(auth_options_));
         if(mode_ == ConnectorMode::IN){
             // We always have subscription_id here, either from config or created in the
             // constructor
@@ -149,6 +157,8 @@ public:
                 ::google::cloud::Options{}
                     .set<pubsub::MaxConcurrencyOption>(1)
                     .set<::google::cloud::GrpcBackgroundThreadPoolSizeOption>(2)
+                    .set<gcloud::UnifiedCredentialsOption>(
+                        gcloud::MakeServiceAccountCredentials(service_key_data_))
             ));
         }else if(mode_ == ConnectorMode::OUT){
             create_topic();
@@ -157,6 +167,8 @@ public:
                 ::google::cloud::Options{}
                     .set<pubsub::MaxConcurrencyOption>(1)
                     .set<::google::cloud::GrpcBackgroundThreadPoolSizeOption>(2)
+                    .set<gcloud::UnifiedCredentialsOption>(
+                        gcloud::MakeServiceAccountCredentials(service_key_data_))
             ));
         }
     }
@@ -231,7 +243,7 @@ public:
 private:
     void create_topic(){
         auto topic_admin = gcloud::pubsub_admin::TopicAdminClient(
-            gcloud::pubsub_admin::MakeTopicAdminConnection()
+            gcloud::pubsub_admin::MakeTopicAdminConnection(auth_options_)
         );
         std::string topic_url = "projects/" + project_id_ + "/topics/" + topic_id_;
         auto res = topic_admin.CreateTopic(topic_url);
@@ -239,6 +251,24 @@ private:
         if (! res && res.status().code() != gcloud::StatusCode::kAlreadyExists){
             std::cerr << "Error creating topic: "<<res.status()<<std::endl;
             throw std::runtime_error("Error creating topic");
+        }
+    }
+
+    void parse_authbundle(){
+        Database db;
+        AuthBundle ab;
+        bool res = db.retrieve_AuthBundle(authbundle_id_, ab);
+        if(res){
+            if(ab.connector_type != ConnectorType::GCP_PUBSUB){
+                throw std::runtime_error("Incompatiable  authbundle connector type\n");
+            }
+            if(ab.auth_type != AuthType::SERVICE_KEY){
+                throw std::runtime_error("Incompatiable  authbundle auth type\n");
+            }
+            service_key_data_ = ab.keydata;
+        }
+        else{
+            throw std::runtime_error("Not able to retreive bundle\n");
         }
     }
 };

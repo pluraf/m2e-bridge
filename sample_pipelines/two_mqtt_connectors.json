@@ -5,7 +5,8 @@
       "topic":"/topic1",
       "server":"mqtt://localhost:1883",
       "qos":1,
-      "retry_attempts":5
+      "retry_attempts":5,
+      "authbundle_id" :"1db45b6c133e437e929d40c5ea7c2b6f"
     },
     "filters":[],
     "transformers":[],
@@ -13,7 +14,8 @@
       "type":"mqtt",
       "topic":"/topic2",
       "server":"mqtt://localhost:1883",
-      "client_id":"xyz"
+      "client_id":"xyz",
+      "authbundle_id" :"e3ad4683b2394c5498321c85e71f1d70"
     }
   }
 }

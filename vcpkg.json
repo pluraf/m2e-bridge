@@ -12,6 +12,7 @@
     },
     "nlohmann-json",
     "civetweb",
-    "jwt-cpp"
+    "jwt-cpp",
+    "sqlite3"
   ]
 }

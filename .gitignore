@@ -1,5 +1,9 @@
 #KEY file
 KEY.json
+GCP-KEY.json
+
+#db s
+*.db
 
 #sample configs
 sample_configs/
