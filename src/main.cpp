@@ -10,6 +10,7 @@
 #include "pipeline.h"
 #include "global_state.h"
 #include "global_config.h"
+#include "pipeline_supervisor.h"
 
 
 using namespace std;
@@ -34,7 +35,7 @@ int main(int argc, char* argv[]){
 
      // Set up signal handler for Ctrl+C (SIGINT)
     signal(SIGINT, signalHandler);
-    vector<Pipeline> pipelines;
+    PipelineSupervisor ps;
 
     if(argc > 1){
         gc.load(argv[1]);
@@ -43,15 +44,8 @@ int main(int argc, char* argv[]){
         return 1;
     }
 
-    json const & config_pipelines = gc.get_pipelines_config();
-    // Iterate over the array of pipelines
-    for(auto it = config_pipelines.begin(); it != config_pipelines.end(); ++it){
-        pipelines.emplace_back(it.key(), *it);
-    }
-
-    for(auto & pipeline: pipelines){
-        pipeline.start();
-    }
+    ps.init();
+    ps.start();
 
     CivetServer* server = start_server();
     if(! server) g_running = false;
@@ -62,13 +56,9 @@ int main(int argc, char* argv[]){
 
     gs.notify_exit();
 
-    for(auto & pipeline: pipelines){
-        pipeline.stop();
-    }
+    ps.stop();
 
     stop_server(server);
-
-    std::cout << "end of pipeline"<<std::endl;
 
     return 0;
 }
