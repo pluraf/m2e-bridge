@@ -65,11 +65,16 @@ Pipeline::Pipeline(std::string const & pipeid, json const & pjson){
         last_error_ = "Unknown exception while creating connector_out";
     }
 
-    state_ = success ? PipelineState::STOPPED : PipelineState::FAILED;
+    state_ = success ? PipelineState::STOPPED : PipelineState::MALFORMED;
 }
 
 
-void Pipeline::run() {
+void Pipeline::run(){
+    if(state_ == PipelineState::MALFORMED){
+        // Pipeline was not configured properly, not safe to run
+        return;
+    }
+
     state_ = PipelineState::RUNNING;
     last_error_ = "";
     bool success = true;

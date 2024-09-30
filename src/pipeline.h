@@ -16,6 +16,7 @@
 enum class PipelineState{
     STOPPED,
     RUNNING,
+    MALFORMED,
     FAILED
 };
 
