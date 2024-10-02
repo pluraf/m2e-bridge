@@ -38,3 +38,19 @@ int parse_pipeline_ids(struct mg_connection *conn, std::vector<std::string> &pip
         return 1;
     }
 }
+
+json get_pipeline_state_as_json(Pipeline pipeline){
+    json json_object;
+    json_object[pipeline.get_id()] = json{
+        {"state", pipeline_state_to_string(pipeline.get_state())}
+    };
+    return json_object;
+}
+
+json get_all_pipelines_state_as_json(std::map<std::string, Pipeline> pipelines){
+    json json_object;
+    for( auto const& [key, val]: pipelines){
+        json_object += get_pipeline_state_as_json(val);
+    }
+    return json_object;
+}

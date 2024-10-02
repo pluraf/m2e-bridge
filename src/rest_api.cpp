@@ -9,8 +9,10 @@
 #include "rest_api.h"
 #include "jwt_helpers.h"
 #include "pipeline.h"
+#include "pipeline_supervisor.h"
 #include "rest_api_helpers.h"
 #include "global_config.h"
+#include "global_state.h"
 
 
 class AuthHandler:public CivetAuthHandler{
@@ -143,6 +145,34 @@ public:
     }
 };
 
+class PipelineStateApiHandler:public CivetHandler {
+public:
+    bool handleGet(CivetServer * server, struct mg_connection * conn)override{
+        std::string response;
+        const struct mg_request_info * req_info = mg_get_request_info(conn);
+
+        PipelineSupervisor *ps = gs.get_pipeline_supervisor();
+        std::map<std::string, Pipeline> pipelines = ps->get_pipelines();
+
+        const char * last_segment = strrchr(req_info->request_uri, '/');
+        if(last_segment && strlen(last_segment) > 1){
+            const char * pipeid = last_segment + 1;
+            auto pos = pipelines.find(pipeid);
+            if(pos != pipelines.end()){
+               response = get_pipeline_state_as_json(pos->second).dump();      
+            }else{
+                mg_send_http_error(conn, 404, "%s", "Pipeid not found!");
+            }
+        }else{
+            response = get_all_pipelines_state_as_json(pipelines).dump();
+        }
+        mg_send_http_ok(conn, "application/json", response.size());
+        mg_write(conn, response.c_str(), response.size());
+        return true;
+    }
+
+};
+
 
 CivetServer* start_server() {
     static std::string public_key = load_public_key(gc.get_jwt_public_key_path());
@@ -156,8 +186,8 @@ CivetServer* start_server() {
     CivetServer* server = new CivetServer(options);
 
     server->addAuthHandler("/**", new AuthHandler(&public_key));
-
     server->addHandler("/pipeline/", new PipelineApiHandler());
+    server->addHandler("/pipelinestate/", new PipelineStateApiHandler());
 
     return server;
 }

@@ -13,6 +13,7 @@ public:
     void init();
     void start();
     void stop();
+    std::map<std::string, Pipeline> get_pipelines();
 private:
     std::map<std::string, Pipeline> pipelines_;  // pipeid is a key
 };

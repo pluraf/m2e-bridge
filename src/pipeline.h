@@ -19,12 +19,22 @@ enum class PipelineState{
     FAILED
 };
 
+inline std::string pipeline_state_to_string(PipelineState st){
+     switch (st) {
+        case PipelineState::STOPPED: return "Stopped";
+        case PipelineState::RUNNING: return "Running";
+        case PipelineState::FAILED: return "Failed";
+        default: return "";
+    }
+}
 
 class Pipeline {
 public:
     Pipeline(std::string const & pipeid, json const & pjson);
     void start();
     void stop();
+    PipelineState get_state();
+    std::string get_id();
 private:
     void run();
     bool filter(MessageWrapper& msg_w);

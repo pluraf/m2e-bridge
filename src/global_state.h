@@ -6,6 +6,8 @@
 #include <mutex>
 #include <functional>
 
+#include "pipeline_supervisor.h"
+
 
 class GlobalState {
 public:
@@ -22,9 +24,18 @@ public:
         }
     }
 
+    PipelineSupervisor* get_pipeline_supervisor(){
+        if (supervisor_ptr_ == nullptr){
+            supervisor_ptr_ = new PipelineSupervisor();
+            supervisor_ptr_->init();
+        }
+        return supervisor_ptr_;
+    }
+
 private:
     std::mutex exit_container_mutex_;
     std::vector<Callback> exit_callbacks_;
+    PipelineSupervisor* supervisor_ptr_;
 };
 
 

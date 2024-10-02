@@ -24,3 +24,7 @@ void PipelineSupervisor::stop(){
         el.second.stop();
     }
 }
+
+std::map<std::string, Pipeline> PipelineSupervisor::get_pipelines(){
+    return pipelines_;
+}

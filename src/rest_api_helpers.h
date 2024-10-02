@@ -4,12 +4,13 @@
 #include <string>
 #include <nlohmann/json.hpp>
 #include "CivetServer.h"
+#include "pipeline.h"
 
 #include "m2e_aliases.h"
 
-
 int parse_request_body(struct mg_connection * conn, json & pipelineData);
 int parse_pipeline_ids(struct mg_connection * conn, std::vector<std::string> & pipeline_ids);
-
+json get_pipeline_state_as_json(Pipeline pipeline);
+json get_all_pipelines_state_as_json(std::map<std::string, Pipeline> pipelines);
 
 #endif

@@ -118,7 +118,8 @@ void Pipeline::transform(MessageWrapper& msg_w) {
 
 
 void Pipeline::start() {
-    if(th_ != nullptr && state_ == PipelineState::STOPPED){
+    if(th_ != nullptr && 
+        state_ == PipelineState::STOPPED| state_ == PipelineState::FAILED){
         th_->join();
         delete th_;
         th_ = nullptr;
@@ -137,4 +138,12 @@ void Pipeline::stop(){
         delete th_;
         th_ = nullptr;
     }
+}
+
+PipelineState Pipeline::get_state(){
+    return state_;
+}
+
+std::string Pipeline::get_id(){
+    return pipeid_;
 }
