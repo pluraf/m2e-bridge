@@ -18,9 +18,9 @@ public:
     void init();
     void start();
     void stop();
-    bool add_pipeline(json pipeline_data);
+    bool add_pipeline(std::string pipeid,json pipeline_data);
     bool delete_pipeline(std::string pipeid);
-    bool edit_pipeline(json pipeline_data);
+    bool edit_pipeline(std::string pipeid, json pipeline_data);
     std::map<std::string, Pipeline> get_pipelines();
     
     static PipelineSupervisor* get_instance(){

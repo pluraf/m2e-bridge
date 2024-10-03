@@ -25,6 +25,36 @@ void PipelineSupervisor::stop(){
     }
 }
 
+bool PipelineSupervisor::add_pipeline(std::string pipeid, json pipeline_data){
+    auto pos = pipelines_.find(pipeid);
+    if(pos != pipelines_.end()){
+        return false;
+    }
+    pipelines_.emplace(pipeid, Pipeline(pipeid, pipeline_data));
+    pipelines_.at(pipeid).start();
+    return true;
+}
+
+bool PipelineSupervisor::delete_pipeline(std::string pipeid){
+    auto pos = pipelines_.find(pipeid);
+    if(pos == pipelines_.end()){
+        return false;
+    }
+    pipelines_.at(pipeid).stop();
+    pipelines_.erase(pipeid);
+    return true;
+}
+
+bool PipelineSupervisor::edit_pipeline(std::string pipeid, json pipeline_data){
+    auto pos = pipelines_.find(pipeid);
+    if(pos == pipelines_.end()){
+        return false;
+    }
+    delete_pipeline(pipeid);
+    add_pipeline(pipeid, pipeline_data);
+    return true;
+}
+
 std::map<std::string, Pipeline> PipelineSupervisor::get_pipelines(){
     return pipelines_;
 }

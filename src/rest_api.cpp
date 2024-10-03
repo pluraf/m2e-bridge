@@ -42,7 +42,7 @@ public:
     bool handlePost(CivetServer * server, struct mg_connection * conn)override{
         json pipeline_data;
         const struct mg_request_info * req_info = mg_get_request_info(conn);
-
+        PipelineSupervisor *ps = PipelineSupervisor::get_instance();
         const char * last_segment = strrchr(req_info->request_uri, '/');
         if(last_segment && strlen(last_segment) > 1){
             if(parse_request_body(conn, pipeline_data) != 0){
@@ -50,9 +50,13 @@ public:
             }else{
                 const char * pipeid = last_segment + 1;
                 try{
+                    // Add pipeline to config file
+                    //if failed: send error
                     if(gc.add_pipeline(pipeid, pipeline_data) != 0){
                         mg_send_http_error(conn, 500, "Failed to add pipeline!");
                     }else{
+                        // Add pipeline to pipeline supervisor
+                        ps->add_pipeline(pipeid, pipeline_data);
                         mg_send_http_ok(conn, "text/plain", 0);
                     }
                 }catch(std::invalid_argument const & e){
@@ -92,7 +96,7 @@ public:
     bool handlePut(CivetServer * server, struct mg_connection * conn)override{
         json pipeline_data;
         const struct mg_request_info * req_info = mg_get_request_info(conn);
-
+        PipelineSupervisor *ps = PipelineSupervisor::get_instance();
         const char * last_segment = strrchr(req_info->request_uri, '/');
         if(last_segment && strlen(last_segment) > 1){
             if(parse_request_body(conn, pipeline_data) != 0){
@@ -100,9 +104,13 @@ public:
             }else{
                 const char * pipeid = last_segment + 1;
                 try{
+                    // Edit pipeline in config file
+                    //if failed: send error
                     if(gc.edit_pipeline(pipeid, pipeline_data) != 0){
                         mg_send_http_error(conn, 500, "Failed to edit pipeline!");
                     }else{
+                        // Edit pipeline in pipeline supervisor
+                        ps->edit_pipeline(pipeid, pipeline_data);
                         mg_send_http_ok(conn, "text/plain", 0);
                     }
                 }catch(std::invalid_argument const & e){
@@ -117,7 +125,7 @@ public:
 
     bool handleDelete(CivetServer * server, struct mg_connection * conn)override{
         std::vector<std::string> pipeline_ids;
-
+        PipelineSupervisor *ps = PipelineSupervisor::get_instance();
         if(parse_pipeline_ids(conn, pipeline_ids) != 0){
             mg_send_http_error(conn, 400, "Could not parse request!");
         }else{
@@ -130,6 +138,8 @@ public:
                         mg_send_http_error(conn, 500, "Failed to delete pipeline!");
                         return true;
                     }
+                    //delete pipeline in pipeline supervisor
+                    ps->delete_pipeline(pipeid);
                     deleted["deleted"].push_back(pipeid);
                 }catch(std::invalid_argument){
                     continue;
