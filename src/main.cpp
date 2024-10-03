@@ -41,7 +41,7 @@ int main(int argc, char* argv[]){
         std::cerr << "Please provide path to config file as the first argument!"<<std::endl;
         return 1;
     }
-    PipelineSupervisor *ps = gs.get_pipeline_supervisor();
+    PipelineSupervisor *ps = PipelineSupervisor::get_instance();
     ps->start();
 
     CivetServer* server = start_server();

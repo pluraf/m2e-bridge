@@ -28,3 +28,5 @@ void PipelineSupervisor::stop(){
 std::map<std::string, Pipeline> PipelineSupervisor::get_pipelines(){
     return pipelines_;
 }
+//Initialize static member to null
+PipelineSupervisor* PipelineSupervisor::instance_ = nullptr;

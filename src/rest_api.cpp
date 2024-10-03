@@ -12,8 +12,6 @@
 #include "pipeline_supervisor.h"
 #include "rest_api_helpers.h"
 #include "global_config.h"
-#include "global_state.h"
-
 
 class AuthHandler:public CivetAuthHandler{
 public:
@@ -151,7 +149,7 @@ public:
         std::string response;
         const struct mg_request_info * req_info = mg_get_request_info(conn);
 
-        PipelineSupervisor *ps = gs.get_pipeline_supervisor();
+        PipelineSupervisor *ps = PipelineSupervisor::get_instance();
         std::map<std::string, Pipeline> pipelines = ps->get_pipelines();
 
         const char * last_segment = strrchr(req_info->request_uri, '/');
