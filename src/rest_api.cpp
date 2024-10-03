@@ -184,8 +184,8 @@ CivetServer* start_server() {
     CivetServer* server = new CivetServer(options);
 
     server->addAuthHandler("/**", new AuthHandler(&public_key));
-    server->addHandler("/pipeline/", new PipelineApiHandler());
-    server->addHandler("/pipelinestate/", new PipelineStateApiHandler());
+    server->addHandler("/pipeline/config/", new PipelineApiHandler());
+    server->addHandler("/pipeline/state/", new PipelineStateApiHandler());
 
     return server;
 }
