@@ -50,13 +50,9 @@ public:
             }else{
                 const char * pipeid = last_segment + 1;
                 try{
-                    // Add pipeline to config file
-                    //if failed: send error
-                    if(gc.add_pipeline(pipeid, pipeline_data) != 0){
+                    if(!ps->add_pipeline(pipeid, pipeline_data)){
                         mg_send_http_error(conn, 500, "Failed to add pipeline!");
                     }else{
-                        // Add pipeline to pipeline supervisor
-                        ps->add_pipeline(pipeid, pipeline_data);
                         mg_send_http_ok(conn, "text/plain", 0);
                     }
                 }catch(std::invalid_argument const & e){
@@ -104,13 +100,9 @@ public:
             }else{
                 const char * pipeid = last_segment + 1;
                 try{
-                    // Edit pipeline in config file
-                    //if failed: send error
-                    if(gc.edit_pipeline(pipeid, pipeline_data) != 0){
+                    if(!ps->edit_pipeline(pipeid, pipeline_data)){
                         mg_send_http_error(conn, 500, "Failed to edit pipeline!");
                     }else{
-                        // Edit pipeline in pipeline supervisor
-                        ps->edit_pipeline(pipeid, pipeline_data);
                         mg_send_http_ok(conn, "text/plain", 0);
                     }
                 }catch(std::invalid_argument const & e){
@@ -134,12 +126,10 @@ public:
             deleted["deleted"] = json::array();
             for(const auto &pipeid : pipeline_ids){
                 try{
-                    if(gc.delete_pipeline(pipeid) != 0) {
+                    if(!ps->delete_pipeline(pipeid)) {
                         mg_send_http_error(conn, 500, "Failed to delete pipeline!");
                         return true;
                     }
-                    //delete pipeline in pipeline supervisor
-                    ps->delete_pipeline(pipeid);
                     deleted["deleted"].push_back(pipeid);
                 }catch(std::invalid_argument){
                     continue;

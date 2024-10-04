@@ -30,6 +30,9 @@ bool PipelineSupervisor::add_pipeline(std::string pipeid, json pipeline_data){
     if(pos != pipelines_.end()){
         return false;
     }
+    if(gc.add_pipeline_in_config_file(pipeid, pipeline_data) != 0){
+        return false;
+    }
     pipelines_.emplace(pipeid, Pipeline(pipeid, pipeline_data));
     pipelines_.at(pipeid).start();
     return true;
@@ -40,6 +43,9 @@ bool PipelineSupervisor::delete_pipeline(std::string pipeid){
     if(pos == pipelines_.end()){
         return false;
     }
+    if(gc.delete_pipeline_in_config_file(pipeid) != 0){
+        return false;
+    }
     pipelines_.at(pipeid).stop();
     pipelines_.erase(pipeid);
     return true;
@@ -48,6 +54,9 @@ bool PipelineSupervisor::delete_pipeline(std::string pipeid){
 bool PipelineSupervisor::edit_pipeline(std::string pipeid, json pipeline_data){
     auto pos = pipelines_.find(pipeid);
     if(pos == pipelines_.end()){
+        return false;
+    }
+    if(gc.edit_pipeline_in_config_file(pipeid, pipeline_data) != 0){
         return false;
     }
     delete_pipeline(pipeid);
