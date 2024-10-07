@@ -142,7 +142,7 @@ public:
                 authbundle.keydata = std::string(static_cast<const char*>(blobData), blobSize);
             }
         }else {
-            std::cerr << format("Authbundle [ {} ] not found.", authbundle_id) << std::endl;
+            std::cerr << fmt::format("Authbundle [ {} ] not found.", authbundle_id) << std::endl;
             sqlite3_finalize(stmt);
             close_db();
             return false;

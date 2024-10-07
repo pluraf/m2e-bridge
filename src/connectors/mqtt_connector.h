@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <random>
 #include <regex>
-#include <format>
+#include <fmt/core.h>
 #include <jwt-cpp/jwt.h>
 
 #include "mqtt/async_client.h"
@@ -358,7 +358,7 @@ public:
                     // Restore iterator after string modification
                     pos = topic.cbegin() + i + match.position() + vvalue.size();
                 }catch(json::exception){
-                    throw runtime_error(format("Topic template variable {} not found!", vname));
+                    throw runtime_error(fmt::format("Topic template variable {} not found!", vname));
                 }
             }
         }catch(json::exception){
