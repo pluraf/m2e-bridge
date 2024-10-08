@@ -14,7 +14,7 @@ code@pluraf.com
 #include "factories/connector_factory.h"
 
 
-Pipeline::Pipeline(std::string const & pipeid, json const & pjson){
+Pipeline::Pipeline(std::string const & pipeid, json const & pjson): stop_(false){
     pipeid_ = pipeid;
     last_error_ = "";
     bool success = true;
@@ -65,7 +65,7 @@ Pipeline::Pipeline(std::string const & pipeid, json const & pjson){
         last_error_ = "Unknown exception while creating connector_out";
     }
 
-    state_ = success ? PipelineState::STOPPED : PipelineState::FAILED;
+    state_ = success ? PipelineState::STOPPED : PipelineState::CONFIG_FAILED;
 }
 
 
@@ -78,7 +78,6 @@ void Pipeline::run() {
         connector_out_-> connect();
         while(! stop_){
             MessageWrapper* msg_w = connector_in_->receive();
-            std::cout<<pipeid_<<" "<<stop_<<std::endl;
             // if no message received, continue till thread is stopped
             if(msg_w == nullptr)continue;
             if(! filter(*msg_w)){
@@ -96,7 +95,7 @@ void Pipeline::run() {
         success = false;
         last_error_ = "Unknown exception while running pipeline";
     }
-    state_ = success ? PipelineState::STOPPED : PipelineState::FAILED;
+    state_ = success ? PipelineState::STOPPED : PipelineState::RUN_FAILED;
 }
 
 
@@ -118,21 +117,32 @@ void Pipeline::transform(MessageWrapper& msg_w) {
 
 
 void Pipeline::start() {
+    if(state_ == PipelineState::CONFIG_FAILED){
+        return;
+    }
     if(th_ != nullptr && 
-        state_ == PipelineState::STOPPED| state_ == PipelineState::FAILED){
+        (state_ == PipelineState::STOPPED || state_ == PipelineState::RUN_FAILED)){
         th_->join();
         delete th_;
         th_ = nullptr;
     }
     if(th_ == nullptr){
+        stop_ = false;
         th_ = new std::thread(&Pipeline::run, this);
     }
 }
 
+void Pipeline::restart() {
+    stop();
+    start();
+}
 
 void Pipeline::stop(){
+    std::cout<<"Called stop for pipeid "<<pipeid_<<std::endl;
     stop_ = true;
-    connector_in_->stop();  // It helps to exit from blocking receiving call
+    if(connector_in_ != nullptr){
+        connector_in_->stop();  // It helps to exit from blocking receiving call
+    }   
     if(th_ != nullptr){
         th_->join();
         delete th_;
@@ -140,10 +150,14 @@ void Pipeline::stop(){
     }
 }
 
-PipelineState Pipeline::get_state(){
+PipelineState Pipeline::get_state() const{
     return state_;
 }
 
-std::string Pipeline::get_id(){
+std::string Pipeline::get_id() const{
     return pipeid_;
+}
+
+std::string Pipeline::get_last_error() const{
+    return last_error_;
 }
