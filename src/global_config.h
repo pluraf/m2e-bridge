@@ -7,7 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <format>
+#include <fmt/core.h>
 
 #include "m2e_aliases.h"
 
@@ -28,7 +28,7 @@ public:
 
     bool add_pipeline_in_config_file(const std::string &pipeid, const json &pipelineData) {
         if(pipelines_.contains(pipeid)) {
-            throw std::invalid_argument(format("Pipeline [ {} ] already exist!", pipeid));
+            throw std::invalid_argument(fmt::format("Pipeline [ {} ] already exist!", pipeid));
         }
         pipelines_[pipeid] = pipelineData;
         return save_pipelines();
@@ -36,7 +36,7 @@ public:
 
     bool edit_pipeline_in_config_file(const std::string &pipeid, const json &pipelineData){
         if(! pipelines_.contains(pipeid)) {
-            throw std::invalid_argument(format("Pipeline [ {} ] doesn't exist!", pipeid));
+            throw std::invalid_argument(fmt::format("Pipeline [ {} ] doesn't exist!", pipeid));
         }
         pipelines_[pipeid] = pipelineData;
         return save_pipelines();
@@ -44,7 +44,7 @@ public:
 
     bool delete_pipeline_in_config_file(const std::string &pipeid){
         if(! pipelines_.contains(pipeid)) {
-            throw std::invalid_argument(format("Pipeline [ {} ] doesn't exist!", pipeid));
+            throw std::invalid_argument(fmt::format("Pipeline [ {} ] doesn't exist!", pipeid));
         }
         pipelines_.erase(pipeid);
         return save_pipelines();

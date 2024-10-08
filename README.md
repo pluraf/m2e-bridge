@@ -14,6 +14,18 @@ This README would normally document whatever steps are necessary to get your app
 
 * Make sure you use Clang++ 18 [https://clang.llvm.org/](https://clang.llvm.org/)
 
+Checkout submodules
+```
+git submodule update --init --checkout --recursive
+```
+Build `paho-mqtt-c`
+```
+cd ./external/paho.mqtt.cpp/externals/paho-mqtt-c/
+mkdir build
+cmake -DPAHO_BUILD_STATIC=TRUE -DPAHO_WITH_SSL=TRUE -DPAHO_ENABLE_TESTING=FALSE ..
+make -j8
+```
+
 
 cd build  
 cmake --preset default ..  

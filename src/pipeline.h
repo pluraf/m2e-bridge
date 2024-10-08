@@ -17,8 +17,8 @@
 enum class PipelineState{
     STOPPED,
     RUNNING,
-    CONFIG_FAILED,
-    RUN_FAILED
+    MALFORMED,
+    FAILED
 };
 
 enum class PipelineCommand{
@@ -32,8 +32,8 @@ inline std::string pipeline_state_to_string(PipelineState st){
      switch (st) {
         case PipelineState::STOPPED: return "Stopped";
         case PipelineState::RUNNING: return "Running";
-        case PipelineState::RUN_FAILED: return "Run Failed";
-        case PipelineState::CONFIG_FAILED: return "Configuration Failed";
+        case PipelineState::FAILED: return "Run Failed";
+        case PipelineState::MALFORMED: return "Configuration Malformed";
         default: return "";
     }
 }

@@ -4,7 +4,7 @@
 #include <string>
 #include <atomic>
 #include <csignal>
-#include <format>
+#include <fmt/core.h>
 
 #include "m2e_aliases.h"
 #include "pipeline.h"

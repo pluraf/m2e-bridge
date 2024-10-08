@@ -64,12 +64,16 @@ Pipeline::Pipeline(std::string const & pipeid, json const & pjson): stop_(false)
         success = false;
         last_error_ = "Unknown exception while creating connector_out";
     }
-
-    state_ = success ? PipelineState::STOPPED : PipelineState::CONFIG_FAILED;
+    state_ = success ? PipelineState::STOPPED : PipelineState::MALFORMED;
 }
 
 
-void Pipeline::run() {
+void Pipeline::run(){
+    if(state_ == PipelineState::MALFORMED){
+        // Pipeline was not configured properly, not safe to run
+        return;
+    }
+
     state_ = PipelineState::RUNNING;
     last_error_ = "";
     bool success = true;
@@ -95,7 +99,7 @@ void Pipeline::run() {
         success = false;
         last_error_ = "Unknown exception while running pipeline";
     }
-    state_ = success ? PipelineState::STOPPED : PipelineState::RUN_FAILED;
+    state_ = success ? PipelineState::STOPPED : PipelineState::FAILED;
 }
 
 
@@ -117,11 +121,11 @@ void Pipeline::transform(MessageWrapper& msg_w) {
 
 
 void Pipeline::start() {
-    if(state_ == PipelineState::CONFIG_FAILED){
+    if(state_ == PipelineState::MALFORMED){
         return;
     }
     if(th_ != nullptr && 
-        (state_ == PipelineState::STOPPED || state_ == PipelineState::RUN_FAILED)){
+        (state_ == PipelineState::STOPPED || state_ == PipelineState::FAILED)){
         th_->join();
         delete th_;
         th_ = nullptr;

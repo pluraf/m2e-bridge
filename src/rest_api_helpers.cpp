@@ -58,8 +58,8 @@ json get_pipeline_state_as_json(const Pipeline& pipeline){
     json json_object = json{
         {"state", pipeline_state_to_string(pipeline.get_state())}
     };
-    if(pipeline.get_state() == PipelineState::RUN_FAILED || 
-        pipeline.get_state() == PipelineState::CONFIG_FAILED ){
+    if(pipeline.get_state() == PipelineState::FAILED || 
+        pipeline.get_state() == PipelineState::MALFORMED ){
         json_object["error"] = pipeline.get_last_error();
     }
     return json_object;
