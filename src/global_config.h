@@ -12,6 +12,8 @@
 #include "m2e_aliases.h"
 
 
+enum Direction {IN, OUT};
+
 class GlobalConfig {
 public:
     std::string get_jwt_public_key_path(){
@@ -59,6 +61,49 @@ public:
         ofs << pipelines_.dump(4);
         ofs.close();
         return 0;
+    }
+
+    bool validate_connector(const json& connector, Direction d) {
+        if(!connector.contains("type") || !connector["type"].is_string()) {
+            return false; 
+        }
+        std::string type = connector["type"];
+        if(type == "mqtt") {
+            if(!connector.contains("topic") || !connector["topic"].is_string() ||
+               !connector.contains("server") || !connector["server"].is_string() ||
+               !connector.contains("authbundle_id") || !connector["authbundle_id"].is_string()) {
+                return false;
+            }
+            if(d == IN) {
+                return (connector.contains("qos") && connector["qos"].is_number_integer() &&
+                        connector.contains("retry_attempts") && connector["retry_attempts"].is_number_integer());
+            }else {
+                return (connector.contains("client_id") && connector["client_id"].is_string());
+            }
+        }else if(type == "gcp_pubsub") {
+            return (connector.contains("authbundle_id") && connector["authbundle_id"].is_string() &&
+                    connector.contains("project_id") && connector["project_id"].is_string() &&
+                    connector.contains("topic_id") && connector["topic_id"].is_string() &&
+                    connector.contains("subscription_id") && connector["subscription_id"].is_string());
+        }else {
+            return false;
+        }
+    }
+
+    bool validate_pipeline_data(const json &pipelineData) {
+        if(!pipelineData.contains("connector_in") || !pipelineData["connector_in"].is_object() ||
+           !pipelineData.contains("filters") || !pipelineData.contains("transformers") ||
+           !pipelineData.contains("connector_out") || !pipelineData["connector_out"].is_object()) {
+            return false;
+        }
+
+        // Validate connectors
+        if(!validate_connector(pipelineData["connector_in"], IN) ||
+           !validate_connector(pipelineData["connector_out"], OUT)) {
+            return false;
+        }
+
+        return true;
     }
 
     void load(std::string const & config_path){
