@@ -18,7 +18,9 @@ enum class PipelineState{
     STOPPED,
     RUNNING,
     MALFORMED,
-    FAILED
+    FAILED,
+    STARTING,
+    STOPPING
 };
 
 enum class PipelineCommand{
@@ -34,6 +36,8 @@ inline std::string pipeline_state_to_string(PipelineState st){
         case PipelineState::RUNNING: return "Running";
         case PipelineState::FAILED: return "Run Failed";
         case PipelineState::MALFORMED: return "Configuration Malformed";
+        case PipelineState::STARTING: return "Starting";
+        case PipelineState::STOPPING: return "Stopping";
         default: return "";
     }
 }

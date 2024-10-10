@@ -3,6 +3,7 @@
 #include <fstream>
 #include <string>
 #include <stdexcept>
+#include <future>
 
 #include "jwt-cpp/jwt.h"
 #include "global_config.h"
@@ -182,14 +183,13 @@ public:
                 mg_send_http_error(conn, 400, "%s", error.c_str());
             }else{
                 const char * pipeid = last_segment + 1;
-                try{
-                    if(!ps->change_pipeline_state(pipeid, command)){
-                        mg_send_http_error(conn, 500, "Failed to change pipeline state!");
-                    }else{
-                        mg_send_http_ok(conn, "text/plain", 0);
-                    }
-                }catch(std::invalid_argument const & e){
-                    mg_send_http_error(conn, 422, "%s", e.what());
+                if(ps->is_pipeid_present(pipeid)){
+                    auto async_task = std::async(std::launch::async, [ps, pipeid, command]() {
+                        ps->change_pipeline_state(pipeid, command);
+                    });                               
+                    mg_send_http_ok(conn, "text/plain", 0);                   
+                }else{                
+                    mg_send_http_error(conn, 404, "%s", "Pipeid not found!");
                 }
             }
         }else{

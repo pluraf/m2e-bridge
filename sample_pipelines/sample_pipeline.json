@@ -1,39 +1,58 @@
 {
-    "connector_id_1":{
-      "connector_in":{
-        "type":"mqtt",
-        "topic":"/topic1",
-        "server":"mqtt://localhost:1883",
-        "qos":1,
-        "retry_attempts":5,
-        "authbundle_id" :"1db45b6c133e437e929d40c5ea7c2b6f"
-      },
-      "filters":[],
-      "transformers":[],
-      "connector_out":{
-        "type":"mqtt",
-        "topic":"/topic2",
-        "server":"mqtt://localhost:1883",
-        "client_id":"xyz",
-        "authbundle_id" :"e3ad4683b2394c5498321c85e71f1d70"
-      }
+    "connector_id_1": {
+        "connector_in": {
+            "type": "mqtt",
+            "topic": "/topic1",
+            "server": "mqtt://localhost:1883",
+            "qos": 1,
+            "retry_attempts": 5,
+            "authbundle_id": "1db45b6c133e437e929d40c5ea7c2b6f"
+        },
+        "filters": [],
+        "transformers": [],
+        "connector_out": {
+            "type": "mqtt",
+            "topic": "/topic2",
+            "server": "mqtt://localhost:1883",
+            "client_id": "xyz",
+            "authbundle_id": "e3ad4683b2394c5498321c85e71f1d70"
+        }
     },
-    "connector_id_2":{
-    "connector_in":{
-      "type":"gcp_pubsub",
-      "authbundle_id" :"95b0bfe15c05408c91ce6933ea85d904",
-      "project_id":"feisty-enigma-416319",
-      "topic_id":"m2e-topic1",
-      "subscription_id":"m2e-topic1-sub"
+    "connector_id_2": {
+        "connector_in": {
+            "type": "gcp_pubsub",
+            "authbundle_id": "95b0bfe15c05408c91ce6933ea85d904",
+            "project_id": "feisty-enigma-416319",
+            "topic_id": "m2e-topic1",
+            "subscription_id": "m2e-topic1-sub"
+        },
+        "filters": [],
+        "transformers": [],
+        "connector_out": {
+            "type": "gcp_pubsub",
+            "authbundle_id": "70116bca719e464aaed63d827f88e8bf",
+            "project_id": "g-node2",
+            "topic_id": "m2e-topic-2",
+            "subscription_id": "m2e-topic-2-sub"
+        }
     },
-    "filters":[],
-    "transformers":[],
-    "connector_out":{
-      "type":"gcp_pubsub",
-      "authbundle_id" :"70116bca719e464aaed63d827f88e8bf",
-      "project_id":"g-node2",
-      "topic_id":"m2e-topic-2",
-      "subscription_id":"m2e-topic-2-sub"
+    "test_pipe": {
+        "connector_in": {
+            "authbundle_id": "e3ad4683b2394c5498321c85e71f1d70",
+            "qos": 1,
+            "retry_attempts": 5,
+            "server": "mqtt://localhost:1883",
+            "topic": "/topic1",
+            "type": "mqtt"
+        },
+        "connector_out": {
+            "authbundle_id": "70116bca719e464aaed63d827f88e8bf",
+            "project_id": "g-node2",
+            "subscription_id": "m2e-topic-2-sub",
+            "topic_id": "m2e-topic-2",
+            "type": "gcp_pubsub"
+        },
+        "filters": [],
+        "transformers": []
     }
-  }
-  }
+}

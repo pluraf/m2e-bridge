@@ -91,5 +91,12 @@ bool PipelineSupervisor::change_pipeline_state(std::string pipeid, PipelineComma
 const std::map<std::string, Pipeline>& PipelineSupervisor::get_pipelines() const{
     return pipelines_;
 }
+
+
+bool PipelineSupervisor::is_pipeid_present(std::string pipeid){
+    auto pos = pipelines_.find(pipeid);
+    return (pos != pipelines_.end());
+}
+
 //Initialize static member to null
 PipelineSupervisor* PipelineSupervisor::instance_ = nullptr;

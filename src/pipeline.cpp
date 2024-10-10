@@ -73,13 +73,12 @@ void Pipeline::run(){
         // Pipeline was not configured properly, not safe to run
         return;
     }
-
-    state_ = PipelineState::RUNNING;
     last_error_ = "";
     bool success = true;
     try{
         connector_in_->connect();
         connector_out_-> connect();
+        state_ = PipelineState::RUNNING;
         while(! stop_){
             MessageWrapper* msg_w = connector_in_->receive();
             // if no message received, continue till thread is stopped
@@ -121,11 +120,14 @@ void Pipeline::transform(MessageWrapper& msg_w) {
 
 
 void Pipeline::start() {
-    if(state_ == PipelineState::MALFORMED){
+    if(state_ == PipelineState::MALFORMED || state_ == PipelineState::RUNNING
+        || state_ == PipelineState::STARTING){
         return;
     }
+    PipelineState prev_state = state_;
+    state_ = PipelineState::STARTING;
     if(th_ != nullptr && 
-        (state_ == PipelineState::STOPPED || state_ == PipelineState::FAILED)){
+         prev_state == PipelineState::FAILED){
         th_->join();
         delete th_;
         th_ = nullptr;
@@ -142,7 +144,11 @@ void Pipeline::restart() {
 }
 
 void Pipeline::stop(){
-    std::cout<<"Called stop for pipeid "<<pipeid_<<std::endl;
+    if(state_ == PipelineState::MALFORMED || state_ == PipelineState::STOPPED){
+        return;
+    }
+    state_ = PipelineState::STOPPING;
+    std::cout<<"Stopping pipeline : "<<pipeid_<<std::endl;
     stop_ = true;
     if(connector_in_ != nullptr){
         connector_in_->stop();  // It helps to exit from blocking receiving call
@@ -152,6 +158,7 @@ void Pipeline::stop(){
         delete th_;
         th_ = nullptr;
     }
+    state_= PipelineState::STOPPED;
 }
 
 PipelineState Pipeline::get_state() const{
