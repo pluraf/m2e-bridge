@@ -48,15 +48,21 @@ public:
             if(parse_request_body(conn, pipeline_data) != 0){
                 mg_send_http_error(conn, 400, "Could not parse request!");
             }else{
-                const char * pipeid = last_segment + 1;
-                try{
-                    if(!ps->add_pipeline(pipeid, pipeline_data)){
-                        mg_send_http_error(conn, 500, "Failed to add pipeline!");
-                    }else{
-                        mg_send_http_ok(conn, "text/plain", 0);
+                if(!gc.validate_pipeline_data(pipeline_data)){
+                    mg_send_http_error(conn, 422, "Invalid pipeline configuration!");
+                }
+                else{
+                    const char * pipeid = last_segment + 1;
+                    try{
+                        if(!ps->add_pipeline(pipeid, pipeline_data)){
+                            mg_send_http_error(conn, 500, "Failed to add pipeline!");
+                        }
+                        else{
+                            mg_send_http_ok(conn, "text/plain", 0);
+                        }
+                    }catch(std::invalid_argument const & e){
+                        mg_send_http_error(conn, 422, "%s", e.what());
                     }
-                }catch(std::invalid_argument const & e){
-                    mg_send_http_error(conn, 422, "%s", e.what());
                 }
             }
         }else{
@@ -98,15 +104,19 @@ public:
             if(parse_request_body(conn, pipeline_data) != 0){
                 mg_send_http_error(conn, 400, "Could not parse request!");
             }else{
-                const char * pipeid = last_segment + 1;
-                try{
-                    if(!ps->edit_pipeline(pipeid, pipeline_data)){
-                        mg_send_http_error(conn, 500, "Failed to edit pipeline!");
-                    }else{
-                        mg_send_http_ok(conn, "text/plain", 0);
-                    }
-                }catch(std::invalid_argument const & e){
-                    mg_send_http_error(conn, 404, "%s", e.what());
+                if(!gc.validate_pipeline_data(pipeline_data)){
+                    mg_send_http_error(conn, 422, "Invalid pipeline configuration!");
+                }else{
+                    const char * pipeid = last_segment + 1;
+                    try{
+                        if(!ps->edit_pipeline(pipeid, pipeline_data)){
+                            mg_send_http_error(conn, 500, "Failed to edit pipeline!");
+                        }else{
+                            mg_send_http_ok(conn, "text/plain", 0);
+                        }
+                    }catch(std::invalid_argument const & e){
+                            mg_send_http_error(conn, 404, "%s", e.what());
+                    }                   
                 }
             }
         }else{
