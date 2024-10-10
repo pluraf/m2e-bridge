@@ -12,7 +12,6 @@
 #include "m2e_aliases.h"
 
 
-enum Direction {IN, OUT};
 
 class GlobalConfig {
 public:
@@ -63,31 +62,55 @@ public:
         return 0;
     }
 
-    bool validate_connector(const json& connector, Direction d) {
+    bool validate_connector(const json& connector) {
         if(!connector.contains("type") || !connector["type"].is_string()) {
             return false; 
         }
+
         std::string type = connector["type"];
+        const char* allowed_params_mqtt[] = {"type", "topic", "server", "qos", "retry_attempts", "authbundle_id"};
+        const char* allowed_params_gcp_pubsup[] = {"type", "authbundle_id", "project_id", "topic_id", "subscription_id"};
+
+        const char** allowed_params = nullptr;
+        size_t allowed_params_size = 0;
+
+        // Essential parameters
         if(type == "mqtt") {
+            allowed_params = allowed_params_mqtt;
+            allowed_params_size = sizeof(allowed_params_mqtt) / sizeof(allowed_params_mqtt[0]);
+
             if(!connector.contains("topic") || !connector["topic"].is_string() ||
-               !connector.contains("server") || !connector["server"].is_string() ||
-               !connector.contains("authbundle_id") || !connector["authbundle_id"].is_string()) {
+               !connector.contains("server") || !connector["server"].is_string()) {
                 return false;
-            }
-            if(d == IN) {
-                return (connector.contains("qos") && connector["qos"].is_number_integer() &&
-                        connector.contains("retry_attempts") && connector["retry_attempts"].is_number_integer());
-            }else {
-                return (connector.contains("client_id") && connector["client_id"].is_string());
-            }
+               }
         }else if(type == "gcp_pubsub") {
-            return (connector.contains("authbundle_id") && connector["authbundle_id"].is_string() &&
-                    connector.contains("project_id") && connector["project_id"].is_string() &&
-                    connector.contains("topic_id") && connector["topic_id"].is_string() &&
-                    connector.contains("subscription_id") && connector["subscription_id"].is_string());
+            allowed_params = allowed_params_gcp_pubsup;
+            allowed_params_size = sizeof(allowed_params_gcp_pubsup) / sizeof(allowed_params_gcp_pubsup[0]);
+
+            if (!connector.contains("authbundle_id") || !connector["authbundle_id"].is_string() &&
+                !connector.contains("project_id") || !connector["project_id"].is_string()) {
+                    return false;
+                }
         }else {
+            // Invalid connector type
             return false;
         }
+
+        // Unexpected parameters
+        for(const auto& param : connector.items()) {
+            bool is_allowed = false;
+            for(size_t i = 0; i < allowed_params_size; i++) {
+                if(param.key() == allowed_params[i]) {
+                    is_allowed = true;
+                    break;
+                }
+            }
+            if(!is_allowed) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     bool validate_pipeline_data(const json &pipelineData) {
@@ -98,8 +121,8 @@ public:
         }
 
         // Validate connectors
-        if(!validate_connector(pipelineData["connector_in"], IN) ||
-           !validate_connector(pipelineData["connector_out"], OUT)) {
+        if(!validate_connector(pipelineData["connector_in"]) ||
+           !validate_connector(pipelineData["connector_out"])) {
             return false;
         }
 
