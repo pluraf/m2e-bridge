@@ -69,7 +69,7 @@ public:
 
         std::string type = connector["type"];
         const char* allowed_params_mqtt[] = {"type", "topic", "server", "qos", "retry_attempts", "authbundle_id"};
-        const char* allowed_params_gcp_pubsup[] = {"type", "authbundle_id", "project_id", "topic_id", "subscription_id"};
+        const char* allowed_params_gcp_pubsub[] = {"type", "authbundle_id", "project_id", "topic_id", "subscription_id"};
 
         const char** allowed_params = nullptr;
         size_t allowed_params_size = 0;
@@ -84,10 +84,10 @@ public:
                 return false;
                }
         }else if(type == "gcp_pubsub") {
-            allowed_params = allowed_params_gcp_pubsup;
-            allowed_params_size = sizeof(allowed_params_gcp_pubsup) / sizeof(allowed_params_gcp_pubsup[0]);
+            allowed_params = allowed_params_gcp_pubsub;
+            allowed_params_size = sizeof(allowed_params_gcp_pubsub) / sizeof(allowed_params_gcp_pubsub[0]);
 
-            if (!connector.contains("authbundle_id") || !connector["authbundle_id"].is_string() &&
+            if (!connector.contains("authbundle_id") || !connector["authbundle_id"].is_string() ||
                 !connector.contains("project_id") || !connector["project_id"].is_string()) {
                     return false;
                 }
