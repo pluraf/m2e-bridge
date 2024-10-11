@@ -23,6 +23,7 @@ public:
     bool edit_pipeline(std::string pipeid, json pipeline_data);
     bool change_pipeline_state(std::string pipeid, PipelineCommand command);
     const std::map<std::string, Pipeline>& get_pipelines() const;
+    bool is_pipeid_present(std::string pipeid);
     
     static PipelineSupervisor* get_instance(){
         if (instance_ == nullptr){

@@ -7,7 +7,8 @@ void PipelineSupervisor::init(){
     json const & config_pipelines = gc.get_pipelines_config();
     // Iterate over the array of pipelines
     for(auto it = config_pipelines.begin(); it != config_pipelines.end(); ++it){
-         pipelines_.emplace(it.key(), Pipeline(it.key(), *it));
+        pipelines_.emplace(it.key(), Pipeline(it.key(), *it));
+        pipelines_.at(it.key()).init();
     }
 }
 
@@ -33,8 +34,9 @@ bool PipelineSupervisor::add_pipeline(std::string pipeid, json pipeline_data){
     if(gc.add_pipeline_in_config_file(pipeid, pipeline_data) != 0){
         return false;
     }
-     pipelines_.emplace(pipeid, Pipeline(pipeid, pipeline_data));
-     pipelines_.at(pipeid).start();
+    pipelines_.emplace(pipeid, Pipeline(pipeid, pipeline_data));
+    pipelines_.at(pipeid).init();
+    pipelines_.at(pipeid).start();
     return true;
 }
 
@@ -72,24 +74,19 @@ bool PipelineSupervisor::change_pipeline_state(std::string pipeid, PipelineComma
     if(command == PipelineCommand::NONE){
         return false;
     }
-    switch (command){
-        case PipelineCommand::START:
-            pos->second.start();
-            break;
-        case PipelineCommand::STOP:
-            pos->second.stop();
-            break;
-        case PipelineCommand::RESTART:
-            pos->second.restart();
-            break;
-        default:
-            break;
-    }
+    pos->second.give_command(command);
     return true;
 }
 
 const std::map<std::string, Pipeline>& PipelineSupervisor::get_pipelines() const{
     return pipelines_;
 }
+
+
+bool PipelineSupervisor::is_pipeid_present(std::string pipeid){
+    auto pos = pipelines_.find(pipeid);
+    return (pos != pipelines_.end());
+}
+
 //Initialize static member to null
 PipelineSupervisor* PipelineSupervisor::instance_ = nullptr;
