@@ -232,7 +232,7 @@ public:
             client_id_ = generate_random_id(10);
         }
         try{
-            n_retry_attempts_ = json_descr.at("n_retry_attempts").get<int>();
+            n_retry_attempts_ = json_descr.at("retry_attempts").get<int>();
         }catch(json::exception){
             n_retry_attempts_ = N_RETRY_ATTEMPTS;
         }
