@@ -194,9 +194,7 @@ public:
             }else{
                 const char * pipeid = last_segment + 1;
                 if(ps->is_pipeid_present(pipeid)){
-                    auto async_task = std::async(std::launch::async, [ps, pipeid, command]() {
-                        ps->change_pipeline_state(pipeid, command);
-                    });                               
+                    ps->change_pipeline_state(pipeid, command);                              
                     mg_send_http_ok(conn, "text/plain", 0);                   
                 }else{                
                     mg_send_http_error(conn, 404, "%s", "Pipeid not found!");

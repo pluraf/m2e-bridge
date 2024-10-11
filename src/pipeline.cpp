@@ -65,7 +65,24 @@ Pipeline::Pipeline(std::string const & pipeid, json const & pjson): stop_(false)
         last_error_ = "Unknown exception while creating connector_out";
     }
     state_ = success ? PipelineState::STOPPED : PipelineState::MALFORMED;
+    // start control thread
+    control_thread_ = new std::thread(&Pipeline::run_control_thread, this);
 }
+
+ Pipeline::~Pipeline(){
+    pipeline_exit_ = true;
+    {
+        std::unique_lock<std::mutex> lock(command_mutex_);
+        command_ = PipelineCommand::NONE;
+        new_command_condition_.notify_one();  
+    }
+
+    if(control_thread_ != nullptr){
+        control_thread_->join();
+        delete control_thread_;
+        control_thread_ = nullptr;
+    }
+ }
 
 
 void Pipeline::run(){
@@ -101,6 +118,70 @@ void Pipeline::run(){
     state_ = success ? PipelineState::STOPPED : PipelineState::FAILED;
 }
 
+//private function to start pipeline in control thread
+void Pipeline::execute_start(){
+    if(state_ == PipelineState::MALFORMED || 
+        state_ == PipelineState::RUNNING
+        || state_ == PipelineState::STARTING){
+        return;
+    }
+    PipelineState prev_state = state_;
+    state_ = PipelineState::STARTING;
+    if(run_thread_ != nullptr && 
+        prev_state == PipelineState::FAILED){
+        run_thread_->join();
+        delete run_thread_;
+        run_thread_ = nullptr;
+    }
+    if(run_thread_ == nullptr){
+        stop_ = false;
+        run_thread_ = new std::thread(&Pipeline::run, this);
+    }
+}
+
+//private function to stop pipeline in control thread
+void Pipeline::execute_stop(){
+    if(state_ == PipelineState::MALFORMED || state_ == PipelineState::STOPPED){
+        return;
+    }
+    state_ = PipelineState::STOPPING;
+    std::cout<<"Stopping pipeline : "<<pipeid_<<std::endl;
+    stop_ = true;
+    if(connector_in_ != nullptr){
+        connector_in_->stop();  // It helps to exit from blocking receiving call
+    }   
+    if(run_thread_ != nullptr){
+        run_thread_->join();
+        delete run_thread_;
+        run_thread_ = nullptr;
+    }
+    state_= PipelineState::STOPPED;
+}
+
+void Pipeline::run_control_thread(){
+    while(true){
+        std::unique_lock<std::mutex> lock(command_mutex_);
+        new_command_condition_.wait(lock);
+        if(command_ == PipelineCommand::NONE && pipeline_exit_){
+            break;
+        }
+        switch(command_){
+            case PipelineCommand::START:
+                execute_start();
+                break;
+            case PipelineCommand::STOP:
+                execute_stop();
+                break;
+            case PipelineCommand::RESTART:
+                execute_stop();
+                execute_start();
+                break;
+            default:
+                break;
+        }
+    }
+    
+}
 
 bool Pipeline::filter(MessageWrapper& msg_w) {
     for (auto *filter : filters_) {
@@ -118,47 +199,24 @@ void Pipeline::transform(MessageWrapper& msg_w) {
     }
 }
 
+void Pipeline::give_command(PipelineCommand command){
+    // setting command_ and notifying condition variable new_command_condition_
+    // will make control thread wake up and execute the command
+    std::unique_lock<std::mutex> lock(command_mutex_);
+    command_ = command;
+    new_command_condition_.notify_one(); 
+}
 
 void Pipeline::start() {
-    if(state_ == PipelineState::MALFORMED || state_ == PipelineState::RUNNING
-        || state_ == PipelineState::STARTING){
-        return;
-    }
-    PipelineState prev_state = state_;
-    state_ = PipelineState::STARTING;
-    if(th_ != nullptr && 
-         prev_state == PipelineState::FAILED){
-        th_->join();
-        delete th_;
-        th_ = nullptr;
-    }
-    if(th_ == nullptr){
-        stop_ = false;
-        th_ = new std::thread(&Pipeline::run, this);
-    }
+    give_command(PipelineCommand::START);
 }
 
 void Pipeline::restart() {
-    stop();
-    start();
+    give_command(PipelineCommand::RESTART);
 }
 
 void Pipeline::stop(){
-    if(state_ == PipelineState::MALFORMED || state_ == PipelineState::STOPPED){
-        return;
-    }
-    state_ = PipelineState::STOPPING;
-    std::cout<<"Stopping pipeline : "<<pipeid_<<std::endl;
-    stop_ = true;
-    if(connector_in_ != nullptr){
-        connector_in_->stop();  // It helps to exit from blocking receiving call
-    }   
-    if(th_ != nullptr){
-        th_->join();
-        delete th_;
-        th_ = nullptr;
-    }
-    state_= PipelineState::STOPPED;
+    give_command(PipelineCommand::STOP);
 }
 
 PipelineState Pipeline::get_state() const{

@@ -72,19 +72,7 @@ bool PipelineSupervisor::change_pipeline_state(std::string pipeid, PipelineComma
     if(command == PipelineCommand::NONE){
         return false;
     }
-    switch (command){
-        case PipelineCommand::START:
-            pos->second.start();
-            break;
-        case PipelineCommand::STOP:
-            pos->second.stop();
-            break;
-        case PipelineCommand::RESTART:
-            pos->second.restart();
-            break;
-        default:
-            break;
-    }
+    pos->second.give_command(command);
     return true;
 }
 
