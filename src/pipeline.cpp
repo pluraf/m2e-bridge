@@ -65,8 +65,6 @@ Pipeline::Pipeline(std::string const & pipeid, json const & pjson): stop_(false)
         last_error_ = "Unknown exception while creating connector_out";
     }
     state_ = success ? PipelineState::STOPPED : PipelineState::MALFORMED;
-    // start control thread
-    control_thread_ = new std::thread(&Pipeline::run_control_thread, this);
 }
 
  Pipeline::~Pipeline(){
@@ -159,6 +157,7 @@ void Pipeline::execute_stop(){
 }
 
 void Pipeline::run_control_thread(){
+    control_thread_running_ = true;
     while(true){
         std::unique_lock<std::mutex> lock(command_mutex_);
         new_command_condition_.wait(lock);
@@ -180,7 +179,7 @@ void Pipeline::run_control_thread(){
                 break;
         }
     }
-    
+    control_thread_running_ = false;
 }
 
 bool Pipeline::filter(MessageWrapper& msg_w) {
@@ -205,6 +204,20 @@ void Pipeline::give_command(PipelineCommand command){
     std::unique_lock<std::mutex> lock(command_mutex_);
     command_ = command;
     new_command_condition_.notify_one(); 
+}
+
+void Pipeline::init(){
+    // start control thread
+    if(control_thread_ == nullptr){
+        std::cout<<" Starting control thread\n";
+        control_thread_ = new std::thread(&Pipeline::run_control_thread, this);
+    }
+    //give some time for control thread to start
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    while(!control_thread_running_){
+
+    }
+
 }
 
 void Pipeline::start() {

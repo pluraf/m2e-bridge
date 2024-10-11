@@ -7,7 +7,8 @@ void PipelineSupervisor::init(){
     json const & config_pipelines = gc.get_pipelines_config();
     // Iterate over the array of pipelines
     for(auto it = config_pipelines.begin(); it != config_pipelines.end(); ++it){
-         pipelines_.emplace(it.key(), Pipeline(it.key(), *it));
+        pipelines_.emplace(it.key(), Pipeline(it.key(), *it));
+        pipelines_.at(it.key()).init();
     }
 }
 
@@ -33,8 +34,9 @@ bool PipelineSupervisor::add_pipeline(std::string pipeid, json pipeline_data){
     if(gc.add_pipeline_in_config_file(pipeid, pipeline_data) != 0){
         return false;
     }
-     pipelines_.emplace(pipeid, Pipeline(pipeid, pipeline_data));
-     pipelines_.at(pipeid).start();
+    pipelines_.emplace(pipeid, Pipeline(pipeid, pipeline_data));
+    pipelines_.at(pipeid).init();
+    pipelines_.at(pipeid).start();
     return true;
 }
 

@@ -66,6 +66,7 @@ class Pipeline {
 public:
     Pipeline(std::string const & pipeid, json const & pjson);
     ~Pipeline();
+    void init(); //to do initializations to be done after constructor is called
     void start();
     void stop();
     void restart();
@@ -84,6 +85,7 @@ public:
     Pipeline(Pipeline&& other) noexcept
         : stop_(other.stop_.load()), 
         pipeline_exit_(other.pipeline_exit_.load()),
+        control_thread_running_(other.control_thread_running_.load()),
         connector_in_(std::move(other.connector_in_)),
         connector_out_(std::move(other.connector_out_)),
         filters_(std::move(other.filters_)),
@@ -124,6 +126,7 @@ private:
     std::condition_variable new_command_condition_;
 
     std::atomic<bool> pipeline_exit_ {false}; // to signal deletion of pipeline
+    std::atomic<bool> control_thread_running_ {false}; // to signal deletion of pipeline
 };
 
 
