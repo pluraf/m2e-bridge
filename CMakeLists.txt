@@ -24,6 +24,7 @@ find_package(civetweb CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(SQLite3 REQUIRED)
 find_package(fmt REQUIRED)
+find_package(CURL REQUIRED)
 
 find_path(JWT_CPP_INCLUDE_DIRS "jwt-cpp/jwt.h"
             PATH_SUFFIXES include
@@ -40,6 +41,7 @@ target_link_libraries(m2e-bridge PRIVATE civetweb::civetweb-cpp)
 target_link_libraries(m2e-bridge PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 target_link_libraries(m2e-bridge PRIVATE SQLite::SQLite3)
 target_link_libraries(m2e-bridge PRIVATE fmt::fmt)
+target_link_libraries(m2e-bridge PRIVATE CURL::libcurl)
 
 target_include_directories(m2e-bridge PRIVATE ${JWT_CPP_INCLUDE_DIRS})
 
