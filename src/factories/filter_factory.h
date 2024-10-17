@@ -1,17 +1,25 @@
 #ifndef __M2E_BRIDGE_FILTER_FACTORY__
 #define __M2E_BRIDGE_FILTER_FACTORY__
 
-#include "nlohmann/json.hpp"
+
 #include <iostream>
 
-#include "filters/filter.h"
+#include "filters/comparator_filter.h"
+#include "filters/search_filter.h"
 
 
 class FilterFactory {
 public:
-    static Filter* create(nlohmann::json json_descr) {
-        return new Filter(json_descr);
+    static Filter * create(json const & json_descr) {
+        if(json_descr["operation"] == "compare"){
+            return new ComparatorFilter(json_descr);
+        }else if(json_descr["operation"] == "search"){
+            return new SearchFilter(json_descr);
+        }else{
+            return new Filter(json_descr);
+        }
     }
 };
 
-#endif
+
+#endif  // __M2E_BRIDGE_FILTER_FACTORY__

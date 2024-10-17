@@ -11,7 +11,7 @@
 
 class TransformerFactory {
 public:
-    static Transformer* create(nlohmann::json json_descr) {
+    static Transformer* create(json const & json_descr){
         return new Transformer(json_descr);
     }
 };

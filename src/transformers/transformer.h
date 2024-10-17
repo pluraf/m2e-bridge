@@ -2,17 +2,16 @@
 #define __M2E_BRIDGE_TRANSFORMER_H__
 
 
-#include "nlohmann/json.hpp"
+#include "m2e_aliases.h"
+#include "m2e_message/message_wrapper.h"
 
 
 class Transformer {
 public:
-    Transformer(nlohmann::json json_descr) {
-        using json = nlohmann::json;
-    }
+    Transformer(json const & json_descr) {}
 
-    void apply(MessageWrapper &msg_w) {}
+    void pass(MessageWrapper &msg_w) {}
 };
 
 
-#endif
+#endif  // __M2E_BRIDGE_TRANSFORMER_H__

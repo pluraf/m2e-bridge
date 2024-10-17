@@ -194,7 +194,7 @@ public:
 
     void send(MessageWrapper & msg_w)override{
         try{
-            auto mb = pubsub::MessageBuilder{}.SetData(msg_w.msg.get_text());
+            auto mb = pubsub::MessageBuilder{}.SetData(msg_w.get_text());
             for(auto const & attribute : attributes_){
                 if(attribute.second.first){
                     string av = derive_attribute(msg_w, attribute.second.second);
@@ -206,7 +206,7 @@ public:
 
             auto id = publisher_ptr_->Publish(std::move(mb).Build()).get();
             if(!id) throw std::move(id).status();
-            std::cout<<" published message "<<msg_w.msg.get_text()<<" with id= "<<*id<<std::endl;
+            std::cout<<" published message "<<msg_w.get_text()<<" with id= "<<*id<<std::endl;
         }
         catch (google::cloud::Status const& status) {
             std::cerr<<"google::cloud::Status thrown: "<< status<<std::endl;
@@ -228,7 +228,7 @@ public:
             smatch match2;
             if(regex_search(ve.cbegin(), ve.cend(), match2, pattern_expression)){
                 int topic_level = stoi(match2[1].str());
-                string vvalue = msg_w.get_topic_level(topic_level);
+                string vvalue = msg_w.orig().get_topic_level(topic_level);
                 unsigned int i = (pos - attribute.cbegin());
                 attribute.replace(i + match1.position(), match1.length(), vvalue);
                 // Restore iterator after string modification

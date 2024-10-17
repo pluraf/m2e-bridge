@@ -70,12 +70,6 @@ Pipeline::Pipeline(std::string const & pipeid, json const & pjson){
 
 
 void Pipeline::run(){
-    if(state_ == PipelineState::MALFORMED){
-        // Pipeline was not configured properly, not safe to run
-        return;
-    }
-
-    state_ = PipelineState::RUNNING;
     last_error_ = "";
     bool success = true;
     try{
@@ -86,7 +80,7 @@ void Pipeline::run(){
             std::cout<<pipeid_<<" "<<stop_<<std::endl;
             // if no message received, continue till thread is stopped
             if(msg_w == nullptr)continue;
-            if(! filter(*msg_w)){
+            if(filter_out(*msg_w)){
                 continue;
             }
             transform(*msg_w);
@@ -105,41 +99,48 @@ void Pipeline::run(){
 }
 
 
-bool Pipeline::filter(MessageWrapper& msg_w) {
+bool Pipeline::filter_out(MessageWrapper& msg_w) {
     for (auto *filter : filters_) {
-        if (! filter->apply(msg_w)) {
-            return false;
+        if (! filter->pass(msg_w)) {
+            return true;
         }
     }
-    return true;
+    return false;
 }
 
 
 void Pipeline::transform(MessageWrapper& msg_w) {
     for (auto *transformer : transformers_) {
-        transformer->apply(msg_w);
+        transformer->pass(msg_w);
     }
 }
 
 
 void Pipeline::start() {
+    if(state_ == PipelineState::MALFORMED){
+        // Pipeline was not configured properly, not safe to run
+        return;
+    }
     if(th_ != nullptr && state_ == PipelineState::STOPPED){
         th_->join();
         delete th_;
         th_ = nullptr;
     }
     if(th_ == nullptr){
+        state_ = PipelineState::RUNNING;
         th_ = new std::thread(&Pipeline::run, this);
     }
 }
 
 
 void Pipeline::stop(){
-    stop_ = true;
-    connector_in_->stop();  // It helps to exit from blocking receiving call
-    if(th_ != nullptr){
-        th_->join();
-        delete th_;
-        th_ = nullptr;
+    if(state_ == PipelineState::RUNNING){
+        stop_ = true;
+        connector_in_->stop();  // It helps to exit from blocking receiving call
+        if(th_ != nullptr){
+            th_->join();
+            delete th_;
+            th_ = nullptr;
+        }
     }
 }

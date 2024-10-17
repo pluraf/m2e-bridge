@@ -2,8 +2,8 @@
 #define __M2E_BRIDGE_CONNECTOR_H__
 
 #include "nlohmann/json.hpp"
-#include<iostream>
-#include<string>
+#include <iostream>
+#include <string>
 
 #include "m2e_message/message_wrapper.h"
 #include "route.h"

@@ -308,8 +308,8 @@ public:
             cout<<"\nSending next message... topic: "<<topic<<std::endl;
             pubtok = client_ptr_->publish(
                 topic,
-                msg_w.msg.get_text().c_str(),
-                msg_w.msg.get_text().length(),
+                msg_w.get_text().c_str(),
+                msg_w.get_text().length(),
                 qos_,
                 false);
             std::cout << "  ...with token: " << pubtok->get_message_id() << std::endl;
@@ -347,7 +347,7 @@ public:
 
         string topic = topic_template_;
         try{
-            json const & payload = msg_w.get_payload();
+            json const & payload = msg_w.orig().get_json();
             auto pos = topic.cbegin();
             while(regex_search(pos, topic.cend(), match, pattern)){
                 string vname = match[1].str();

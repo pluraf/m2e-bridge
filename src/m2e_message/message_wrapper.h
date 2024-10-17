@@ -8,38 +8,19 @@
 #include "message.h"
 
 
-class MessageWrapper {
+class MessageWrapper{
 public:
-    MessageWrapper(const Message msg): msg(msg) { }
-    json const & get_payload(){
-        if(! is_payload_decoded_){
-            decoded_payload_ = json::parse(msg.get_text());
-            is_payload_decoded_ = true;
-        }
-        return decoded_payload_;
+    MessageWrapper(Message msg):orig_(msg),alt_(msg){}
+    Message const & orig(){return orig_;}
+    Message & alt(){return alt_;}
+
+    string const & get_text()const{
+        return alt_ ? alt_.get_text() : orig_.get_text();
     }
-
-    std::string const & get_topic_level(int level){
-        using namespace std;
-        if(! is_topic_levels_){
-            regex r("/");
-            sregex_token_iterator it(msg.get_topic().begin(), msg.get_topic().end(), r, -1);
-            sregex_token_iterator end;
-            topic_levels_ = vector<std::string>(it, end);
-            is_topic_levels_ = true;
-        }
-        return level < topic_levels_.size() ? topic_levels_[level] : empty_string_;
-    }
-
-    Message const msg;
-
 private:
-    json decoded_payload_;
-    bool is_payload_decoded_ {false};
-    std::vector<std::string> topic_levels_;
-    bool is_topic_levels_ {false};
-    std::string const empty_string_ {""};
+    Message orig_;
+    Message alt_;
 };
 
 
-#endif
+#endif  // __M2E_BRIDGE_MESSAGE_WRAPPER_H__

@@ -28,11 +28,11 @@ public:
     void stop();
 private:
     void run();
-    bool filter(MessageWrapper& msg_w);
+    bool filter_out(MessageWrapper& msg_w);
     void transform(MessageWrapper& msg_w);
     void map(MessageWrapper& msg_w);
-    Connector* connector_in_;
-    Connector* connector_out_;
+    Connector * connector_in_;
+    Connector * connector_out_;
     std::vector<Filter*> filters_;
     std::vector<Transformer*> transformers_;
     std::string pipeid_;
