@@ -14,7 +14,7 @@ code@pluraf.com
 #include "factories/connector_factory.h"
 
 
-Pipeline::Pipeline(std::string const & pipeid, json const & pjson){
+Pipeline::Pipeline(std::string const & pipeid, json const & pjson): stop_(false){
     pipeid_ = pipeid;
     last_error_ = "";
     bool success = true;
@@ -64,23 +64,41 @@ Pipeline::Pipeline(std::string const & pipeid, json const & pjson){
         success = false;
         last_error_ = "Unknown exception while creating connector_out";
     }
-
     state_ = success ? PipelineState::STOPPED : PipelineState::MALFORMED;
 }
 
+ Pipeline::~Pipeline(){
+    pipeline_exit_ = true;
+    {
+        std::unique_lock<std::mutex> lock(command_mutex_);
+        command_ = PipelineCommand::NONE;
+        new_command_condition_.notify_one();
+    }
+
+    if(control_thread_ != nullptr){
+        control_thread_->join();
+        delete control_thread_;
+        control_thread_ = nullptr;
+    }
+ }
+
 
 void Pipeline::run(){
+    if(state_ == PipelineState::MALFORMED){
+        // Pipeline was not configured properly, not safe to run
+        return;
+    }
     last_error_ = "";
     bool success = true;
     try{
         connector_in_->connect();
         connector_out_-> connect();
+        state_ = PipelineState::RUNNING;
         while(! stop_){
             MessageWrapper* msg_w = connector_in_->receive();
-            std::cout<<pipeid_<<" "<<stop_<<std::endl;
             // if no message received, continue till thread is stopped
             if(msg_w == nullptr)continue;
-            if(filter_out(*msg_w)){
+            if(! filter(*msg_w)){
                 continue;
             }
             transform(*msg_w);
@@ -98,14 +116,79 @@ void Pipeline::run(){
     state_ = success ? PipelineState::STOPPED : PipelineState::FAILED;
 }
 
+//private function to start pipeline in control thread
+void Pipeline::execute_start(){
+    if(state_ == PipelineState::MALFORMED ||
+        state_ == PipelineState::RUNNING
+        || state_ == PipelineState::STARTING){
+        return;
+    }
+    PipelineState prev_state = state_;
+    state_ = PipelineState::STARTING;
+    if(run_thread_ != nullptr &&
+        prev_state == PipelineState::FAILED){
+        run_thread_->join();
+        delete run_thread_;
+        run_thread_ = nullptr;
+    }
+    if(run_thread_ == nullptr){
+        stop_ = false;
+        run_thread_ = new std::thread(&Pipeline::run, this);
+    }
+}
 
-bool Pipeline::filter_out(MessageWrapper& msg_w) {
-    for (auto *filter : filters_) {
-        if (! filter->pass(msg_w)) {
-            return true;
+//private function to stop pipeline in control thread
+void Pipeline::execute_stop(){
+    if(state_ == PipelineState::MALFORMED || state_ == PipelineState::STOPPED){
+        return;
+    }
+    state_ = PipelineState::STOPPING;
+    std::cout<<"Stopping pipeline : "<<pipeid_<<std::endl;
+    stop_ = true;
+    if(connector_in_ != nullptr){
+        connector_in_->stop();  // It helps to exit from blocking receiving call
+    }
+    if(run_thread_ != nullptr){
+        run_thread_->join();
+        delete run_thread_;
+        run_thread_ = nullptr;
+    }
+    state_= PipelineState::STOPPED;
+}
+
+void Pipeline::run_control_thread(){
+    control_thread_running_ = true;
+    while(true){
+        std::unique_lock<std::mutex> lock(command_mutex_);
+        new_command_condition_.wait(lock);
+        if(command_ == PipelineCommand::NONE && pipeline_exit_){
+            break;
+        }
+        switch(command_){
+            case PipelineCommand::START:
+                execute_start();
+                break;
+            case PipelineCommand::STOP:
+                execute_stop();
+                break;
+            case PipelineCommand::RESTART:
+                execute_stop();
+                execute_start();
+                break;
+            default:
+                break;
         }
     }
-    return false;
+    control_thread_running_ = false;
+}
+
+bool Pipeline::filter(MessageWrapper& msg_w) {
+    for (auto *filter : filters_) {
+        if (! filter->pass(msg_w)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 
@@ -115,32 +198,48 @@ void Pipeline::transform(MessageWrapper& msg_w) {
     }
 }
 
-
-void Pipeline::start() {
-    if(state_ == PipelineState::MALFORMED){
-        // Pipeline was not configured properly, not safe to run
-        return;
-    }
-    if(th_ != nullptr && state_ == PipelineState::STOPPED){
-        th_->join();
-        delete th_;
-        th_ = nullptr;
-    }
-    if(th_ == nullptr){
-        state_ = PipelineState::RUNNING;
-        th_ = new std::thread(&Pipeline::run, this);
-    }
+void Pipeline::give_command(PipelineCommand command){
+    // setting command_ and notifying condition variable new_command_condition_
+    // will make control thread wake up and execute the command
+    std::unique_lock<std::mutex> lock(command_mutex_);
+    command_ = command;
+    new_command_condition_.notify_one();
 }
 
+void Pipeline::init(){
+    // start control thread
+    if(control_thread_ == nullptr){
+        std::cout<<" Starting control thread\n";
+        control_thread_ = new std::thread(&Pipeline::run_control_thread, this);
+    }
+    //give some time for control thread to start
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    while(!control_thread_running_){
+
+    }
+
+}
+
+void Pipeline::start() {
+    give_command(PipelineCommand::START);
+}
+
+void Pipeline::restart() {
+    give_command(PipelineCommand::RESTART);
+}
 
 void Pipeline::stop(){
-    if(state_ == PipelineState::RUNNING){
-        stop_ = true;
-        connector_in_->stop();  // It helps to exit from blocking receiving call
-        if(th_ != nullptr){
-            th_->join();
-            delete th_;
-            th_ = nullptr;
-        }
-    }
+    give_command(PipelineCommand::STOP);
+}
+
+PipelineState Pipeline::get_state() const{
+    return state_;
+}
+
+std::string Pipeline::get_id() const{
+    return pipeid_;
+}
+
+std::string Pipeline::get_last_error() const{
+    return last_error_;
 }

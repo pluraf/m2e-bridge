@@ -15,9 +15,8 @@
 
 using namespace std;
 
-
-GlobalState gs;
 GlobalConfig gc;
+GlobalState gs;
 
 #include "rest_api.h"
 
@@ -35,7 +34,6 @@ int main(int argc, char* argv[]){
 
      // Set up signal handler for Ctrl+C (SIGINT)
     signal(SIGINT, signalHandler);
-    PipelineSupervisor ps;
 
     if(argc > 1){
         gc.load(argv[1]);
@@ -43,9 +41,8 @@ int main(int argc, char* argv[]){
         std::cerr << "Please provide path to config file as the first argument!"<<std::endl;
         return 1;
     }
-
-    ps.init();
-    ps.start();
+    PipelineSupervisor *ps = PipelineSupervisor::get_instance();
+    ps->start();
 
     CivetServer* server = start_server();
     if(! server) g_running = false;
@@ -53,10 +50,9 @@ int main(int argc, char* argv[]){
     for(int i = 0; i < 3; i++){  //while(g_running){
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
-
     gs.notify_exit();
 
-    ps.stop();
+    ps->stop();
 
     stop_server(server);
 

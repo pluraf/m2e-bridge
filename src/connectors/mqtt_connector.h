@@ -279,6 +279,7 @@ public:
     }
     void disconnect() override {
         try {
+            stop();
             std::cout << "\nDisconnecting from the MQTT server..." << std::flush;
             client_ptr_->disconnect()->wait();
             std::cout << "OK" << std::endl;

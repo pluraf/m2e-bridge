@@ -27,7 +27,7 @@ public:
         return pipelines_;
     }
 
-    bool add_pipeline(const std::string &pipeid, const json &pipelineData) {
+    bool add_pipeline_in_config_file(const std::string &pipeid, const json &pipelineData) {
         if(pipelines_.contains(pipeid)) {
             throw std::invalid_argument(fmt::format("Pipeline [ {} ] already exist!", pipeid));
         }
@@ -35,7 +35,7 @@ public:
         return save_pipelines();
     }
 
-    bool edit_pipeline(const std::string &pipeid, const json &pipelineData){
+    bool edit_pipeline_in_config_file(const std::string &pipeid, const json &pipelineData){
         if(! pipelines_.contains(pipeid)) {
             throw std::invalid_argument(fmt::format("Pipeline [ {} ] doesn't exist!", pipeid));
         }
@@ -43,7 +43,7 @@ public:
         return save_pipelines();
     }
 
-    bool delete_pipeline(const std::string &pipeid){
+    bool delete_pipeline_in_config_file(const std::string &pipeid){
         if(! pipelines_.contains(pipeid)) {
             throw std::invalid_argument(fmt::format("Pipeline [ {} ] doesn't exist!", pipeid));
         }

@@ -8,19 +8,85 @@ void PipelineSupervisor::init(){
     // Iterate over the array of pipelines
     for(auto it = config_pipelines.begin(); it != config_pipelines.end(); ++it){
         pipelines_.emplace(it.key(), Pipeline(it.key(), *it));
+        pipelines_.at(it.key()).init();
     }
 }
 
 
 void PipelineSupervisor::start(){
     for(auto & el: pipelines_){
-        el.second.start();
+         el.second.start();
     }
 }
 
 
 void PipelineSupervisor::stop(){
     for(auto & el: pipelines_){
-        el.second.stop();
+         el.second.stop();
     }
 }
+
+bool PipelineSupervisor::add_pipeline(std::string pipeid, json pipeline_data){
+    auto pos = pipelines_.find(pipeid);
+    if(pos != pipelines_.end()){
+        return false;
+    }
+    if(gc.add_pipeline_in_config_file(pipeid, pipeline_data) != 0){
+        return false;
+    }
+    pipelines_.emplace(pipeid, Pipeline(pipeid, pipeline_data));
+    pipelines_.at(pipeid).init();
+    pipelines_.at(pipeid).start();
+    return true;
+}
+
+bool PipelineSupervisor::delete_pipeline(std::string pipeid){
+    auto pos = pipelines_.find(pipeid);
+    if(pos == pipelines_.end()){
+        return false;
+    }
+    if(gc.delete_pipeline_in_config_file(pipeid) != 0){
+        return false;
+    }
+    pipelines_.at(pipeid).stop();
+    pipelines_.erase(pipeid);
+    return true;
+}
+
+bool PipelineSupervisor::edit_pipeline(std::string pipeid, json pipeline_data){
+    auto pos = pipelines_.find(pipeid);
+    if(pos == pipelines_.end()){
+        return false;
+    }
+    if(gc.edit_pipeline_in_config_file(pipeid, pipeline_data) != 0){
+        return false;
+    }
+    delete_pipeline(pipeid);
+    add_pipeline(pipeid, pipeline_data);
+    return true;
+}
+
+bool PipelineSupervisor::change_pipeline_state(std::string pipeid, PipelineCommand command){
+    auto pos = pipelines_.find(pipeid);
+    if(pos == pipelines_.end()){
+        return false;
+    }
+    if(command == PipelineCommand::NONE){
+        return false;
+    }
+    pos->second.give_command(command);
+    return true;
+}
+
+const std::map<std::string, Pipeline>& PipelineSupervisor::get_pipelines() const{
+    return pipelines_;
+}
+
+
+bool PipelineSupervisor::is_pipeid_present(std::string pipeid){
+    auto pos = pipelines_.find(pipeid);
+    return (pos != pipelines_.end());
+}
+
+//Initialize static member to null
+PipelineSupervisor* PipelineSupervisor::instance_ = nullptr;

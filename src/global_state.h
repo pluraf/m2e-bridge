@@ -1,11 +1,9 @@
 #ifndef __M2E_BRIDGE_GLOBAL_STATE_H__
 #define __M2E_BRIDGE_GLOBAL_STATE_H__
 
-
 #include <vector>
 #include <mutex>
 #include <functional>
-
 
 class GlobalState {
 public:
@@ -21,7 +19,6 @@ public:
             cb();
         }
     }
-
 private:
     std::mutex exit_container_mutex_;
     std::vector<Callback> exit_callbacks_;

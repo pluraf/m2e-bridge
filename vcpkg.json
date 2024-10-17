@@ -13,6 +13,7 @@
     "nlohmann-json",
     "civetweb",
     "jwt-cpp",
-    "sqlite3"
+    "sqlite3",
+    "fmt"
   ]
 }
