@@ -10,6 +10,7 @@
 #include "connectors/connector.h"
 #include "connectors/mqtt_connector.h"
 #include "connectors/gcp_pubsub_connector.h"
+#include "connectors/email_connector.h"
 
 
 class ConnectorFactory {
@@ -22,6 +23,10 @@ public:
         }
         else if (json_descr["type"] == "gcp_pubsub"){
             return new gcp::PubSubConnector(json_descr, mode, pipeid);
+
+        }
+        else if (json_descr["type"] == "email"){
+            return new EmailConnector(json_descr, mode, pipeid);
 
         }
         else {
