@@ -157,7 +157,7 @@ public:
 
     void send(MessageWrapper & msg_w)override{
         std::string subject = "Message from M2E Bridge";
-        std::string body = msg_w.msg.get_text();
+        std::string body = msg_w.get_text();
 
         send_email(subject, body);
     }
