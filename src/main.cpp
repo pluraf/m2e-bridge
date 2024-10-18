@@ -47,7 +47,7 @@ int main(int argc, char* argv[]){
     CivetServer* server = start_server();
     if(! server) g_running = false;
 
-    for(int i = 0; i < 3; i++){  //while(g_running){
+    while(g_running){
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
     gs.notify_exit();
