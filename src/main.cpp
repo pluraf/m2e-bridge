@@ -11,7 +11,7 @@
 #include "global_state.h"
 #include "global_config.h"
 #include "pipeline_supervisor.h"
-
+#include "zmq_listner.h"
 
 using namespace std;
 
@@ -28,7 +28,6 @@ void signalHandler(int signal) {
     g_running = false;
 }
 
-
 int main(int argc, char* argv[]){
     using namespace std;
 
@@ -41,8 +40,12 @@ int main(int argc, char* argv[]){
         std::cerr << "Please provide path to config file as the first argument!"<<std::endl;
         return 1;
     }
+
     PipelineSupervisor *ps = PipelineSupervisor::get_instance();
     ps->start();
+    
+    ZmqListner *zmq = ZmqListner::get_instance();
+    zmq->start();
 
     CivetServer* server = start_server();
     if(! server) g_running = false;
@@ -55,6 +58,8 @@ int main(int argc, char* argv[]){
     ps->stop();
 
     stop_server(server);
+    zmq->stop();
 
     return 0;
 }
+
