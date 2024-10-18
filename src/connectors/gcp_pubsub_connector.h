@@ -116,7 +116,7 @@ public:
                 attributes_[it.key()] = std::pair(is_dynamic, v);
             }
         }
-        
+
     }
 
     void connect()override{
@@ -177,31 +177,30 @@ public:
         }
     }
 
-    MessageWrapper* receive()override{
+    Message receive()override{
         try{
             auto opts = google::cloud::Options{}
                 .set<pubsub::RetryPolicyOption>(pubsub::LimitedTimeRetryPolicy(
                                               std::chrono::milliseconds(500))
                                               .clone());
             auto response = subscriber_ptr_->Pull(opts);
-            if (!response) return NULL;
+            if (!response) return Message();
             string msg_text = response->message.data();
             std::cout << "Received message " << msg_text << "\n";
             std::move(response->handler).ack();
-            Message msg(msg_text, subscription_id_);
-		    return new MessageWrapper(msg);
+            return Message(msg_text, subscription_id_);
         }catch (google::cloud::Status const& status) {
             std::cerr << "google::cloud::Status thrown: " << status << "\n";
             throw std::runtime_error("Error pulling messages from gcp pubsub");
         }
     }
 
-    void send(MessageWrapper & msg_w)override{
+    void send(Message & msg)override{
         try{
-            auto mb = pubsub::MessageBuilder{}.SetData(msg_w.get_text());
+            auto mb = pubsub::MessageBuilder{}.SetData(msg.get_raw());
             for(auto const & attribute : attributes_){
                 if(attribute.second.first){
-                    string av = derive_attribute(msg_w, attribute.second.second);
+                    string av = derive_attribute(msg, attribute.second.second);
                     mb.InsertAttribute(attribute.first, av);
                 }else{
                     mb.InsertAttribute(attribute.first, attribute.second.second);
@@ -210,15 +209,13 @@ public:
 
             auto id = publisher_ptr_->Publish(std::move(mb).Build()).get();
             if(!id) throw std::move(id).status();
-            std::cout<<" published message "<<msg_w.get_text()<<" with id= "<<*id<<std::endl;
         }
         catch (google::cloud::Status const& status) {
-            std::cerr<<"google::cloud::Status thrown: "<< status<<std::endl;
             throw std::runtime_error("Unable to publish to gcp pub/sub");
         }
     }
 
-    string derive_attribute(MessageWrapper & msg_w, string const & atemplate){
+    string derive_attribute(Message & msg, string const & atemplate){
         using namespace std;
 
         regex pattern_variable("\\{\\{(.*?)\\}\\}");
@@ -232,7 +229,7 @@ public:
             smatch match2;
             if(regex_search(ve.cbegin(), ve.cend(), match2, pattern_expression)){
                 int topic_level = stoi(match2[1].str());
-                string vvalue = msg_w.orig().get_topic_level(topic_level);
+                string vvalue = msg.get_topic_level(topic_level);
                 unsigned int i = (pos - attribute.cbegin());
                 attribute.replace(i + match1.position(), match1.length(), vvalue);
                 // Restore iterator after string modification

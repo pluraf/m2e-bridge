@@ -117,7 +117,7 @@ public:
                         }
                     }catch(std::invalid_argument const & e){
                             mg_send_http_error(conn, 404, "%s", e.what());
-                    }                   
+                    }
                 }
             }
         }else{
@@ -161,14 +161,14 @@ public:
         const struct mg_request_info * req_info = mg_get_request_info(conn);
 
         PipelineSupervisor *ps = PipelineSupervisor::get_instance();
-        const std::map<std::string, Pipeline>  & pipelines = ps->get_pipelines();
+        auto const & pipelines = ps->get_pipelines();
 
         const char * last_segment = strrchr(req_info->request_uri, '/');
         if(last_segment && strlen(last_segment) > 1){
             const char * pipeid = last_segment + 1;
             auto pos = pipelines.find(pipeid);
             if(pos != pipelines.end()){
-               response = get_pipeline_state_as_json(pos->second).dump();      
+               response = get_pipeline_state_as_json(* pos->second).dump();
             }else{
                 mg_send_http_error(conn, 404, "%s", "Pipeid not found!");
             }
@@ -187,21 +187,22 @@ public:
         const char * last_segment = strrchr(req_info->request_uri, '/');
         if(last_segment && strlen(last_segment) > 1){
             PipelineCommand command = parse_pipeline_command(conn, state_data);
-            if(command == PipelineCommand::NONE){
-                std::string error = std::string("Request not in correct format!") 
+            if(command == PipelineCommand::UNKN){
+                std::string error = std::string("Request not in correct format!")
                 + "Format: {\"state\" : \"<STATE>\" } whete STATE can be STOP, START, RESTART";
                 mg_send_http_error(conn, 400, "%s", error.c_str());
             }else{
                 const char * pipeid = last_segment + 1;
-                if(ps->is_pipeid_present(pipeid)){
-                    ps->change_pipeline_state(pipeid, command);                              
-                    mg_send_http_ok(conn, "text/plain", 0);                   
-                }else{                
-                    mg_send_http_error(conn, 404, "%s", "Pipeid not found!");
+                try{
+                    Pipeline & pipeline = ps->get_pipeline(pipeid);
+                    pipeline.execute(command);
+                    mg_send_http_ok(conn, "text/plain", 0);
+                }catch(std::out_of_range){
+                    mg_send_http_error(conn, 404, "%s", "Pipeline not found!");
                 }
             }
         }else{
-            mg_send_http_error(conn, 400, "Pipeline ID is missing in URI");
+            mg_send_http_error(conn, 400, "Pipeline Id is missing in URI");
         }
         return true;
     }

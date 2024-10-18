@@ -9,237 +9,305 @@ code@pluraf.com
 
 #include "global_state.h"
 #include "pipeline.h"
-#include "factories/filter_factory.h"
-#include "factories/transformer_factory.h"
+#include "tsqueue.h"
+#include "internal_queues.h"
+#include "factories/filtra_factory.h"
 #include "factories/connector_factory.h"
 
 
-Pipeline::Pipeline(std::string const & pipeid, json const & pjson): stop_(false){
+Pipeline::Pipeline(std::string const & pipeid, json const & pjson){
     pipeid_ = pipeid;
-    last_error_ = "";
-    bool success = true;
-    // Create connector IN
-    try{
-        connector_in_ = ConnectorFactory::create(pjson["connector_in"], ConnectorMode::IN, pipeid_);
-    }catch(std::exception const & e){
-        success = false;
-        last_error_ = e.what();
-    }catch(...){
-        success = false;
-        last_error_ = "Unknown exception while creating connector_in";
+    bool success = construct(pjson);
+    if(success){
+        state_ = PipelineState::STOPPED;
+        is_alive_ = true;
+        control_thread_ = new std::thread(& Pipeline::run_control, this);
+    }else{
+        state_ = PipelineState::MALFORMED;
+        // perform cleaning
+        free_resources();
     }
-    // Create filters
-    try{
-        for (auto filter_parsed : pjson["filters"]) {
-            Filter *filter = FilterFactory::create(filter_parsed);
-            filters_.push_back(filter);
-        }
-    }catch(std::exception const & e){
-        success = false;
-        last_error_ = e.what();
-    }catch(...){
-        success = false;
-        last_error_ = "Unknown exception while creating filters";
-    }
-    // Create transformers
-    try{
-        for (auto transformer_parsed : pjson["transformers"]) {
-            Transformer *transformer = TransformerFactory::create(transformer_parsed);
-            transformers_.push_back(transformer);
-        }
-    }catch(std::exception const & e){
-        success = false;
-        last_error_ = e.what();
-    }catch(...){
-        success = false;
-        last_error_ = "Unknown exception while creating transformers";
-    }
-    // Create connector OUT
-    try{
-        connector_out_ = ConnectorFactory::create(pjson["connector_out"], ConnectorMode::OUT, pipeid_);
-    }catch(std::exception const & e){
-        success = false;
-        last_error_ = e.what();
-    }catch(...){
-        success = false;
-        last_error_ = "Unknown exception while creating connector_out";
-    }
-    state_ = success ? PipelineState::STOPPED : PipelineState::MALFORMED;
 }
 
- Pipeline::~Pipeline(){
-    pipeline_exit_ = true;
-    {
-        std::unique_lock<std::mutex> lock(command_mutex_);
-        command_ = PipelineCommand::NONE;
-        new_command_condition_.notify_one();
-    }
 
-    if(control_thread_ != nullptr){
+Pipeline::~Pipeline(){
+    if(state_ != PipelineState::MALFORMED){
+        terminate();
         control_thread_->join();
         delete control_thread_;
         control_thread_ = nullptr;
     }
+}
+
+
+bool Pipeline::construct(json const & pjson){
+    last_error_ = "";
+    bool success = true;
+    // Create connector IN
+    try{
+        connector_in_ = ConnectorFactory::create(
+            pipeid_, pjson["connector_in"], ConnectorMode::IN
+        );
+    }catch(std::exception const & e){
+        last_error_ = e.what();
+        return false;
+    }
+    // Create filtras
+    try{
+        for (auto filtra_parsed : pjson["filtras"]) {
+            Filtra * filtra = FiltraFactory::create(* this, filtra_parsed);
+            filtras_.push_back(filtra);
+        }
+    }catch(std::exception const & e){
+        last_error_ = e.what();
+        return false;
+    }
+    // Create connector OUT
+    try{
+        connector_out_ = ConnectorFactory::create(
+            pipeid_, pjson["connector_out"], ConnectorMode::OUT
+        );
+    }catch(std::exception const & e){
+        last_error_ = e.what();
+        return false;
+    }
+    return true;
  }
 
 
-void Pipeline::run(){
-    if(state_ == PipelineState::MALFORMED){
-        // Pipeline was not configured properly, not safe to run
-        return;
+void Pipeline::free_resources(){
+    if(connector_in_){
+        delete connector_in_;
+        connector_in_ = nullptr;
     }
-    last_error_ = "";
-    bool success = true;
+    if(connector_out_){
+        delete connector_out_;
+        connector_out_ = nullptr;
+    }
+    for(Filtra * filtra : filtras_){
+        delete filtra;
+    }
+    filtras_.clear();
+ }
+
+
+void Pipeline::process(){
+    bool is_passed = true;
+    MessageWrapper msg_w;
+    int filtra_ix = 0;
+    while(! msg_w && filtra_ix < filtras_.size()){
+        msg_w = filtras_[filtra_ix]->pass();
+        ++filtra_ix;
+    }
+
+    if(msg_w){
+        InternalQueues::redirect_if(msg_w);
+        for(; msg_w.is_passed() && filtra_ix < filtras_.size(); filtra_ix++){
+            try{
+                filtras_[filtra_ix]->pass(msg_w);
+            }catch(std::exception const & e){
+                last_error_ = e.what();
+                return;
+            }
+            InternalQueues::redirect_if(msg_w);
+        }
+        if(msg_w.is_passed()) s_queue_.push(msg_w.msg());
+    }
+}
+
+
+void Pipeline::process(Message &msg){
+    MessageWrapper msg_w(msg);
+    for(auto const & filtra : filtras_){
+        try{
+            filtra->pass(msg_w);
+        }catch(std::exception const & e){
+            last_error_ = e.what();
+            return;
+        }
+        InternalQueues::redirect_if(msg_w);
+        if(! msg_w.is_passed()) break;
+    }
+    if(msg_w.is_passed()) s_queue_.push(msg_w.msg());
+}
+
+
+void Pipeline::run_receiving(){
     try{
         connector_in_->connect();
-        connector_out_-> connect();
-        state_ = PipelineState::RUNNING;
-        while(! stop_){
-            MessageWrapper* msg_w = connector_in_->receive();
-            // if no message received, continue till thread is stopped
-            if(msg_w == nullptr)continue;
-            if(! filter(*msg_w)){
-                continue;
-            }
-            transform(*msg_w);
-            connector_out_->send(*msg_w);
+        while(is_active_){
+            Message msg = connector_in_->receive();
+            r_queue_.push(std::move(msg));
+            pipeline_event_.notify_one();
         }
         connector_in_->disconnect();
+    }catch(std::exception const & e){
+        last_error_ = e.what();
+        state_ = PipelineState::FAILED;
+    }
+}
+
+
+void Pipeline::run_processing(){
+    try{
+        while(is_active_){
+            while(e_queue_.pop()){
+                process();
+            }
+            std::optional<Message> el;
+            while((el = r_queue_.pop())){
+                if(el){
+                    process(* el);
+                }
+            }
+            std::unique_lock<std::mutex> lock(pipeline_event_mtx_);
+            pipeline_event_.wait(lock);
+        }
+    }catch(std::exception const & e){
+        last_error_ = e.what();
+        state_ = PipelineState::FAILED;
+    }
+}
+
+
+void Pipeline::run_sending(){
+    try{
+        connector_out_-> connect();
+        while(is_active_){
+            std::optional<Message> el;
+            while((el = s_queue_.pop())){
+                connector_out_->send(* el);
+            }
+            s_queue_.wait();
+        }
         connector_out_-> disconnect();
     }catch(std::exception const & e){
-        success = false;
         last_error_ = e.what();
-    }catch(...){
-        success = false;
-        last_error_ = "Unknown exception while running pipeline";
+        state_ = PipelineState::FAILED;
     }
-    state_ = success ? PipelineState::STOPPED : PipelineState::FAILED;
 }
 
-//private function to start pipeline in control thread
+
+void Pipeline::run_control(){
+    while(is_alive_){
+        std::optional<PipelineCommand> command;
+        while((command = c_queue_.pop())){
+            switch(* command){
+                case PipelineCommand::START:
+                    execute_start();
+                    break;
+                case PipelineCommand::STOP:
+                    execute_stop();
+                    break;
+                case PipelineCommand::RESTART:
+                    execute_stop();
+                    execute_start();
+                    break;
+                case PipelineCommand::TERMINATE:
+                    is_alive_ = false;
+                    execute_stop();
+                    break;
+                default:
+                    break;
+            }
+        }
+        if(is_alive_){
+            c_queue_.wait();
+        }else{
+            break;
+        }
+    }
+    free_resources();
+}
+
+
 void Pipeline::execute_start(){
-    if(state_ == PipelineState::MALFORMED ||
-        state_ == PipelineState::RUNNING
-        || state_ == PipelineState::STARTING){
+    if(state_ != PipelineState::STOPPED){
         return;
     }
-    PipelineState prev_state = state_;
-    state_ = PipelineState::STARTING;
-    if(run_thread_ != nullptr &&
-        prev_state == PipelineState::FAILED){
-        run_thread_->join();
-        delete run_thread_;
-        run_thread_ = nullptr;
-    }
-    if(run_thread_ == nullptr){
-        stop_ = false;
-        run_thread_ = new std::thread(&Pipeline::run, this);
-    }
+
+    is_active_ = true;
+
+    sending_thread_ = new std::thread(& Pipeline::run_sending, this);
+    processing_thread_ = new std::thread(& Pipeline::run_processing, this);
+    receiving_thread_ = new std::thread(& Pipeline::run_receiving, this);
+
+    state_ = PipelineState::RUNNING;
 }
 
-//private function to stop pipeline in control thread
+
 void Pipeline::execute_stop(){
-    if(state_ == PipelineState::MALFORMED || state_ == PipelineState::STOPPED){
+    if(state_ != PipelineState::RUNNING){
         return;
     }
+
+    is_active_ = false;
     state_ = PipelineState::STOPPING;
-    std::cout<<"Stopping pipeline : "<<pipeid_<<std::endl;
-    stop_ = true;
-    if(connector_in_ != nullptr){
-        connector_in_->stop();  // It helps to exit from blocking receiving call
+
+    try{
+        if(connector_in_ != nullptr){
+            connector_in_->stop();  // It helps to exit from blocking receiving call
+        }
+    }catch(std::exception const & e){
+        last_error_ = e.what();
     }
-    if(run_thread_ != nullptr){
-        run_thread_->join();
-        delete run_thread_;
-        run_thread_ = nullptr;
-    }
+
+    receiving_thread_->join();
+    processing_thread_->join();
+    sending_thread_->join();
+
+    delete receiving_thread_;
+    delete processing_thread_;
+    delete sending_thread_;
+
     state_= PipelineState::STOPPED;
 }
 
-void Pipeline::run_control_thread(){
-    control_thread_running_ = true;
-    while(true){
-        std::unique_lock<std::mutex> lock(command_mutex_);
-        new_command_condition_.wait(lock);
-        if(command_ == PipelineCommand::NONE && pipeline_exit_){
-            break;
-        }
-        switch(command_){
-            case PipelineCommand::START:
-                execute_start();
-                break;
-            case PipelineCommand::STOP:
-                execute_stop();
-                break;
-            case PipelineCommand::RESTART:
-                execute_stop();
-                execute_start();
-                break;
-            default:
-                break;
-        }
-    }
-    control_thread_running_ = false;
+
+void Pipeline::execute(PipelineCommand cmd){
+    c_queue_.push(cmd);
 }
 
-bool Pipeline::filter(MessageWrapper& msg_w) {
-    for (auto *filter : filters_) {
-        if (! filter->pass(msg_w)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-
-void Pipeline::transform(MessageWrapper& msg_w) {
-    for (auto *transformer : transformers_) {
-        transformer->pass(msg_w);
-    }
-}
-
-void Pipeline::give_command(PipelineCommand command){
-    // setting command_ and notifying condition variable new_command_condition_
-    // will make control thread wake up and execute the command
-    std::unique_lock<std::mutex> lock(command_mutex_);
-    command_ = command;
-    new_command_condition_.notify_one();
-}
-
-void Pipeline::init(){
-    // start control thread
-    if(control_thread_ == nullptr){
-        std::cout<<" Starting control thread\n";
-        control_thread_ = new std::thread(&Pipeline::run_control_thread, this);
-    }
-    //give some time for control thread to start
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    while(!control_thread_running_){
-
-    }
-
-}
 
 void Pipeline::start() {
-    give_command(PipelineCommand::START);
+    c_queue_.push(PipelineCommand::START);
 }
+
 
 void Pipeline::restart() {
-    give_command(PipelineCommand::RESTART);
+    c_queue_.push(PipelineCommand::RESTART);
 }
+
 
 void Pipeline::stop(){
-    give_command(PipelineCommand::STOP);
+    c_queue_.push(PipelineCommand::STOP);
 }
 
-PipelineState Pipeline::get_state() const{
+
+void Pipeline::terminate(){
+    c_queue_.push(PipelineCommand::TERMINATE);
+}
+
+
+PipelineState Pipeline::get_state()const{
     return state_;
 }
 
-std::string Pipeline::get_id() const{
+
+std::string Pipeline::get_id()const{
     return pipeid_;
 }
 
+
 std::string Pipeline::get_last_error() const{
     return last_error_;
+}
+
+
+void Pipeline::schedule_event(std::chrono::milliseconds msec){
+    std::thread([this, msec](){
+        std::this_thread::sleep_for(std::chrono::milliseconds(msec));
+        this->e_queue_.push(true);
+        this->pipeline_event_.notify_one();
+    }).detach();
 }

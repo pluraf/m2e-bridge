@@ -8,18 +8,30 @@
 #include "message.h"
 
 
+
 class MessageWrapper{
 public:
-    MessageWrapper(Message msg):orig_(msg),alt_(msg){}
+    MessageWrapper() = default;
+    MessageWrapper(Message const & msg):orig_(msg),alt_(msg),is_initialized_(true){}
     Message const & orig(){return orig_;}
-    Message & alt(){return alt_;}
+    Message & msg(){return alt_;}
 
-    string const & get_text()const{
-        return alt_ ? alt_.get_text() : orig_.get_text();
-    }
+    operator bool()const{return is_initialized_;}
+
+    bool is_passed(){return is_passed_;}
+    void accept(){is_passed_ = true;}
+    void reject(){is_passed_ = false;}
+
+    void add_destination(string queuid){destinations_.insert(queuid);}
+    set<string> const & get_destinations(){return destinations_;}
+    void clear_destinations(){destinations_.clear();}
+
 private:
     Message orig_;
     Message alt_;
+    bool is_initialized_;
+    bool is_passed_;
+    set<string> destinations_;
 };
 
 

@@ -155,9 +155,9 @@ public:
         curl_easy_setopt(curl, CURLOPT_USE_SSL, CURLUSESSL_ALL);
     }
 
-    void send(MessageWrapper & msg_w)override{
+    void send(Message & msg)override{
         std::string subject = "Message from M2E Bridge";
-        std::string body = msg_w.get_text();
+        std::string body = msg.get_raw();
 
         send_email(subject, body);
     }

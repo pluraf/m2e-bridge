@@ -4,6 +4,8 @@
 
 #include <vector>
 #include <string>
+#include <map>
+#include <set>
 
 #include <nlohmann/json.hpp>
 
@@ -13,6 +15,8 @@ using ordered_json = nlohmann::ordered_json;
 
 using std::string;
 using std::vector;
+using std::map;
+using std::set;
 
 
 

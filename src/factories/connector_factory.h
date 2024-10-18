@@ -13,7 +13,7 @@
 class ConnectorFactory {
 public:
     static Connector * create(
-        json const & json_descr, ConnectorMode mode, std::string const & pipeid
+        std::string const & pipeid, json const & json_descr, ConnectorMode mode
     ){
         std::cout<< "connector type: "<< json_descr["type"]<< std::endl;
         if (json_descr["type"] == "mqtt"){

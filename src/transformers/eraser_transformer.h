@@ -1,33 +1,34 @@
-#ifndef __M2E_BRIDGE_REDUCTION_TRANSFORMER_H__
-#define __M2E_BRIDGE_REDUCTION_TRANSFORMER_H__
+#ifndef __M2E_BRIDGE_ERASER_TRANSFORMER_H__
+#define __M2E_BRIDGE_ERASER_TRANSFORMER_H__
 
 
-#include "transformer.h"
-
-#include <string>
-#include <vector>
+#include "filtra.h"
 
 
-class EraserTransformer:public Transformer{
+class EraserTransformer:public Filtra{
 public:
-    EraserTransformer(json const & json_descr):Transformer(json_descr){
+    EraserTransformer(PipelineIface const & pi, json const & json_descr):
+            Filtra(pi, json_descr){
         json const & j_keys = json_descr["keys"];
-        keys_ = vector(j_keys.begin, j_keys.end());
+        keys_ = vector<string>(j_keys.begin(), j_keys.end());
     }
 
-    void pass(MessageWrapper &msg_w){
-        json & j_payload = msg_w.alt().get_json();
-        for(auto const & key : keys_){
-            try{
-                j_payload.erase(key);
-            }catch(son::exception){
-                continue;
+    void pass(MessageWrapper &msg_w)override{
+        if(decoder_ == MessageFormat::JSON){
+            json & j_payload = msg_w.msg().get_json();
+            for(auto const & key : keys_){
+                try{
+                    j_payload.erase(key);
+                }catch(std::exception){
+                    continue;
+                }
             }
         }
     }
+
 private:
     vector<string> keys_;
 };
 
 
-#endif  // __M2E_BRIDGE_REDUCTION_TRANSFORMER_H__
+#endif  // __M2E_BRIDGE_ERASER_TRANSFORMER_H__

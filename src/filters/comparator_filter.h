@@ -2,18 +2,17 @@
 #define __M2E_BRIDGE_COMPARATOR_FILTER_H__
 
 
-#include <string>
 #include <variant>
 
-#include "filter.h"
+#include "filtra.h"
 
 
 enum class ComparatorOperator {UNKN, EQ, GT, GTE, LT, LTE};
 
 
-class ComparatorFilter:public Filter{
+class ComparatorFilter:public Filtra{
 public:
-    ComparatorFilter(json const & json_descr):Filter(json_descr){
+    ComparatorFilter(PipelineIface const & pi, json const & json_descr):Filtra(pi, json_descr){
         std::string const & oper = json_descr["operator"];
         if(oper == "eq"){
             operator_ = ComparatorOperator::EQ;
@@ -37,8 +36,8 @@ public:
         }
     }
 
-    bool pass(MessageWrapper & msg_w){
-        json const & payload = msg_w.orig().get_json();
+    void pass(MessageWrapper & msg_w)override{
+        json const & payload = msg_w.msg().get_json();
         bool res = false;
         try{
             json const & j_value = payload.at(value_key_);
@@ -47,11 +46,17 @@ public:
             }else if(j_value.is_number_integer()){
                 res = compare(j_value.get<long long>(), std::get<long long>(comparand_));
             }else{
-                return false;
+                msg_w.reject();
+                return;
             }
-            return logical_negation_ ? ! res : res;
+            res = logical_negation_ ? ! res : res;
+            if(res){
+                msg_w.accept();
+            }else{
+                msg_w.reject();
+            }
         }catch(json::exception){
-            return false;
+            msg_w.reject();
         }
     }
 private:

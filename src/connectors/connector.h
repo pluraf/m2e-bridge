@@ -29,8 +29,8 @@ public:
     virtual void connect() {}
     virtual void disconnect() {}
     virtual void stop() {}
-    virtual MessageWrapper * receive() { return nullptr; }
-    virtual void send(MessageWrapper & msg_w) {}
+    virtual Message receive() { return Message(); }
+    virtual void send(Message & msg) {}
 };
 
 

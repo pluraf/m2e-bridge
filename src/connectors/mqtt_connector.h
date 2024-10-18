@@ -290,13 +290,13 @@ public:
         }
     }
 
-    void send(MessageWrapper & msg_w)override{
+    void send(Message & msg)override{
         using namespace std;
 
         string derived_topic;
         if(is_topic_template_){
             try{
-                derived_topic = derive_topic(msg_w);
+                derived_topic = derive_topic(msg);
             }catch(runtime_error const & e){
                 cerr<<e.what()<<endl;
                 return;
@@ -306,11 +306,10 @@ public:
         string const & topic = is_topic_template_ ? derived_topic : topic_template_;
         try {
             mqtt::delivery_token_ptr pubtok;
-            cout<<"\nSending next message... topic: "<<topic<<std::endl;
             pubtok = client_ptr_->publish(
                 topic,
-                msg_w.get_text().c_str(),
-                msg_w.get_text().length(),
+                msg.get_raw().c_str(),
+                msg.get_raw().length(),
                 qos_,
                 false);
             std::cout << "  ...with token: " << pubtok->get_message_id() << std::endl;
@@ -325,22 +324,21 @@ public:
         }
     }
 
-    MessageWrapper * receive() override {
+    Message receive()override {
         mqtt::message mqtt_msg;
         try{
             msg_queue_->get(&mqtt_msg);  // blocking call
         }catch(const std::underflow_error){
-            return nullptr;
+            return Message();
         }
-        Message msg(mqtt_msg.to_string(), mqtt_msg.get_topic());
-        return new MessageWrapper(msg);
+        return Message(mqtt_msg.to_string(), mqtt_msg.get_topic());
     }
 
     void stop()override{
         msg_queue_->handle_exit();
     }
 
-    std::string derive_topic(MessageWrapper & msg_w){
+    std::string derive_topic(Message & msg){
         using namespace std;
 
         regex pattern("\\{\\{(.*?)\\}\\}");
@@ -348,7 +346,7 @@ public:
 
         string topic = topic_template_;
         try{
-            json const & payload = msg_w.orig().get_json();
+            json const & payload = msg.get_json();
             auto pos = topic.cbegin();
             while(regex_search(pos, topic.cend(), match, pattern)){
                 string vname = match[1].str();

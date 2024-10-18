@@ -42,12 +42,12 @@ int main(int argc, char* argv[]){
     }
 
     PipelineSupervisor *ps = PipelineSupervisor::get_instance();
-    ps->start();
-    
+    ps->start_all();
+
     ZmqListner *zmq = ZmqListner::get_instance();
     zmq->start();
 
-    CivetServer* server = start_server();
+    CivetServer * server = start_server();
     if(! server) g_running = false;
 
     while(g_running){
@@ -55,11 +55,10 @@ int main(int argc, char* argv[]){
     }
     gs.notify_exit();
 
-    ps->stop();
+    ps->stop_all();
 
     stop_server(server);
     zmq->stop();
 
     return 0;
 }
-
