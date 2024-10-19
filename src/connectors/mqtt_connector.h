@@ -1,6 +1,7 @@
 #ifndef __M2E_BRIDGE_MQTT_CONNECTOR_H__
 #define __M2E_BRIDGE_MQTT_CONNECTOR_H__
 
+#include <iostream>
 #include <string>
 #include <atomic>
 #include <stdexcept>
@@ -15,7 +16,7 @@
 #include "database.h"
 
 const int QOS=1;
-const int N_RETRY_ATTEMPTS = 5;
+const int N_RETRY_ATTEMPTS = 10;
 
 const auto TIMEOUT = std::chrono::seconds(10);
 
@@ -72,10 +73,10 @@ public:
 };
 
 
-class MqttConnector: virtual public Connector {
+class MqttConnector: public Connector{
 private:
     class Callback : public virtual mqtt::callback,
-                    public virtual mqtt::iaction_listener
+                     public virtual mqtt::iaction_listener
 
     {
         // Counter for the number of connection retries
@@ -105,13 +106,11 @@ private:
 
         // (Re)connection success
         void connected(const std::string& cause) override {
-
             std::cout << "\nConnection success"  << std::endl;
 
             if(connector_ptr_->mode_ == ConnectorMode::IN){
                 std::cout << "\nSubscribing to topic '" << connector_ptr_->topic_template_ << "'\n"
                     << " using QoS" << connector_ptr_->qos_ << std::endl;
-
                 try {
                     connector_ptr_->client_ptr_->subscribe(connector_ptr_->topic_template_, connector_ptr_->qos_, nullptr, subListener_);
                 }
@@ -150,8 +149,7 @@ private:
         Callback(MqttConnector *connector):
         nretry_(0),
         connector_ptr_(connector),
-        subListener_("Subscription")
-        {}
+        subListener_("Subscription"){}
     };
 
     void parse_authbundle(){
@@ -192,7 +190,6 @@ private:
                 default:
                     throw std::runtime_error("Incompatiable  authbundle auth type\n");
             }
-
         }
         else{
             throw std::runtime_error("Not able to retreive bundle\n");
@@ -257,7 +254,7 @@ public:
         is_topic_template_ = std::regex_search(topic_template_.cbegin(), topic_template_.cend(), match, pattern);
     }
 
-    void connect() override {
+    void connect()override{
         conn_opts_.set_clean_session(false);
         if( !authbundle_id_.empty()){
             parse_authbundle();
@@ -267,38 +264,21 @@ public:
         // Install the callback(s) before connecting.
         callback_ptr_ = new Callback(this);
         client_ptr_->set_callback(*callback_ptr_);
-        try {
-            std::cout << "Connecting to the MQTT server..." << std::endl;
-            client_ptr_->connect(conn_opts_, nullptr, *callback_ptr_)->wait();
-        }
-        catch (const mqtt::exception& exc) {
-            std::cerr << "\nERROR: Unable to connect to MQTT server: '"
-                << server_ << "'" << exc.get_message() << std::endl;
-            throw std::runtime_error("Unable to connect to MQTT server. Ensure that connector authentication is proper.\n");
-        }
+        client_ptr_->connect(conn_opts_, nullptr, *callback_ptr_);
     }
-    void disconnect() override {
-        try {
-            stop();
-            std::cout << "\nDisconnecting from the MQTT server..." << std::flush;
-            client_ptr_->disconnect()->wait();
-            std::cout << "OK" << std::endl;
-        }
-        catch (const mqtt::exception& exc) {
-            std::cerr << exc << std::endl;
-            throw std::runtime_error("Unable to disconnect from MQTT server\n");
-        }
+
+    void disconnect()override{
+        stop();
+        client_ptr_->disconnect();
     }
 
     void send(Message & msg)override{
-        using namespace std;
-
         string derived_topic;
         if(is_topic_template_){
             try{
                 derived_topic = derive_topic(msg);
-            }catch(runtime_error const & e){
-                cerr<<e.what()<<endl;
+            }catch(std::runtime_error const & e){
+                std::cerr<<e.what()<<std::endl;
                 return;
             }
         }
@@ -324,7 +304,7 @@ public:
         }
     }
 
-    Message receive()override {
+    Message receive()override{
         mqtt::message mqtt_msg;
         try{
             msg_queue_->get(&mqtt_msg);  // blocking call
@@ -367,4 +347,5 @@ public:
     }
 };
 
-#endif
+
+#endif  // __M2E_BRIDGE_MQTT_CONNECTOR_H__
