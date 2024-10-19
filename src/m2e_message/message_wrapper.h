@@ -12,7 +12,12 @@
 class MessageWrapper{
 public:
     MessageWrapper() = default;
-    MessageWrapper(Message const & msg):orig_(msg),alt_(msg),is_initialized_(true){}
+    MessageWrapper(Message const & msg){
+        orig_ = msg;
+        alt_ = msg;
+        is_initialized_ = true;
+        is_passed_ = true;
+    }
     Message const & orig(){return orig_;}
     Message & msg(){return alt_;}
 
@@ -23,6 +28,8 @@ public:
     void reject(){is_passed_ = false;}
 
     void add_destination(string queuid){destinations_.insert(queuid);}
+    template<class Cont>
+    void add_destinations(Cont const & cont){destinations_.insert(cont.begin(), cont.end());}
     set<string> const & get_destinations(){return destinations_;}
     void clear_destinations(){destinations_.clear();}
 

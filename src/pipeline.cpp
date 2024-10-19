@@ -46,26 +46,28 @@ bool Pipeline::construct(json const & pjson){
     // Create connector IN
     try{
         connector_in_ = ConnectorFactory::create(
-            pipeid_, pjson["connector_in"], ConnectorMode::IN
+            pipeid_, ConnectorMode::IN, pjson.at("connector_in")
         );
     }catch(std::exception const & e){
         last_error_ = e.what();
         return false;
     }
     // Create filtras
-    try{
-        for (auto filtra_parsed : pjson["filtras"]) {
-            Filtra * filtra = FiltraFactory::create(* this, filtra_parsed);
-            filtras_.push_back(filtra);
+    if(pjson.contains("filtras")){
+        try{
+            for(auto filtra_parsed : pjson["filtras"]){
+                Filtra * filtra = FiltraFactory::create(* this, filtra_parsed);
+                filtras_.push_back(filtra);
+            }
+        }catch(std::exception const & e){
+            last_error_ = e.what();
+            return false;
         }
-    }catch(std::exception const & e){
-        last_error_ = e.what();
-        return false;
     }
     // Create connector OUT
     try{
         connector_out_ = ConnectorFactory::create(
-            pipeid_, pjson["connector_out"], ConnectorMode::OUT
+            pipeid_, ConnectorMode::OUT, pjson["connector_out"]
         );
     }catch(std::exception const & e){
         last_error_ = e.what();
@@ -95,13 +97,19 @@ void Pipeline::process(){
     bool is_passed = true;
     MessageWrapper msg_w;
     int filtra_ix = 0;
-    while(! msg_w && filtra_ix < filtras_.size()){
+    while(filtra_ix < filtras_.size()){
         msg_w = filtras_[filtra_ix]->pass();
+        if(msg_w) break;
         ++filtra_ix;
     }
 
     if(msg_w){
-        InternalQueues::redirect_if(msg_w);
+        if(msg_w.is_passed()){
+            for(auto const & queuid : filtras_[filtra_ix]->get_destinations()){
+                InternalQueues::redirect(msg_w, queuid);
+            }
+        }
+        ++filtra_ix;
         for(; msg_w.is_passed() && filtra_ix < filtras_.size(); filtra_ix++){
             try{
                 filtras_[filtra_ix]->pass(msg_w);
@@ -109,7 +117,11 @@ void Pipeline::process(){
                 last_error_ = e.what();
                 return;
             }
-            InternalQueues::redirect_if(msg_w);
+            if(msg_w.is_passed()){
+                for(auto const & queuid : filtras_[filtra_ix]->get_destinations()){
+                    InternalQueues::redirect(msg_w, queuid);
+                }
+            }
         }
         if(msg_w.is_passed()) s_queue_.push(msg_w.msg());
     }
@@ -125,8 +137,10 @@ void Pipeline::process(Message &msg){
             last_error_ = e.what();
             return;
         }
-        InternalQueues::redirect_if(msg_w);
         if(! msg_w.is_passed()) break;
+        for(auto const & queuid : filtra->get_destinations()){
+            InternalQueues::redirect(msg_w, queuid);
+        }
     }
     if(msg_w.is_passed()) s_queue_.push(msg_w.msg());
 }

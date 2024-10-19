@@ -210,9 +210,8 @@ private:
     int mqtt_version_ = MQTTVERSION_3_1_1;
 
 public:
-    MqttConnector(
-            json const & json_descr, ConnectorMode mode, std::string pipeid
-        ):Connector(json_descr, mode, pipeid){
+    MqttConnector(std::string pipeid, ConnectorMode mode, json const & json_descr):
+            Connector(pipeid, mode, json_descr){
         try{
             server_ = json_descr.at("server").get<string>();
         }catch(json::exception){

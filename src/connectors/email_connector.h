@@ -25,7 +25,7 @@ private:
     std::string password_;  // Password for pluraf mail address
     std::string authbundle_id_;
 
-    CURL* curl;
+    CURL * curl;
     CURLcode res = CURLE_OK;
 
     struct upload_status {
@@ -47,9 +47,8 @@ private:
     }
 
 public:
-    EmailConnector(
-            json const & json_descr, ConnectorMode mode_, std::string pipeid
-        ):Connector(json_descr, mode_, pipeid){
+    EmailConnector(std::string pipeid, ConnectorMode mode_, json const & json_descr):
+            Connector(pipeid, mode_, json_descr){
         if(mode_ != ConnectorMode::OUT) {
             throw std::runtime_error("Email connector only supports OUT mode");
         }

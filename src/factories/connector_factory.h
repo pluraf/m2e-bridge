@@ -8,28 +8,27 @@
 #include "connectors/mqtt_connector.h"
 #include "connectors/gcp_pubsub_connector.h"
 #include "connectors/email_connector.h"
+#include "connectors/internal_connector.h"
 
 
-class ConnectorFactory {
+class ConnectorFactory{
 public:
     static Connector * create(
-        std::string const & pipeid, json const & json_descr, ConnectorMode mode
-    ){
-        std::cout<< "connector type: "<< json_descr["type"]<< std::endl;
-        if (json_descr["type"] == "mqtt"){
-            return new MqttConnector(json_descr, mode, pipeid);
-        }
-        else if (json_descr["type"] == "gcp_pubsub"){
-            return new gcp::PubSubConnector(json_descr, mode, pipeid);
-        }
-        else if (json_descr["type"] == "email"){
-            return new EmailConnector(json_descr, mode, pipeid);
-
-        }
-        else {
-            return new Connector(json_descr, mode, pipeid);
+            std::string const & pipeid, ConnectorMode mode, json const & config){
+        string const & conn_type = config.at("type");
+        if(conn_type == "mqtt"){
+            return new MqttConnector(pipeid, mode, config);
+        }else if(conn_type == "gcp_pubsub"){
+            return new gcp::PubSubConnector(pipeid, mode, config);
+        }else if(conn_type == "email"){
+            return new EmailConnector(pipeid, mode, config);
+        }else if(conn_type == "queue"){
+            return new InternalConnector(pipeid, mode, config);
+        }else{
+            return new Connector(pipeid, mode, config);
         }
     }
 };
 
-#endif
+
+#endif  // __M2E_BRIDGE_CONNECTOR_FACTORY__

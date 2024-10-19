@@ -53,9 +53,8 @@ private:
     map<string, std::pair<bool,string>> attributes_;
 
 public:
-    PubSubConnector(
-            json const & json_descr, ConnectorMode mode, std::string pipeid
-        ):Connector(json_descr, mode, pipeid){
+    PubSubConnector(std::string pipeid, ConnectorMode mode, json const & json_descr):
+            Connector(pipeid, mode, json_descr){
         try{
             authbundle_id_ = json_descr.at("authbundle_id").get<string>();
         }catch(json::exception){

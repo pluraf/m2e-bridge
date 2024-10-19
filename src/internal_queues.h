@@ -19,13 +19,14 @@ public:
         return instance_;
     }
 
-    static void redirect_if(MessageWrapper & msg_w){
+    static void redirect(MessageWrapper & msg_w, string const & queuid){
         Message const & msg = msg_w.msg();
-        for(string const & queuid : msg_w.get_destinations()){
-            TSQueue<Message> & queue = queues_[queuid];
-            queue.push(msg);
-        }
-        msg_w.clear_destinations();
+        TSQueue<Message> & queue = queues_[queuid];
+        queue.push(msg);
+    }
+
+    static TSQueue<Message> & get_queue(string const & queuid){
+        return queues_[queuid];
     }
 };
 

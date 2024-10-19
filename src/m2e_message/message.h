@@ -18,10 +18,6 @@ public:
         msg_topic_(topic){
     }
 
-    operator bool()const{
-        return msg_text_.size() > 0;
-    }
-
     std::string const & get_raw(){
         if(! is_serialized_){
             if(decoder_ == MessageFormat::JSON){

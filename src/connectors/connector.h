@@ -22,7 +22,7 @@ protected:
     std::string pipeid_;
 
 public:
-    Connector(json const & json_descr, ConnectorMode mode, std::string pipeid) {
+    Connector(std::string pipeid, ConnectorMode mode, json const & config){
         mode_ = mode;
         pipeid_ = pipeid;
     }
@@ -34,4 +34,4 @@ public:
 };
 
 
-#endif
+#endif  // __M2E_BRIDGE_CONNECTOR_H__

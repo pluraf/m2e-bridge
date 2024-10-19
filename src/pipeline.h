@@ -95,8 +95,8 @@ private:
     void run_control();
     void free_resources();
 
-    Connector * connector_in_;
-    Connector * connector_out_;
+    Connector * connector_in_ {nullptr};
+    Connector * connector_out_ {nullptr};
     std::vector<Filtra*> filtras_;
     std::string pipeid_;
 
