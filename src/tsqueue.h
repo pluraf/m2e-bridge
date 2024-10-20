@@ -13,9 +13,13 @@ class TSQueue {
 public:
     TSQueue():size_limit_(100){};
 
+    void exit_blocking_calls(){
+        cv_.notify_one();
+    }
+
     void wait(){
         std::unique_lock<std::mutex> lock(mtx_);
-        cv_.wait(lock, [this](){return queue_.size() > 0;});
+        cv_.wait(lock);
     }
 
     void push(const T& el){

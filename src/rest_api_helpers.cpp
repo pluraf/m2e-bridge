@@ -1,8 +1,22 @@
 #include <iostream>
 #include <fstream>
 
+
 #include "rest_api_helpers.h"
 
+
+std::vector<std::string> get_last_segments(char const * uri, int count){
+    vector<string> segments;
+    string segment;
+    std::stringstream ss(uri);
+    while(std::getline(ss, segment, '/')){
+        segments.push_back(segment);
+    }
+    if(segments.size() < count){
+        throw std::out_of_range("");
+    }
+    return vector<string>(segments.end() - count, segments.end());
+}
 
 int parse_request_body(struct mg_connection * conn, json & pipeline_data){
     char buf[1024];
@@ -39,19 +53,6 @@ int parse_pipeline_ids(struct mg_connection *conn, std::vector<std::string> &pip
     }
 }
 
-PipelineCommand parse_pipeline_command(struct mg_connection * conn, json & state_data){
-    std::string command_string = "";
-    if(parse_request_body(conn, state_data) != 0){
-        return PipelineCommand::UNKN;
-    }
-    try{
-        command_string = state_data.at("state");
-        return pipeline_command_from_string(command_string);
-    }catch(json::exception){
-        return PipelineCommand::UNKN;
-    }
-
-}
 
 json get_pipeline_state_as_json(Pipeline const & pipeline){
 

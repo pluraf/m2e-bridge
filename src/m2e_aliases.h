@@ -6,6 +6,8 @@
 #include <string>
 #include <map>
 #include <set>
+#include <sstream>
+#include <iostream>
 
 #include <nlohmann/json.hpp>
 
@@ -17,6 +19,7 @@ using std::string;
 using std::vector;
 using std::map;
 using std::set;
+using std::stringstream;
 
 
 

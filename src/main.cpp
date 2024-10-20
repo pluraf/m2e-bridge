@@ -53,11 +53,13 @@ int main(int argc, char* argv[]){
     while(g_running){
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
+
     gs.notify_exit();
 
     ps->stop_all();
 
     stop_server(server);
+
     zmq->stop();
 
     return 0;

@@ -11,10 +11,12 @@
 #include <fstream>
 #include "VERSION.h"
 
+
 enum class ZmqRequest{
     VERSION,
     NONE
 };
+
 
 inline ZmqRequest zmq_request_from_string(std::string request){
     if(request == "VERSION"){
@@ -24,22 +26,28 @@ inline ZmqRequest zmq_request_from_string(std::string request){
     }
 }
 
+
 class ZmqListner{
-private:
-    std::thread *listner_th_ {nullptr};
-    std::atomic<bool> stop_ {false};
-    static ZmqListner* instance_;
-    ZmqListner() {} // private constructor to make class singleton
-    void run();
-    std::string get_response(ZmqRequest req);
 public:
     void start();
     void stop();
     static ZmqListner* get_instance(){
-        if (instance_ == nullptr){
+        if(instance_ == nullptr){
             instance_ = new ZmqListner();
         }
         return instance_;
     }
+
+private:
+    std::thread *listner_th_ {nullptr};
+    std::atomic<bool> stop_ {false};
+    static ZmqListner* instance_;
+    ZmqListner(){} // private constructor to make class singleton
+    void run();
+    std::string get_response(ZmqRequest req);
+    zmq::socket_t socket_;
+    zmq::context_t context_;
 };
-#endif
+
+
+#endif  // __M2E_BRIDGE_ZMQLISTENER_H__

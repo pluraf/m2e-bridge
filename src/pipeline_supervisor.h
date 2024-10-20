@@ -16,11 +16,11 @@ public:
 
     void start_all();
     void stop_all();
-    bool add_pipeline(std::string pipeid,json pipeline_data);
-    bool delete_pipeline(std::string pipeid);
-    bool edit_pipeline(std::string pipeid, json pipeline_data);
+    bool add_pipeline(string const & pipeid, json const & pipeline_data);
+    bool delete_pipeline(string const & pipeid);
+    bool edit_pipeline(string const & pipeid, json const & pipeline_data);
     map<string, Pipeline *> const & get_pipelines()const;
-    Pipeline & get_pipeline(std::string pipeid);
+    Pipeline * get_pipeline(string const & pipeid);
 
 public:
     static PipelineSupervisor * get_instance(){

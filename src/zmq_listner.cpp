@@ -1,20 +1,19 @@
 #include "zmq_listner.h"
 
+
 //Initialize static member to null
 ZmqListner* ZmqListner::instance_ = nullptr;
 
-void  ZmqListner::run () {
+
+void ZmqListner::run(){
     try{
-        //  Prepare our context and socket
-        zmq::context_t context (2);
-        zmq::socket_t socket (context, zmq::socket_type::rep);
-        socket.bind ("ipc:///tmp/m2e-bridge-zmq.sock");
+        context_ = zmq::context_t(2);
+        socket_ = zmq::socket_t(context_, zmq::socket_type::rep);
+        socket_.bind("ipc:///tmp/m2e-bridge-zmq.sock");
 
-        while (!stop_) {
+        while(!stop_){
             zmq::message_t request;
-
-            //  Wait for next request from client
-            auto res = socket.recv (request, zmq::recv_flags::dontwait);
+            auto res = socket_.recv(request);  // Wait for next request from client
             if(res){
                 std::string received_msg = request.to_string();
                 std::cout << "Received Zeromq request: " << received_msg << std::endl;
@@ -22,22 +21,23 @@ void  ZmqListner::run () {
                 std::string reply_str = get_response(zmq_request_from_string(received_msg));
                 //  Send reply back to client
                 zmq::message_t reply (reply_str.size());
-                memcpy (reply.data(), reply_str.c_str(), reply_str.size());
-                socket.send (reply, zmq::send_flags::none);
+                memcpy(reply.data(), reply_str.c_str(), reply_str.size());
+                socket_.send(reply, zmq::send_flags::none);
             }
         }
         std::cout << "Zeromq Shutting down..." << std::endl;
-        socket.close();
-        context.close();
-    }catch (const zmq::error_t &e) {
-        if (e.num() == EINTR)
-                std::cout << "Zeromq Interrupted" << std::endl;
-        else
-                std::cerr << "Zeromq Error: " << e.what() << std::endl;
-    } catch (const std::exception &e) {
+        socket_.close();
+        context_.close();
+    }catch(const zmq::error_t &e){
+        if(e.num() == EINTR){
+            std::cout << "Zeromq Interrupted" << std::endl;
+        }else{
+            std::cerr << "Zeromq Error: " << e.what() << std::endl;
+        }
+    }catch(const std::exception &e){
         std::cerr << "Zeromq Exception: " << e.what() << std::endl;
     }
-
+    std::cout << "Zeromq Shutting down..." << std::endl;
 }
 
 void ZmqListner::start(){
@@ -50,6 +50,8 @@ void ZmqListner::start(){
 
 void ZmqListner::stop(){
     stop_ = true;
+    socket_.close();
+    context_.close();
     if(listner_th_ != nullptr){
         listner_th_->join();
         delete listner_th_;
@@ -68,5 +70,3 @@ std::string ZmqListner::get_response(ZmqRequest req){
             return "Hello from m2e-bridge";
     }
 }
-
-

@@ -74,16 +74,204 @@ public:
 
 
 class MqttConnector: public Connector{
-private:
-    class Callback : public virtual mqtt::callback,
-                     public virtual mqtt::iaction_listener
+public:
+    MqttConnector(std::string pipeid, ConnectorMode mode, json const & json_descr):
+            Connector(pipeid, mode, json_descr){
+        try{
+            server_ = json_descr.at("server").get<string>();
+        }catch(json::exception){
+            throw std::runtime_error("Server url cannot be null for mqtt connector\n");
+        }
+        try{
+            topic_template_ = json_descr.at("topic").get<string>();
+        }catch(json::exception){
+           throw std::runtime_error("Topic cannot be null for mqtt connector\n");
+        }
+        try{
+            client_id_ = json_descr.at("client_id").get<string>();
+        }catch(json::exception){
+            client_id_ = generate_random_id(10);
+        }
+        try{
+            n_retry_attempts_ = json_descr.at("retry_attempts").get<int>();
+        }catch(json::exception){
+            n_retry_attempts_ = N_RETRY_ATTEMPTS;
+        }
+        try{
+            qos_ = json_descr.at("qos").get<int>();
+        }catch(json::exception){
+            qos_ = QOS;
+        }
+        try{
+            authbundle_id_ = json_descr.at("authbundle_id").get<string>();
+        }catch(json::exception){
+            authbundle_id_ = "";
+        }
 
-    {
+        std::smatch match;
+        std::regex pattern("\\{\\{(.*?)\\}\\}");
+        is_topic_template_ = std::regex_search(topic_template_.cbegin(), topic_template_.cend(), match, pattern);
+    }
+
+    void connect()override{
+        msg_queue_ = std::make_unique<mqtt::thread_queue<mqtt::message>>(1000);
+        conn_opts_.set_clean_session(false);
+        if( !authbundle_id_.empty()){
+            parse_authbundle();
+        }
+        client_ptr_ = std::make_shared<mqtt::async_client>(
+            server_, client_id_, mqtt::create_options(mqtt_version_), nullptr
+        );
+        // Install the callback(s) before connecting.
+        callback_ptr_ = std::make_unique<Callback>(this);
+        client_ptr_->set_callback(* callback_ptr_);
+        client_ptr_->connect(conn_opts_, nullptr, * callback_ptr_);
+    }
+
+    void disconnect()override{
+        stop();
+        client_ptr_->disconnect()->wait();
+    }
+
+    void send(Message & msg)override{
+        string derived_topic;
+        if(is_topic_template_){
+            try{
+                derived_topic = derive_topic(msg);
+            }catch(std::runtime_error const & e){
+                std::cerr<<e.what()<<std::endl;
+                return;
+            }
+        }
+
+        string const & topic = is_topic_template_ ? derived_topic : topic_template_;
+        try {
+            mqtt::delivery_token_ptr pubtok;
+            pubtok = client_ptr_->publish(
+                topic,
+                msg.get_raw().c_str(),
+                msg.get_raw().length(),
+                qos_,
+                false);
+            std::cout << "  ...with token: " << pubtok->get_message_id() << std::endl;
+            std::cout << "  ...for message with " << pubtok->get_message()->get_payload().size()
+                << " bytes" << std::endl;
+            pubtok->wait_for(TIMEOUT);
+            std::cout << "  ...OK" << std::endl;
+        }
+        catch (const mqtt::exception& exc) {
+            std::cerr << exc << std::endl;
+            throw std::runtime_error("Unable to send message to MQTT server\n");
+        }
+    }
+
+    Message receive()override{
+        mqtt::message mqtt_msg;
+        msg_queue_->get(&mqtt_msg);  // blocking call
+        return Message(mqtt_msg.to_string(), mqtt_msg.get_topic());
+    }
+
+    void stop()override{
+        msg_queue_->exit_blocking_calls();
+    }
+
+    std::string derive_topic(Message & msg){
+        using namespace std;
+
+        regex pattern("\\{\\{(.*?)\\}\\}");
+        smatch match;
+
+        string topic = topic_template_;
+        try{
+            json const & payload = msg.get_json();
+            auto pos = topic.cbegin();
+            while(regex_search(pos, topic.cend(), match, pattern)){
+                string vname = match[1].str();
+                try{
+                    string vvalue = payload.at(vname);
+                    unsigned int i = (pos - topic.cbegin());
+                    topic.replace(i + match.position(), match.length(), vvalue);
+                    // Restore iterator after string modification
+                    pos = topic.cbegin() + i + match.position() + vvalue.size();
+                }catch(json::exception){
+                    throw runtime_error(fmt::format("Topic template variable {} not found!", vname));
+                }
+            }
+        }catch(json::exception){
+            throw runtime_error("Message payload is not a valid JSON!");
+        }
+        return topic;
+    }
+
+private:
+    void parse_authbundle(){
+        Database db;
+        AuthBundle ab;
+        bool res = db.retrieve_authbundle(authbundle_id_, ab);
+        if(res){
+            switch(ab.connector_type){
+                case ConnectorType::MQTT311:
+                    conn_opts_.set_mqtt_version(MQTTVERSION_3_1_1);
+                    mqtt_version_ = MQTTVERSION_3_1_1;
+                    break;
+                case ConnectorType::MQTT50:
+                    conn_opts_.set_mqtt_version(MQTTVERSION_5);
+                    mqtt_version_ = MQTTVERSION_5;
+                    break;
+                default:
+                    throw std::runtime_error("Incompatiable  authbundle connector type\n");
+            }
+            std::string token;
+            switch(ab.auth_type){
+                case AuthType::PASSWORD:
+                    conn_opts_.set_user_name(ab.username);
+                    conn_opts_.set_password(ab.password);
+                    break;
+                case AuthType::JWT_ES256:
+                    if(!ab.username.empty()){
+                        conn_opts_.set_user_name(ab.username);
+                    }
+                    token = jwt::create()
+                        .set_issuer("m2e-bridge")
+                        .set_type("JWT")
+                        .set_issued_at(std::chrono::system_clock::now())
+                        .set_payload_claim("client_id", jwt::claim(std::string{client_id_}))
+                        .sign(jwt::algorithm::es256( "", ab.keydata, "", ""));
+                    conn_opts_.set_password(token);
+                    break;
+                default:
+                    throw std::runtime_error("Incompatiable  authbundle auth type\n");
+            }
+        }
+        else{
+            throw std::runtime_error("Not able to retreive bundle\n");
+        }
+    }
+
+    class Callback;
+    string server_;
+    string client_id_;
+    mqtt::async_client_ptr  client_ptr_;
+    string topic_template_;
+    bool is_topic_template_ {false};
+    int n_retry_attempts_;
+    int qos_;
+    mqtt::connect_options conn_opts_;
+    std::unique_ptr<mqtt::thread_queue<mqtt::message>> msg_queue_;
+    std::unique_ptr<Callback> callback_ptr_;
+    string authbundle_id_;
+    int mqtt_version_ = MQTTVERSION_3_1_1;
+
+private:
+    class Callback : public virtual mqtt::callback, public virtual mqtt::iaction_listener{
+    public:
+        Callback(MqttConnector *connector):
+                nretry_(0),connector_ptr_(connector),subListener_("Subscription"){}
         // Counter for the number of connection retries
         int nretry_;
         MqttConnector* connector_ptr_;
         ActionListener subListener_;
-
+    private:
         void reconnect() {
             std::this_thread::sleep_for(std::chrono::milliseconds(2500));
             try{
@@ -144,206 +332,7 @@ private:
         }
 
         void delivery_complete(mqtt::delivery_token_ptr token) override {}
-
-    public:
-        Callback(MqttConnector *connector):
-        nretry_(0),
-        connector_ptr_(connector),
-        subListener_("Subscription"){}
     };
-
-    void parse_authbundle(){
-        Database db;
-        AuthBundle ab;
-        bool res = db.retrieve_authbundle(authbundle_id_, ab);
-        if(res){
-            switch(ab.connector_type){
-                case ConnectorType::MQTT311:
-                    conn_opts_.set_mqtt_version(MQTTVERSION_3_1_1);
-                    mqtt_version_ = MQTTVERSION_3_1_1;
-                    break;
-                case ConnectorType::MQTT50:
-                    conn_opts_.set_mqtt_version(MQTTVERSION_5);
-                    mqtt_version_ = MQTTVERSION_5;
-                    break;
-                default:
-                    throw std::runtime_error("Incompatiable  authbundle connector type\n");
-            }
-            std::string token;
-            switch(ab.auth_type){
-                case AuthType::PASSWORD:
-                    conn_opts_.set_user_name(ab.username);
-                    conn_opts_.set_password(ab.password);
-                    break;
-                case AuthType::JWT_ES256:
-                    if(!ab.username.empty()){
-                        conn_opts_.set_user_name(ab.username);
-                    }
-                    token = jwt::create()
-                        .set_issuer("m2e-bridge")
-                        .set_type("JWT")
-                        .set_issued_at(std::chrono::system_clock::now())
-                        .set_payload_claim("client_id", jwt::claim(std::string{client_id_}))
-                        .sign(jwt::algorithm::es256( "", ab.keydata, "", ""));
-                    conn_opts_.set_password(token);
-                    break;
-                default:
-                    throw std::runtime_error("Incompatiable  authbundle auth type\n");
-            }
-        }
-        else{
-            throw std::runtime_error("Not able to retreive bundle\n");
-        }
-    }
-
-    string server_;
-    string client_id_;
-    mqtt::async_client_ptr  client_ptr_;
-    string topic_template_;
-    bool is_topic_template_ {false};
-    int n_retry_attempts_;
-    int qos_;
-    mqtt::connect_options conn_opts_;
-    mqtt::thread_queue<mqtt::message> * msg_queue_;
-    Callback* callback_ptr_;
-    string authbundle_id_;
-    int mqtt_version_ = MQTTVERSION_3_1_1;
-
-public:
-    MqttConnector(std::string pipeid, ConnectorMode mode, json const & json_descr):
-            Connector(pipeid, mode, json_descr){
-        try{
-            server_ = json_descr.at("server").get<string>();
-        }catch(json::exception){
-            throw std::runtime_error("Server url cannot be null for mqtt connector\n");
-        }
-        try{
-            topic_template_ = json_descr.at("topic").get<string>();
-        }catch(json::exception){
-           throw std::runtime_error("Topic cannot be null for mqtt connector\n");
-        }
-        try{
-            client_id_ = json_descr.at("client_id").get<string>();
-        }catch(json::exception){
-            client_id_ = generate_random_id(10);
-        }
-        try{
-            n_retry_attempts_ = json_descr.at("retry_attempts").get<int>();
-        }catch(json::exception){
-            n_retry_attempts_ = N_RETRY_ATTEMPTS;
-        }
-        try{
-            qos_ = json_descr.at("qos").get<int>();
-        }catch(json::exception){
-            qos_ = QOS;
-        }
-        try{
-            authbundle_id_ = json_descr.at("authbundle_id").get<string>();
-        }catch(json::exception){
-            authbundle_id_ = "";
-        }
-
-        std::cout<<"server "<<server_<<std::endl;
-
-        std::cout<<"client id  "<<client_id_<<std::endl;
-        msg_queue_ = new mqtt::thread_queue<mqtt::message>(1000);
-
-        std::smatch match;
-        std::regex pattern("\\{\\{(.*?)\\}\\}");
-        is_topic_template_ = std::regex_search(topic_template_.cbegin(), topic_template_.cend(), match, pattern);
-    }
-
-    void connect()override{
-        conn_opts_.set_clean_session(false);
-        if( !authbundle_id_.empty()){
-            parse_authbundle();
-        }
-        client_ptr_ = std::make_shared<mqtt::async_client>(server_, client_id_,
-            mqtt::create_options(mqtt_version_), nullptr);
-        // Install the callback(s) before connecting.
-        callback_ptr_ = new Callback(this);
-        client_ptr_->set_callback(*callback_ptr_);
-        client_ptr_->connect(conn_opts_, nullptr, *callback_ptr_);
-    }
-
-    void disconnect()override{
-        stop();
-        client_ptr_->disconnect();
-    }
-
-    void send(Message & msg)override{
-        string derived_topic;
-        if(is_topic_template_){
-            try{
-                derived_topic = derive_topic(msg);
-            }catch(std::runtime_error const & e){
-                std::cerr<<e.what()<<std::endl;
-                return;
-            }
-        }
-
-        string const & topic = is_topic_template_ ? derived_topic : topic_template_;
-        try {
-            mqtt::delivery_token_ptr pubtok;
-            pubtok = client_ptr_->publish(
-                topic,
-                msg.get_raw().c_str(),
-                msg.get_raw().length(),
-                qos_,
-                false);
-            std::cout << "  ...with token: " << pubtok->get_message_id() << std::endl;
-            std::cout << "  ...for message with " << pubtok->get_message()->get_payload().size()
-                << " bytes" << std::endl;
-            pubtok->wait_for(TIMEOUT);
-            std::cout << "  ...OK" << std::endl;
-        }
-        catch (const mqtt::exception& exc) {
-            std::cerr << exc << std::endl;
-            throw std::runtime_error("Unable to send message to MQTT server\n");
-        }
-    }
-
-    Message receive()override{
-        mqtt::message mqtt_msg;
-        try{
-            msg_queue_->get(&mqtt_msg);  // blocking call
-        }catch(const std::underflow_error){
-            return Message();
-        }
-        return Message(mqtt_msg.to_string(), mqtt_msg.get_topic());
-    }
-
-    void stop()override{
-        msg_queue_->handle_exit();
-    }
-
-    std::string derive_topic(Message & msg){
-        using namespace std;
-
-        regex pattern("\\{\\{(.*?)\\}\\}");
-        smatch match;
-
-        string topic = topic_template_;
-        try{
-            json const & payload = msg.get_json();
-            auto pos = topic.cbegin();
-            while(regex_search(pos, topic.cend(), match, pattern)){
-                string vname = match[1].str();
-                try{
-                    string vvalue = payload.at(vname);
-                    unsigned int i = (pos - topic.cbegin());
-                    topic.replace(i + match.position(), match.length(), vvalue);
-                    // Restore iterator after string modification
-                    pos = topic.cbegin() + i + match.position() + vvalue.size();
-                }catch(json::exception){
-                    throw runtime_error(fmt::format("Topic template variable {} not found!", vname));
-                }
-            }
-        }catch(json::exception){
-            throw runtime_error("Message payload is not a valid JSON!");
-        }
-        return topic;
-    }
 };
 
 

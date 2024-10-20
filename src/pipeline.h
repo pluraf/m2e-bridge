@@ -35,29 +35,22 @@ enum class PipelineCommand{
 
 inline std::string pipeline_state_to_string(PipelineState st){
      switch (st) {
-        case PipelineState::STOPPED: return "Stopped";
-        case PipelineState::RUNNING: return "Running";
-        case PipelineState::FAILED: return "Run Failed";
-        case PipelineState::MALFORMED: return "Configuration Malformed";
-        case PipelineState::STARTING: return "Starting";
-        case PipelineState::STOPPING: return "Stopping";
-        default: return "";
+        case PipelineState::STOPPED: return "stopped";
+        case PipelineState::RUNNING: return "running";
+        case PipelineState::FAILED: return "failed";
+        case PipelineState::MALFORMED: return "malformed";
+        case PipelineState::STARTING: return "starting";
+        case PipelineState::STOPPING: return "stopping";
+        case PipelineState::UNKN: return "unknown";
     }
 }
 
 inline PipelineCommand pipeline_command_from_string(std::string command){
-    if(command == "STOP"){
-        return PipelineCommand::STOP;
-    }
-    else if(command == "START"){
-        return PipelineCommand::START;
-    }
-    else if(command == "RESTART"){
-        return PipelineCommand::RESTART;
-    }
-    else{
-        return PipelineCommand::UNKN;
-    }
+    if(command == "stop") return PipelineCommand::STOP;
+    if(command == "start") return PipelineCommand::START;
+    if(command == "restart") return PipelineCommand::RESTART;
+    if(command == "terminate") return PipelineCommand::TERMINATE;
+    return PipelineCommand::UNKN;
 }
 
 

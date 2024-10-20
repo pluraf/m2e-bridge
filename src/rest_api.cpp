@@ -14,6 +14,7 @@
 #include "rest_api_helpers.h"
 #include "global_config.h"
 
+
 class AuthHandler:public CivetAuthHandler{
 public:
     AuthHandler(std::string* public_key):public_key_(public_key) {}
@@ -38,7 +39,7 @@ private:
 };
 
 
-class PipelineApiHandler:public CivetHandler {
+class PipelineConfigApiHandler:public CivetHandler{
 public:
     bool handlePost(CivetServer * server, struct mg_connection * conn)override{
         json pipeline_data;
@@ -86,7 +87,7 @@ public:
                mg_send_http_ok(conn, "application/json", serialized.size());
                mg_write(conn, serialized.c_str(), serialized.size());
             }catch(json::exception const & e){
-                mg_send_http_error(conn, 404, "%s", e.what());
+                mg_send_http_error(conn, 404, "");
             }
         }else{
             std::string serialized = pipelines.dump();
@@ -128,7 +129,7 @@ public:
 
     bool handleDelete(CivetServer * server, struct mg_connection * conn)override{
         std::vector<std::string> pipeline_ids;
-        PipelineSupervisor *ps = PipelineSupervisor::get_instance();
+        PipelineSupervisor * ps = PipelineSupervisor::get_instance();
         if(parse_pipeline_ids(conn, pipeline_ids) != 0){
             mg_send_http_error(conn, 400, "Could not parse request!");
         }else{
@@ -154,7 +155,8 @@ public:
     }
 };
 
-class PipelineStateApiHandler:public CivetHandler {
+
+class PipelineStateApiHandler:public CivetHandler{
 public:
     bool handleGet(CivetServer * server, struct mg_connection * conn)override{
         std::string response;
@@ -179,38 +181,45 @@ public:
         mg_write(conn, response.c_str(), response.size());
         return true;
     }
-
-    bool handlePut(CivetServer * server, struct mg_connection * conn)override{
-        json state_data;
-        const struct mg_request_info * req_info = mg_get_request_info(conn);
-        PipelineSupervisor *ps = PipelineSupervisor::get_instance();
-        const char * last_segment = strrchr(req_info->request_uri, '/');
-        if(last_segment && strlen(last_segment) > 1){
-            PipelineCommand command = parse_pipeline_command(conn, state_data);
-            if(command == PipelineCommand::UNKN){
-                std::string error = std::string("Request not in correct format!")
-                + "Format: {\"state\" : \"<STATE>\" } whete STATE can be STOP, START, RESTART";
-                mg_send_http_error(conn, 400, "%s", error.c_str());
-            }else{
-                const char * pipeid = last_segment + 1;
-                try{
-                    Pipeline & pipeline = ps->get_pipeline(pipeid);
-                    pipeline.execute(command);
-                    mg_send_http_ok(conn, "text/plain", 0);
-                }catch(std::out_of_range){
-                    mg_send_http_error(conn, 404, "%s", "Pipeline not found!");
-                }
-            }
-        }else{
-            mg_send_http_error(conn, 400, "Pipeline Id is missing in URI");
-        }
-        return true;
-    }
-
 };
 
 
-CivetServer* start_server() {
+class PipelineControlApiHandler:public CivetHandler{
+    bool handlePut(CivetServer * server, struct mg_connection * conn)override{
+        json state_data;
+        const struct mg_request_info * req_info = mg_get_request_info(conn);
+
+        vector<string> segments;
+        try{
+            segments = get_last_segments(req_info->request_uri, 2);
+        }catch(std::out_of_range){
+            mg_send_http_error(conn, 400, "");
+        }
+
+        string const & pipeid = segments[1];
+        string const & command_str = segments[0];
+
+        PipelineCommand command = pipeline_command_from_string(command_str);
+
+        if(command != PipelineCommand::START
+                && command != PipelineCommand::STOP
+                && command != PipelineCommand::RESTART){
+            mg_send_http_error(conn, 400, "Command unknown");
+        }else{
+            PipelineSupervisor * ps = PipelineSupervisor::get_instance();
+            try{
+                ps->get_pipeline(pipeid)->execute(command);
+                mg_send_http_ok(conn, "text/plain", 0);
+            }catch(std::out_of_range){
+                mg_send_http_error(conn, 404, "%s", "Pipeline not found!");
+            }
+        }
+        return true;
+    }
+};
+
+
+CivetServer* start_server(){
     static std::string public_key = load_public_key(gc.get_jwt_public_key_path());
 
     char const * options[] = {
@@ -222,14 +231,15 @@ CivetServer* start_server() {
     CivetServer* server = new CivetServer(options);
 
     server->addAuthHandler("/**", new AuthHandler(&public_key));
-    server->addHandler("/pipeline/config/", new PipelineApiHandler());
-    server->addHandler("/pipeline/state/", new PipelineStateApiHandler());
+    server->addHandler("/pipeline/config/", new PipelineConfigApiHandler());
+    server->addHandler("/pipeline/status/", new PipelineStateApiHandler());
+    server->addHandler("/pipeline/control/", new PipelineControlApiHandler());
 
     return server;
 }
 
 
-void stop_server(CivetServer* server) {
+void stop_server(CivetServer* server){
     if (server) {
         delete server;
     }

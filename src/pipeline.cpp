@@ -148,9 +148,14 @@ void Pipeline::process(Message &msg){
 
 void Pipeline::run_receiving(){
     try{
+        Message msg;
         connector_in_->connect();
         while(is_active_){
-            Message msg = connector_in_->receive();
+            try{
+                msg = connector_in_->receive();
+            }catch(std::out_of_range){
+                continue;
+            }
             r_queue_.push(std::move(msg));
             pipeline_event_.notify_one();
         }
@@ -186,7 +191,7 @@ void Pipeline::run_processing(){
 
 void Pipeline::run_sending(){
     try{
-        connector_out_-> connect();
+        connector_out_->connect();
         while(is_active_){
             std::optional<Message> el;
             while((el = s_queue_.pop())){
@@ -194,7 +199,7 @@ void Pipeline::run_sending(){
             }
             s_queue_.wait();
         }
-        connector_out_-> disconnect();
+        connector_out_->disconnect();
     }catch(std::exception const & e){
         last_error_ = e.what();
         state_ = PipelineState::FAILED;
@@ -258,15 +263,16 @@ void Pipeline::execute_stop(){
     is_active_ = false;
     state_ = PipelineState::STOPPING;
 
+    // It helps to exit from blocking receiving call
     try{
-        if(connector_in_ != nullptr){
-            connector_in_->stop();  // It helps to exit from blocking receiving call
-        }
+        if(connector_in_ != nullptr) connector_in_->stop();
     }catch(std::exception const & e){
         last_error_ = e.what();
     }
+    s_queue_.exit_blocking_calls();
 
     receiving_thread_->join();
+    pipeline_event_.notify_all();
     processing_thread_->join();
     sending_thread_->join();
 

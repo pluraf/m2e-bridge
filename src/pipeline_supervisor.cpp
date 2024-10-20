@@ -1,5 +1,5 @@
+
 #include "pipeline_supervisor.h"
-#include "m2e_aliases.h"
 #include "global_config.h"
 
 
@@ -29,7 +29,7 @@ void PipelineSupervisor::stop_all(){
 }
 
 
-bool PipelineSupervisor::add_pipeline(std::string pipeid, json pipeline_data){
+bool PipelineSupervisor::add_pipeline(string const & pipeid, json const & pipeline_data){
     auto pos = pipelines_.find(pipeid);
     if(pos != pipelines_.end()){
         return false;
@@ -38,16 +38,12 @@ bool PipelineSupervisor::add_pipeline(std::string pipeid, json pipeline_data){
         return false;
     }
     pipelines_.emplace(pipeid, new Pipeline(pipeid, pipeline_data));
-    pipelines_.at(pipeid)->start();
     return true;
 }
 
 
-bool PipelineSupervisor::delete_pipeline(std::string pipeid){
-    auto pos = pipelines_.find(pipeid);
-    if(pos == pipelines_.end()){
-        return false;
-    }
+bool PipelineSupervisor::delete_pipeline(string const & pipeid){
+    get_pipeline(pipeid)->terminate();
     if(gc.delete_pipeline(pipeid) != 0){
         return false;
     }
@@ -56,17 +52,25 @@ bool PipelineSupervisor::delete_pipeline(std::string pipeid){
 }
 
 
-bool PipelineSupervisor::edit_pipeline(std::string pipeid, json pipeline_data){
-    return delete_pipeline(pipeid) && add_pipeline(pipeid, pipeline_data);
+bool PipelineSupervisor::edit_pipeline(string const & pipeid, json const & pipeline_data){
+    Pipeline * pipeline = get_pipeline(pipeid);
+    PipelineState pstate = pipeline->get_state();
+    bool res = delete_pipeline(pipeid) && add_pipeline(pipeid, pipeline_data);
+    if(res){
+        if(pstate != PipelineState::STOPPED && pstate != PipelineState::STOPPING){
+            get_pipeline(pipeid)->start();
+        }
+    }
+    return res;
 }
 
 
-Pipeline & PipelineSupervisor::get_pipeline(std::string pipeid){
+Pipeline * PipelineSupervisor::get_pipeline(string const & pipeid){
     auto pos = pipelines_.find(pipeid);
     if(pos == pipelines_.end()){
         throw std::out_of_range(fmt::format("pipeid [ {} ]is not found", pipeid));
     }
-    return * pos->second;
+    return pos->second;
 }
 
 
