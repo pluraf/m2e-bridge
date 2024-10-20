@@ -58,12 +58,12 @@ public:
         try{
             authbundle_id_ = json_descr.at("authbundle_id").get<string>();
         }catch(json::exception){
-            throw std::runtime_error("authbundle_id cannot be null for pubsub connector\n");
+            throw std::runtime_error("authbundle_id cannot be null for pubsub connector");
         }
         try{
             project_id_ = json_descr.at("project_id").get<string>();
         }catch(json::exception){
-            throw std::runtime_error("Project ID cannot be null for pubsub connector\n");
+            throw std::runtime_error("Project ID cannot be null for pubsub connector");
         }
 
         if(mode_ == ConnectorMode::IN){
@@ -257,15 +257,15 @@ private:
         bool res = db.retrieve_authbundle(authbundle_id_, ab);
         if(res){
             if(ab.connector_type != ConnectorType::GCP_PUBSUB){
-                throw std::runtime_error("Incompatiable authbundle connector type\n");
+                throw std::runtime_error("Incompatiable authbundle connector type");
             }
             if(ab.auth_type != AuthType::SERVICE_KEY){
-                throw std::runtime_error("Incompatiable authbundle auth type\n");
+                throw std::runtime_error("Incompatiable authbundle auth type");
             }
             service_key_data_ = ab.keydata;
         }
         else{
-            throw std::runtime_error("Not able to retreive bundle\n");
+            throw std::runtime_error("Not able to retreive bundle");
         }
     }
 };

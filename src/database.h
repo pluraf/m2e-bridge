@@ -167,14 +167,14 @@ private:
         int res = sqlite3_close(db_);
         if (res != SQLITE_OK) {
             std::cerr << "Can't close database: " << sqlite3_errmsg(db_) << std::endl;
-            throw std::runtime_error("Can't close database\n");
+            throw std::runtime_error("Can't close database");
         }
     }
 
     void open_db(int flags){
         int res = sqlite3_open_v2(db_path_.c_str(), &db_, flags, nullptr);
         if (res != SQLITE_OK) {
-            throw std::runtime_error("Can't open database\n");
+            throw std::runtime_error("Can't open database");
         }
     }
 

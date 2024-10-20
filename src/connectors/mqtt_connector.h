@@ -81,7 +81,7 @@ public:
         try{
             server_ = json_descr.at("server").get<string>();
         }catch(json::exception){
-            throw std::runtime_error("Server url cannot be null for mqtt connector\n");
+            throw std::runtime_error("Server url cannot be null for mqtt connector");
         }
         try{
             topic_template_ = json_descr.at("topic").get<string>();

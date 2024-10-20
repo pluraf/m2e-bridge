@@ -42,7 +42,7 @@ private:
             password_ = ab.password;
         }
         else{
-            throw std::runtime_error("Not able to retreive bundle\n");
+            throw std::runtime_error("Not able to retreive bundle");
         }
     }
 
@@ -57,19 +57,19 @@ public:
             authbundle_id_ = json_descr.at("authbundle_id").get<std::string>();
             parse_authbundle();
         }catch(json::exception){
-            throw std::runtime_error("authbundle_id cannot be null for email connector\n");
+            throw std::runtime_error("authbundle_id cannot be null for email connector");
         }
 
         try {
             to_ = json_descr.at("to").get<std::string>();
         }catch(json::exception) {
-            throw std::runtime_error("Destination adress cannot be null for email connector\n");
+            throw std::runtime_error("Destination adress cannot be null for email connector");
         }
 
         try {
             smtp_server_ = json_descr.at("smtp_server").get<std::string>();
         }catch(json::exception) {
-            throw std::runtime_error("Smtp server cannot be null for email connector\n");
+            throw std::runtime_error("Smtp server cannot be null for email connector");
         }
 
         try {
