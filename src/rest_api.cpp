@@ -20,7 +20,6 @@ public:
     AuthHandler(std::string* public_key):public_key_(public_key) {}
 
     bool authorize(CivetServer *server, struct mg_connection *conn) override {
-        return 1;
         const char* auth_token = mg_get_header(conn, "Authorization");
         if (auth_token != NULL && strlen(auth_token) > 7) {
             const char *token = auth_token + 7;  // Skip "Bearer "
