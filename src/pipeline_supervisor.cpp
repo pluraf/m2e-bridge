@@ -22,9 +22,9 @@ void PipelineSupervisor::start_all(){
 }
 
 
-void PipelineSupervisor::stop_all(){
+void PipelineSupervisor::terminate_all(){
     for(auto & el: pipelines_){
-         el.second->stop();
+         el.second->terminate();
     }
 }
 

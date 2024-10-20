@@ -15,7 +15,7 @@ class PipelineSupervisor {
 public:
 
     void start_all();
-    void stop_all();
+    void terminate_all();
     bool add_pipeline(string const & pipeid, json const & pipeline_data);
     bool delete_pipeline(string const & pipeid);
     bool edit_pipeline(string const & pipeid, json const & pipeline_data);

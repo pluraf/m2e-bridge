@@ -236,6 +236,7 @@ void Pipeline::run_control(){
             break;
         }
     }
+    std::cout<<pipeid_<<": control thread terminated"<<std::endl;
     free_resources();
 }
 
@@ -256,7 +257,9 @@ void Pipeline::execute_start(){
 
 
 void Pipeline::execute_stop(){
-    if(state_ != PipelineState::RUNNING){
+    if(state_ == PipelineState::MALFORMED
+            || state_ == PipelineState::STOPPED
+            || state_ == PipelineState::STOPPING){
         return;
     }
 
@@ -271,10 +274,14 @@ void Pipeline::execute_stop(){
     }
     s_queue_.exit_blocking_calls();
 
+    std::cout<<pipeid_<<": waiting for receiving_thread to finish..."<<std::endl;
     receiving_thread_->join();
     pipeline_event_.notify_all();
+    std::cout<<pipeid_<<": waiting for processing_thread to finish..."<<std::endl;
     processing_thread_->join();
+    std::cout<<pipeid_<<": waiting for sending_thread to finish..."<<std::endl;
     sending_thread_->join();
+    std::cout<<pipeid_<<": stopped"<<std::endl;
 
     delete receiving_thread_;
     delete processing_thread_;

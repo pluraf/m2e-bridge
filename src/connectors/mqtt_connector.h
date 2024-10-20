@@ -1,6 +1,7 @@
 #ifndef __M2E_BRIDGE_MQTT_CONNECTOR_H__
 #define __M2E_BRIDGE_MQTT_CONNECTOR_H__
 
+
 #include <iostream>
 #include <string>
 #include <atomic>
@@ -161,7 +162,7 @@ public:
         }
         catch (const mqtt::exception& exc) {
             std::cerr << exc << std::endl;
-            throw std::runtime_error("Unable to send message to MQTT server\n");
+            throw std::runtime_error("Unable to send message to MQTT server");
         }
     }
 

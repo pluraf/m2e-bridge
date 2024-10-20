@@ -56,7 +56,7 @@ int main(int argc, char* argv[]){
 
     gs.notify_exit();
 
-    ps->stop_all();
+    ps->terminate_all();
 
     stop_server(server);
 
