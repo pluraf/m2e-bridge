@@ -57,7 +57,7 @@ int parse_pipeline_ids(struct mg_connection *conn, std::vector<std::string> &pip
 json get_pipeline_state_as_json(Pipeline const & pipeline){
 
     json json_object = json{
-        {"state", pipeline_state_to_string(pipeline.get_state())}
+        {"status", pipeline_state_to_string(pipeline.get_state())}
     };
     if(pipeline.get_state() == PipelineState::FAILED ||
         pipeline.get_state() == PipelineState::MALFORMED ){

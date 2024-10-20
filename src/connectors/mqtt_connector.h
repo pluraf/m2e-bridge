@@ -86,7 +86,7 @@ public:
         try{
             topic_template_ = json_descr.at("topic").get<string>();
         }catch(json::exception){
-           throw std::runtime_error("Topic cannot be null for mqtt connector\n");
+           throw std::runtime_error("Topic cannot be null for mqtt connector");
         }
         try{
             client_id_ = json_descr.at("client_id").get<string>();
@@ -220,7 +220,7 @@ private:
                     mqtt_version_ = MQTTVERSION_5;
                     break;
                 default:
-                    throw std::runtime_error("Incompatiable  authbundle connector type\n");
+                    throw std::runtime_error("Incompatiable  authbundle connector type");
             }
             std::string token;
             switch(ab.auth_type){
@@ -241,11 +241,11 @@ private:
                     conn_opts_.set_password(token);
                     break;
                 default:
-                    throw std::runtime_error("Incompatiable  authbundle auth type\n");
+                    throw std::runtime_error("Incompatiable  authbundle auth type");
             }
         }
         else{
-            throw std::runtime_error("Not able to retreive bundle\n");
+            throw std::runtime_error("Not able to retreive bundle");
         }
     }
 
@@ -305,7 +305,7 @@ private:
                 }
                 catch (const mqtt::exception& exc) {
                     std::cerr << exc << std::endl;
-                    throw std::runtime_error("Unable to subscribe\n");
+                    throw std::runtime_error("Unable to subscribe");
                 }
                 std::cout << "Subscribed"<<std::endl;
             }
