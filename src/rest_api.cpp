@@ -155,7 +155,7 @@ public:
 };
 
 
-class PipelineStateApiHandler:public CivetHandler{
+class PipelineStatusApiHandler:public CivetHandler{
 public:
     bool handleGet(CivetServer * server, struct mg_connection * conn)override{
         std::string response;
@@ -231,7 +231,7 @@ CivetServer* start_server(){
 
     server->addAuthHandler("/**", new AuthHandler(&public_key));
     server->addHandler("/pipeline/config/", new PipelineConfigApiHandler());
-    server->addHandler("/pipeline/status/", new PipelineStateApiHandler());
+    server->addHandler("/pipeline/status/", new PipelineStatusApiHandler());
     server->addHandler("/pipeline/control/", new PipelineControlApiHandler());
 
     return server;
