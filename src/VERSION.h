@@ -1,1 +1,0 @@
-#define M2E_BRIDGE_VERSION "1.0.0"

@@ -1,5 +1,5 @@
-#ifndef __M2E_BRIDGE_ZMQLISTENER_H__
-#define __M2E_BRIDGE_ZMQLISTENER_H__
+#ifndef __M2E_BRIDGE_ZMQ_LISTENER_H__
+#define __M2E_BRIDGE_ZMQ_LISTENER_H__
 
 
 #include <zmq.hpp>
@@ -9,18 +9,19 @@
 #include <thread>
 #include <atomic>
 #include <fstream>
-#include "VERSION.h"
+
+#include "API_VERSION.h"
 
 
 enum class ZmqRequest{
-    VERSION,
+    API_VERSION,
     NONE
 };
 
 
 inline ZmqRequest zmq_request_from_string(std::string request){
-    if(request == "VERSION"){
-        return ZmqRequest::VERSION;
+    if(request == "api_version"){
+        return ZmqRequest::API_VERSION;
     }else{
         return ZmqRequest::NONE;
     }
@@ -50,4 +51,4 @@ private:
 };
 
 
-#endif  // __M2E_BRIDGE_ZMQLISTENER_H__
+#endif  // __M2E_BRIDGE_ZMQ_LISTENER_H__

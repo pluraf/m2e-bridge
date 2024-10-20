@@ -9,7 +9,7 @@ void ZmqListner::run(){
     try{
         context_ = zmq::context_t(2);
         socket_ = zmq::socket_t(context_, zmq::socket_type::rep);
-        socket_.bind("ipc:///tmp/m2e-bridge-zmq.sock");
+        socket_.bind("ipc:///tmp/m2eb-zmq.sock");
 
         while(!stop_){
             zmq::message_t request;
@@ -62,10 +62,8 @@ void ZmqListner::stop(){
 
 std::string ZmqListner::get_response(ZmqRequest req){
     switch(req){
-        case ZmqRequest::VERSION :{
+        case ZmqRequest::API_VERSION:
             return M2E_BRIDGE_VERSION;
-            break;
-        }
         default:
             return "Hello from m2e-bridge";
     }
