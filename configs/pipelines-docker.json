@@ -7,7 +7,17 @@
       "qos": 1,
       "retry_attempts": 5
     },
-    "filtras": [
+    "connector_out":{
+      "type":"gcp_pubsub",
+      "authbundle_id":"real_gcp",
+      "project_id":"feisty-enigma-416319",
+      "topic_id":"sensor-data",
+      "attributes":{
+        "deviceId":"{{topic[2]}}",
+        "projectId": "G-NODE"
+      }
+    },
+    "filtras":[
       {
           "type": "comparator",
           "operator": "gt",
@@ -21,41 +31,12 @@
           "logical_negation": true,
           "string": "LOG"
       }
-  ],
-    "connector_out":{
-      "type":"gcp_pubsub",
-      "key_path":"/etc/m2e-bridge/connectors/auth/feisty-enigma-416319-44f4fddc898c.json",
-      "project_id":"feisty-enigma-416319",
-      "topic_id":"sensor-data",
-      "attributes":{
-        "deviceId":"{{topic[2]}}",
-        "projectId": "G-NODE"
-      }
-    }
-  },
-  "sensor-state":{
-    "connector_in": {
-      "type": "mqtt",
-      "topic": "/topic2",
-      "server": "mqtt://localhost:1884",
-      "qos": 1,
-      "retry_attempts": 5
-    },
-    "connector_out": {
-      "type": "gcp_pubsub",
-      "key_path":"/etc/m2e-bridge/connectors/auth/feisty-enigma-416319-44f4fddc898c.json",
-      "project_id": "feisty-enigma-416319",
-      "topic_id": "sensor-state",
-      "attributes":{
-        "deviceId":"{{topic[2]}}",
-        "projectId": "G-NODE"
-      }
-    }
+    ]
   },
   "commands":{
     "connector_in": {
       "type": "gcp_pubsub",
-      "key_path":"/etc/m2e-bridge/connectors/auth/feisty-enigma-416319-44f4fddc898c.json",
+      "authbundle_id":"real_gcp",
       "project_id": "feisty-enigma-416319",
       "subscription_id": "commands"
     },
@@ -65,6 +46,34 @@
       "server": "mqtt://localhost:1884",
       "qos": 1,
       "retry_attempts": 5
+    }
+  },
+  "internal_control_loop": {
+    "connector_in": {
+      "type": "mqtt",
+      "topic": "/alerts",
+      "server": "mqtt://localhost:1884"
+    },
+    "filtras":[
+      {
+        "type": "comparator",
+        "operator": "gt",
+        "decoder": "json",
+        "value_key": "temp",
+        "comparand": 45
+      },
+      {
+        "type": "builder",
+        "encoder": "json",
+        "attributes":{
+          "cooler_on": true
+        }
+      }
+    ],
+    "connector_out": {
+      "type": "mqtt",
+      "topic": "/actions",
+      "server": "mqtt://localhost:1884"
     }
   }
 }
