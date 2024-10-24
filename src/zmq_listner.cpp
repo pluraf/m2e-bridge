@@ -64,6 +64,8 @@ std::string ZmqListner::get_response(ZmqRequest req){
     switch(req){
         case ZmqRequest::API_VERSION:
             return M2E_BRIDGE_VERSION;
+        case ZmqRequest::STATUS:
+            return "RUNNING";
         default:
             return "Hello from m2e-bridge";
     }

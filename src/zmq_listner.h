@@ -15,6 +15,7 @@
 
 enum class ZmqRequest{
     API_VERSION,
+    STATUS,
     NONE
 };
 
@@ -22,6 +23,8 @@ enum class ZmqRequest{
 inline ZmqRequest zmq_request_from_string(std::string request){
     if(request == "api_version"){
         return ZmqRequest::API_VERSION;
+    }else if(request == "status"){
+        return ZmqRequest::STATUS;
     }else{
         return ZmqRequest::NONE;
     }
