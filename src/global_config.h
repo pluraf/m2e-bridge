@@ -68,8 +68,12 @@ public:
         }
 
         std::string type = connector["type"];
-        const char* allowed_params_mqtt[] = {"type", "topic", "server", "qos", "retry_attempts", "authbundle_id", "client_id"};
-        const char* allowed_params_gcp_pubsub[] = {"type", "authbundle_id", "project_id", "topic_id", "subscription_id", "attributes"};
+        const char* allowed_params_mqtt[] = {
+            "type", "topic", "server", "qos", "retry_attempts", "authbundle_id", "client_id"
+        };
+        const char* allowed_params_gcp_pubsub[] = {
+            "type", "authbundle_id", "project_id", "topic_id", "subscription_id", "attributes"
+        };
 
         const char** allowed_params = nullptr;
         size_t allowed_params_size = 0;
@@ -114,9 +118,10 @@ public:
     }
 
     bool validate_pipeline_data(const json &pipelineData) {
-        if(!pipelineData.contains("connector_in") || !pipelineData["connector_in"].is_object() ||
-           !pipelineData.contains("filters") || !pipelineData.contains("transformers") ||
-           !pipelineData.contains("connector_out") || !pipelineData["connector_out"].is_object()) {
+        if(! pipelineData.contains("connector_in")
+                || ! pipelineData["connector_in"].is_object()
+                || ! pipelineData.contains("connector_out")
+                || !pipelineData["connector_out"].is_object()){
             return false;
         }
 
