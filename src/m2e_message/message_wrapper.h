@@ -36,8 +36,8 @@ public:
 private:
     Message orig_;
     Message alt_;
-    bool is_initialized_;
-    bool is_passed_;
+    bool is_initialized_ {false};
+    bool is_passed_ {false};
     set<string> destinations_;
 };
 

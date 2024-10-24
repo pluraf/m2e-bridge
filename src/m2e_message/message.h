@@ -66,8 +66,8 @@ private:
     std::string msg_text_;
     std::string msg_topic_;
     mutable json decoded_json_;
-    mutable bool is_serialized_;
-    mutable bool is_deserialized_;
+    mutable bool is_serialized_ {false};
+    mutable bool is_deserialized_ {false};
     mutable std::vector<std::string> topic_levels_;
     string empty_level_ {""};
     MessageFormat decoder_ {MessageFormat::UNKN};
