@@ -33,6 +33,7 @@ private:
     std::string authbundle_id_;
     std::string object_name_template_;
     bool is_object_template_ {false};
+    bool delete_after_processing_ {false};
 
     gcloud::Options auth_options_;
 
@@ -48,8 +49,7 @@ private:
                 throw std::runtime_error("Incompatiable authbundle auth type\n");
             }
             service_key_data_ = ab.keydata;
-        }
-        else{
+        }else{
             throw std::runtime_error("Not able to retreive bundle\n");
         }
     }
@@ -83,6 +83,10 @@ public:
             throw std::runtime_error("Object name cannot be null for bucket connector_out\n");
         }
 
+        if(json_descr.contains("delete_after_processing")){
+            delete_after_processing_ = json_descr.at("delete_after_processing").get<bool>();
+        }
+
         auth_options_ = gcloud::Options{}
                         .set<gcloud::UnifiedCredentialsOption>(
                             gcloud::MakeServiceAccountCredentials(service_key_data_))
@@ -102,7 +106,7 @@ public:
         std::cout << "Connecting to GCP Bucket: " << bucket_name_ << std::endl;
 
         auto metadata = client_.GetBucketMetadata(bucket_name_);
-        if (!metadata) {
+        if(!metadata){
             if(mode_ == ConnectorMode::IN) {
                 throw std::runtime_error(fmt::format("Bucket '{}' does not exist!", bucket_name_));
             }
@@ -118,22 +122,22 @@ public:
                 std::cout << "Bucket created successfully." << std::endl;
                 metadata = client_.GetBucketMetadata(bucket_name_);
             }
-        } else {
+        }else{
             std::cout << "Bucket exists. Proceeding with connection..." << std::endl;
         }
 
-        if(metadata) {
+        if(metadata){
             std::cout << "Connected to bucket successfully: " << bucket_name_ << std::endl;
-        }else {
+        }else{
             throw std::runtime_error("Unable to connect to GCP bucket.");
         }
     }
 
-    std::string generate_timestamp() {
+    std::string generate_timestamp(){
         auto current_time = time(nullptr);
         tm time_info{};
 
-        if (localtime_r(&current_time, &time_info) == nullptr) {
+        if(localtime_r(&current_time, &time_info) == nullptr){
             throw std::runtime_error("localtime_r() failed");
         }
         std::ostringstream oss;
@@ -142,7 +146,7 @@ public:
         return timestamp;
     }
 
-    std::string derive_object_name(Message & msg) {
+    std::string derive_object_name(Message & msg){
         std::string file_name = object_name_template_;
         std::regex pattern("\\{\\{(.*?)\\}\\}");
 
@@ -151,7 +155,7 @@ public:
 
         while(regex_search(pos, file_name.cend(), match, pattern)){
             std::string ve = match[1].str();
-            if(ve == "topic") {
+            if(ve == "topic"){
                 std::string vvalue = msg.get_topic(); 
 
                 vvalue.erase(remove(vvalue.begin(), vvalue.end(), '/'), vvalue.end());
@@ -159,21 +163,21 @@ public:
                 unsigned int i = (pos - file_name.cbegin());
                 file_name.replace(i + match.position(), match.length(), vvalue);
                 pos = file_name.cbegin() + i + match.position() + vvalue.size(); 
-            }else if(ve == "timestamp") {
+            }else if(ve == "timestamp"){
                 std::string timestamp = generate_timestamp();
 
                 unsigned int i = (pos - file_name.cbegin());
                 file_name.replace(i + match.position(), match.length(), timestamp);
                 pos = file_name.cbegin() + i + match.position() + timestamp.size();
             }else{
-                try {
+                try{
                     json const& payload = msg.get_raw();
                     std::string vvalue = payload.at(ve);
 
                     unsigned int i = (pos - file_name.cbegin());
                     file_name.replace(i + match.position(), match.length(), vvalue);
                     pos = file_name.cbegin() + i + match.position() + vvalue.size();
-                }catch (json::exception& e) {
+                }catch(json::exception& e){
                     throw std::runtime_error(fmt::format("Template variable {} not found in the payload!", ve));
                 }
             }
@@ -182,7 +186,7 @@ public:
         return file_name;
     }
 
-    void send(Message & msg)override {
+    void send(Message & msg)override{
         std::string file_name = derive_object_name(msg);
         std::string file_content = msg.get_raw();
 
@@ -190,7 +194,7 @@ public:
         stream << file_content;
         stream.Close();
 
-        if (!stream.metadata()) {
+        if(!stream.metadata()){
             throw std::runtime_error("Error sending message to GCP Bucket.");
         }
 
@@ -200,7 +204,7 @@ public:
     Message receive()override {
         try{
             gcloud::storage::ObjectReadStream stream = client_.ReadObject(bucket_name_, object_name_template_);
-            if(!stream) {
+            if(!stream){
                 std::cerr << "Error reading message from GCP Bucket." << std::endl;
                 throw std::runtime_error("Error reading message from GCP Bucket");
             }
@@ -210,8 +214,17 @@ public:
 
             std::cout << "Message received from GCP Bucket: " << file_content << std::endl;
 
+            if(delete_after_processing_){
+                auto delete_status = client_.DeleteObject(bucket_name_, object_name_template_);
+                if(!delete_status.ok()){
+                    std::cerr << "Failed to delete object after processing: " << delete_status.message() << std::endl;
+                }else{
+                    std::cout << "Object deleted after processing." << std::endl;
+                }
+            }
+
             return Message(file_content, object_name_template_);
-        }catch (google::cloud::Status const& status) {
+        }catch(google::cloud::Status const& status){
             std::cerr << "google::cloud::Status thrown: " << status << "\n";
             throw std::runtime_error("Error pulling messages from gcp storage");
         }
