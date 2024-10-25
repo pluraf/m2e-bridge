@@ -9,6 +9,8 @@
 #include "connectors/gcp_pubsub_connector.h"
 #include "connectors/email_connector.h"
 #include "connectors/internal_connector.h"
+#include "connectors/gcp_bucket_connector.h"
+
 
 
 class ConnectorFactory{
@@ -24,6 +26,8 @@ public:
             return new EmailConnector(pipeid, mode, config);
         }else if(conn_type == "queue"){
             return new InternalConnector(pipeid, mode, config);
+        }else if(conn_type == "gcp_bucket"){
+            return new gcp::CloudStorageConnector(pipeid, mode, config);
         }else{
             return new Connector(pipeid, mode, config);
         }

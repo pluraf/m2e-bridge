@@ -14,6 +14,7 @@
 
 enum class ConnectorType{
     GCP_PUBSUB,
+    GCP_BUCKET,
     MQTT311,
     MQTT50,
     EMAIL,
@@ -23,6 +24,8 @@ enum class ConnectorType{
 ConnectorType get_connector_type(std::string val){
     if(val == "gcp_pubsub")
         return ConnectorType::GCP_PUBSUB;
+    else if(val == "gcp_bucket")
+        return ConnectorType::GCP_BUCKET;
     else if(val == "mqtt311")
         return ConnectorType::MQTT311;
     else if(val == "mqtt50")
@@ -36,6 +39,7 @@ ConnectorType get_connector_type(std::string val){
 std::string connector_type_to_string(ConnectorType ct){
      switch (ct) {
         case ConnectorType::GCP_PUBSUB: return "gcp_pubsub";
+        case ConnectorType::GCP_BUCKET: return "gcp_bucket";
         case ConnectorType::MQTT311: return "mqtt311";
         case ConnectorType::MQTT50: return "mqtt50";
         case ConnectorType::EMAIL: return "email";
