@@ -87,10 +87,11 @@ private:
     void run_sending();
     void run_control();
     void free_resources();
+    int find_filtra_index(string const & filtra_name);
 
     Connector * connector_in_ {nullptr};
     Connector * connector_out_ {nullptr};
-    std::vector<Filtra*> filtras_;
+    std::vector<Filtra *> filtras_;
     std::string pipeid_;
 
     std::thread * processing_thread_ {nullptr};

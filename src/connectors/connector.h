@@ -10,26 +10,28 @@
 
 
 enum class ConnectorMode {
+    UNKN,
     IN,
     OUT
 };
 
 
-class Connector {
+class Connector{
 
 protected:
-    ConnectorMode mode_;
+    ConnectorMode mode_ {ConnectorMode::UNKN};
     std::string pipeid_;
-    bool is_active_;
+    bool is_active_ {false};
 
 public:
     Connector(std::string pipeid, ConnectorMode mode, json const & config){
         mode_ = mode;
         pipeid_ = pipeid;
+        is_active_ = true;
     }
     virtual void connect(){}
     virtual void disconnect(){}
-    virtual void stop(){}
+    virtual void stop(){is_active_=false;}
     virtual Message receive(){return Message();}
     virtual void send(Message & msg){}
 };

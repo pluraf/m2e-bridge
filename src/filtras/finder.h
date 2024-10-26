@@ -1,5 +1,5 @@
-#ifndef __M2E_BRIDGE_SEARCH_FILTER_H__
-#define __M2E_BRIDGE_SEARCH_FILTER_H__
+#ifndef __M2E_BRIDGE_FINDER_FT_H__
+#define __M2E_BRIDGE_FINDER_FT_H__
 
 
 #include <variant>
@@ -10,9 +10,9 @@
 enum class SearchOperator {UNKN, CONTAIN, CONTAINED, MATCH};
 
 
-class SearchFilter:public Filtra{
+class FinderFT:public Filtra{
 public:
-    SearchFilter(PipelineIface const & pi, json const & config):Filtra(pi, config){
+    FinderFT(PipelineIface const & pi, json const & config):Filtra(pi, config){
         std::string const & oper = config.value("operator", "match");
         if(oper == "contain"){
             operator_ = SearchOperator::CONTAIN;
@@ -36,7 +36,7 @@ public:
         }
     }
 
-    void pass(MessageWrapper & msg_w)override{
+    void process(MessageWrapper & msg_w)override{
         bool res = true;
         if(string_.size() > 0){
             if(value_key_.size() > 0){
@@ -50,7 +50,7 @@ public:
         }
         res = logical_negation_ ? ! res : res;
         if(res){
-            msg_w.accept();
+            msg_w.pass();
         }else{
             msg_w.reject();
         }
@@ -101,4 +101,4 @@ private:
 };
 
 
-#endif  // __M2E_BRIDGE_SEARCH_FILTER_H__
+#endif  // __M2E_BRIDGE_FINDER_FT_H__

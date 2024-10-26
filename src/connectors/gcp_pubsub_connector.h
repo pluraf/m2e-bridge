@@ -36,7 +36,7 @@ using std::string;
 using std::map;
 
 
-class PubSubConnector: public Connector {
+class PubSubConnector: public Connector{
 private:
     string project_id_;
     string topic_id_;
@@ -182,8 +182,11 @@ public:
                 .set<pubsub::RetryPolicyOption>(pubsub::LimitedTimeRetryPolicy(
                                               std::chrono::milliseconds(500))
                                               .clone());
-            auto response = subscriber_ptr_->Pull(opts);
-            if (!response) return Message();
+            google::cloud::StatusOr<google::cloud::pubsub::PullResponse> response;
+            while(is_active_){
+                response = subscriber_ptr_->Pull(opts);
+                if(response) break;
+            }
             string msg_text = response->message.data();
             std::cout << "Received message " << msg_text << "\n";
             std::move(response->handler).ack();

@@ -5,20 +5,23 @@
 #include <iostream>
 
 #include "m2e_aliases.h"
-#include "filters/comparator_filter.h"
-#include "filters/finder_filter.h"
-#include "transformers/eraser_transformer.h"
+#include "filtras/comparator.h"
+#include "filtras/finder.h"
+#include "filtras/eraser.h"
+#include "filtras/builder.h"
 
 
 class FiltraFactory {
 public:
     static Filtra * create(PipelineIface const & pi, json const & json_descr) {
         if(json_descr["type"] == "comparator"){
-            return new ComparatorFilter(pi, json_descr);
+            return new ComparatorFT(pi, json_descr);
         }else if(json_descr["type"] == "finder"){
-            return new SearchFilter(pi, json_descr);
+            return new FinderFT(pi, json_descr);
         }else if(json_descr["type"] == "eraser"){
-            return new EraserTransformer(pi, json_descr);
+            return new EraserFT(pi, json_descr);
+        }else if(json_descr["type"] == "builder"){
+            return new BuilderFT(pi, json_descr);
         }else{
             throw std::invalid_argument("Unknown filtra");
         }

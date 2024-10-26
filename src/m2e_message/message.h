@@ -13,7 +13,7 @@ enum class MessageFormat {UNKN, RAW, JSON};
 class Message{
 public:
     Message() = default;
-    Message(const std::string &text, const std::string &topic):
+    Message(string const &text, string const & topic):
         msg_text_(text),
         msg_topic_(topic){
     }

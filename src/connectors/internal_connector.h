@@ -11,7 +11,6 @@ public:
     InternalConnector(std::string pipeid, ConnectorMode mode, json const & config):
             Connector(pipeid, mode, config){
         queuid_ = config.at("name");
-        is_active_ = true;
     }
 
     Message receive()override{

@@ -20,7 +20,10 @@ using std::vector;
 using std::map;
 using std::set;
 using std::stringstream;
+using std::pair;
 
+
+typedef pair<string,string> hops_t;
 
 
 #endif  // __M2E_BRIDGE_ALIASES_H__

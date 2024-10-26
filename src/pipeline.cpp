@@ -90,7 +90,20 @@ void Pipeline::free_resources(){
         delete filtra;
     }
     filtras_.clear();
- }
+}
+
+
+int Pipeline::find_filtra_index(string const & filtra_name){
+
+    if(filtra_name == "out") return filtras_.size();
+
+    for(int ix = 0; ix < filtras_.size(); ++ix){
+        if(filtras_[ix]->get_name() == filtra_name){
+            return ix;
+        }
+    }
+    return -1;
+}
 
 
 void Pipeline::process(){
@@ -98,7 +111,7 @@ void Pipeline::process(){
     MessageWrapper msg_w;
     int filtra_ix = 0;
     while(filtra_ix < filtras_.size()){
-        msg_w = filtras_[filtra_ix]->pass();
+        msg_w = filtras_[filtra_ix]->process();
         if(msg_w) break;
         ++filtra_ix;
     }
@@ -112,7 +125,7 @@ void Pipeline::process(){
         ++filtra_ix;
         for(; msg_w.is_passed() && filtra_ix < filtras_.size(); filtra_ix++){
             try{
-                filtras_[filtra_ix]->pass(msg_w);
+                filtras_[filtra_ix]->process(msg_w);
             }catch(std::exception const & e){
                 last_error_ = e.what();
                 return;
@@ -130,16 +143,43 @@ void Pipeline::process(){
 
 void Pipeline::process(Message &msg){
     MessageWrapper msg_w(msg);
-    for(auto const & filtra : filtras_){
+    int filtra_ix = 0;
+    while(filtra_ix < filtras_.size() && is_active_){
+
+        Filtra * filtra = nullptr;
         try{
-            filtra->pass(msg_w);
+            filtra = filtras_.at(filtra_ix);
+        }catch(std::out_of_range){
+            msg_w.reject();
+            break;
+        }
+
+        try{
+            filtra->process(msg_w);
+        }catch(std::invalid_argument){
+            msg_w.reject();
+            break;
         }catch(std::exception const & e){
             last_error_ = e.what();
             return;
         }
-        if(! msg_w.is_passed()) break;
-        for(auto const & queuid : filtra->get_destinations()){
-            InternalQueues::redirect(msg_w, queuid);
+
+        std::pair<string, string> hops = filtra->get_hops();
+        if(msg_w.is_passed()){
+            if(! hops.first.empty()){
+                filtra_ix = find_filtra_index(hops.first);
+            }else{
+                filtra_ix++;
+            }
+            for(auto const & queuid : filtra->get_destinations()){
+                InternalQueues::redirect(msg_w, queuid);
+            }
+        }else{
+            if(! hops.second.empty()){
+                filtra_ix = find_filtra_index(hops.second);
+            }else{
+                break;
+            }
         }
     }
     if(msg_w.is_passed()) s_queue_.push(msg_w.msg());

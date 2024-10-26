@@ -7,29 +7,53 @@
 #include "m2e_message/message_wrapper.h"
 #include "iostream"
 
+
 class Filtra{
 public:
-    Filtra(PipelineIface const & pipeline, json const & config){
+    Filtra(PipelineIface const & pipeline, json const & config):name_(){
         std::string const & decoder = config.value("decoder", "raw");
         if(decoder == "json"){
             decoder_ = MessageFormat::JSON;
         }else if(decoder == "raw"){
             decoder_ = MessageFormat::RAW;
         }
+
+        std::string const & encoder = config.value("encoder", "raw");
+        if(encoder == "json"){
+            encoder_ = MessageFormat::JSON;
+        }else if(encoder == "raw"){
+            encoder_ = MessageFormat::RAW;
+        }
+
         logical_negation_ = config.value("logical_negation", false);
+
         if(config.contains("queues")){
             json const & j_queues = config.at("queues");
             queue_ids_ = vector<string>(j_queues.begin(), j_queues.end());
         }
+
+        name_ = config.value("name", "");
+
+        hops_.first = config.value("goto_passed", "");
+
+        hops_.second = config.value("goto_rejected", "");
     }
     virtual ~Filtra(){}
-    virtual void pass(MessageWrapper &msg_w) = 0;
-    virtual MessageWrapper pass(){return MessageWrapper();}
+    virtual void process(MessageWrapper &msg_w) = 0;
+    virtual MessageWrapper process(){return MessageWrapper();}
     vector<string> const & get_destinations(){return queue_ids_;}
+    string const & get_name(){return name_;}
+    hops_t const & get_hops(){return hops_;}
+
 protected:
     MessageFormat decoder_ {MessageFormat::UNKN};
+    MessageFormat encoder_ {MessageFormat::UNKN};
     bool logical_negation_ {false};
     vector<string> queue_ids_;
+
+private:
+    string name_;
+    hops_t hops_;
 };
 
 

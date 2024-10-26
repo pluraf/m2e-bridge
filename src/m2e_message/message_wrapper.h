@@ -24,7 +24,7 @@ public:
     operator bool()const{return is_initialized_;}
 
     bool is_passed(){return is_passed_;}
-    void accept(){is_passed_ = true;}
+    void pass(){is_passed_ = true;}
     void reject(){is_passed_ = false;}
 
     void add_destination(string queuid){destinations_.insert(queuid);}

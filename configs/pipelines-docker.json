@@ -60,14 +60,27 @@
         "operator": "gt",
         "decoder": "json",
         "value_key": "temp",
-        "comparand": 45
+        "comparand": 45,
+        "goto_passed": "cooler_on",
+        "goto_rejected": "cooler_off"
       },
       {
+        "name": "cooler_on",
         "type": "builder",
         "encoder": "json",
-        "attributes":{
+        "payload":{
           "cooler_on": true
-        }
+        },
+        "goto_passed": "out"
+      },
+      {
+        "name": "cooler_off",
+        "type": "builder",
+        "encoder": "json",
+        "payload":{
+          "cooler_on": false
+        },
+        "goto_passed": "out"
       }
     ],
     "connector_out": {
