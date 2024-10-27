@@ -80,7 +80,7 @@ private:
     bool construct(json const & pjson);
     void execute_stop();
     void execute_start();
-    void process(Message &msg);
+    void process(Message const & msg, int filtra_ix = 0);
     void process();
     void run_receiving();
     void run_processing();

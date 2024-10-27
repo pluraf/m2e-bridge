@@ -39,8 +39,8 @@ public:
         hops_.second = config.value("goto_rejected", "");
     }
     virtual ~Filtra(){}
-    virtual void process(MessageWrapper &msg_w) = 0;
-    virtual MessageWrapper process(){return MessageWrapper();}
+    virtual string process(MessageWrapper &msg_w) = 0;
+    virtual Message process(){return Message();}
     vector<string> const & get_destinations(){return queue_ids_;}
     string const & get_name(){return name_;}
     hops_t const & get_hops(){return hops_;}

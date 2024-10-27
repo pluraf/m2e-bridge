@@ -102,7 +102,7 @@ int Pipeline::find_filtra_index(string const & filtra_name){
             return ix;
         }
     }
-    return -1;
+    return filtras_.size();
 }
 
 
@@ -141,9 +141,8 @@ void Pipeline::process(){
 }
 
 
-void Pipeline::process(Message &msg){
+void Pipeline::process(Message const & msg, int filtra_ix){
     MessageWrapper msg_w(msg);
-    int filtra_ix = 0;
     while(filtra_ix < filtras_.size() && is_active_){
 
         Filtra * filtra = nullptr;
@@ -154,13 +153,29 @@ void Pipeline::process(Message &msg){
             break;
         }
 
+        string hop;
         try{
-            filtra->process(msg_w);
+            hop = filtra->process(msg_w);
         }catch(std::invalid_argument){
             msg_w.reject();
             break;
         }catch(std::exception const & e){
             last_error_ = e.what();
+            return;
+        }
+
+        if(hop == "self"){
+            hops_t hops = filtra->get_hops();
+            if(! hops.first.empty()){
+                filtra_ix = find_filtra_index(hops.first);
+            }else{
+                ++filtra_ix;
+            }
+            Message new_msg = filtra->process();
+            while(new_msg){
+                process(new_msg, filtra_ix);
+                new_msg = filtra->process();
+            }
             return;
         }
 

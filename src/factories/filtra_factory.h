@@ -9,6 +9,7 @@
 #include "filtras/finder.h"
 #include "filtras/eraser.h"
 #include "filtras/builder.h"
+#include "filtras/splitter.h"
 
 
 class FiltraFactory {
@@ -22,6 +23,8 @@ public:
             return new EraserFT(pi, json_descr);
         }else if(json_descr["type"] == "builder"){
             return new BuilderFT(pi, json_descr);
+        }else if(json_descr["type"] == "splitter"){
+            return new SplitterFT(pi, json_descr);
         }else{
             throw std::invalid_argument("Unknown filtra");
         }

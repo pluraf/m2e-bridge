@@ -36,7 +36,7 @@ public:
         }
     }
 
-    void process(MessageWrapper & msg_w)override{
+    string process(MessageWrapper & msg_w)override{
         json const & payload = msg_w.msg().get_json();
         bool res = false;
         try{
@@ -65,6 +65,7 @@ public:
         }catch(json::exception){
             throw std::invalid_argument("json");
         }
+        return "";
     }
 private:
     ComparatorOperator operator_ {ComparatorOperator::UNKN};

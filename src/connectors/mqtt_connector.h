@@ -154,11 +154,7 @@ public:
                 msg.get_raw().length(),
                 qos_,
                 false);
-            std::cout << "  ...with token: " << pubtok->get_message_id() << std::endl;
-            std::cout << "  ...for message with " << pubtok->get_message()->get_payload().size()
-                << " bytes" << std::endl;
             pubtok->wait_for(TIMEOUT);
-            std::cout << "  ...OK" << std::endl;
         }
         catch (const mqtt::exception& exc) {
             std::cerr << exc << std::endl;
@@ -169,7 +165,7 @@ public:
     Message receive()override{
         mqtt::message mqtt_msg;
         msg_queue_->get(&mqtt_msg);  // blocking call
-        return Message(mqtt_msg.to_string(), mqtt_msg.get_topic());
+        return Message(mqtt_msg.get_payload(), mqtt_msg.get_topic());
     }
 
     void stop()override{
@@ -326,9 +322,6 @@ private:
 
         // Callback for when a message arrives.
         void message_arrived(mqtt::const_message_ptr msg) override {
-            std::cout << "Message arrived" << std::endl;
-            std::cout << "\ttopic: '" << msg->get_topic() << "'" << std::endl;
-            std::cout << "\tpayload: '" << msg->to_string() << "'\n" << std::endl;
             connector_ptr_->msg_queue_->put(*msg);
         }
 

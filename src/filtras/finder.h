@@ -36,7 +36,7 @@ public:
         }
     }
 
-    void process(MessageWrapper & msg_w)override{
+    string process(MessageWrapper & msg_w)override{
         bool res = true;
         if(string_.size() > 0){
             if(value_key_.size() > 0){
@@ -54,6 +54,7 @@ public:
         }else{
             msg_w.reject();
         }
+        return "";
     }
 
     bool find_in_string(string const & msg_string){
