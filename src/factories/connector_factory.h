@@ -1,4 +1,3 @@
-
 #ifndef __M2E_BRIDGE_CONNECTOR_FACTORY__
 #define __M2E_BRIDGE_CONNECTOR_FACTORY__
 
@@ -10,7 +9,8 @@
 #include "connectors/email_connector.h"
 #include "connectors/internal_connector.h"
 #include "connectors/gcp_bucket_connector.h"
-
+#include "connectors/aws_s3_connector.h"
+#include "connectors/aws_sdk_manager.h"
 
 
 class ConnectorFactory{
@@ -28,6 +28,9 @@ public:
             return new InternalConnector(pipeid, mode, config);
         }else if(conn_type == "gcp_bucket"){
             return new gcp::CloudStorageConnector(pipeid, mode, config);
+        }else if(conn_type == "aws_s3"){
+            AwsSdkManager::Instance();
+            return new S3Connector(pipeid, mode, config);
         }else{
             return new Connector(pipeid, mode, config);
         }

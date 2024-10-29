@@ -18,6 +18,7 @@ enum class ConnectorType{
     MQTT311,
     MQTT50,
     EMAIL,
+    AWS_S3,
     NONE
 };
 
@@ -32,6 +33,8 @@ ConnectorType get_connector_type(std::string val){
         return ConnectorType::MQTT50;
     else if(val == "email")
         return ConnectorType::EMAIL;
+    else if(val == "aws_s3")
+        return ConnectorType::AWS_S3;
     else
         return ConnectorType::NONE;
 }
@@ -43,6 +46,7 @@ std::string connector_type_to_string(ConnectorType ct){
         case ConnectorType::MQTT311: return "mqtt311";
         case ConnectorType::MQTT50: return "mqtt50";
         case ConnectorType::EMAIL: return "email";
+        case ConnectorType::AWS_S3: return "aws_s3";
         case ConnectorType::NONE: return "";
         default: return "";
     }
