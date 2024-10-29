@@ -15,6 +15,13 @@
     "civetweb",
     "jwt-cpp",
     "sqlite3",
-    "fmt"
+    "fmt",
+    {
+      "name": "aws-sdk-cpp",
+      "default-features": false,
+      "features": [
+        "s3"
+      ]
+    }
   ]
 }
