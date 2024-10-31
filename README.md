@@ -24,10 +24,7 @@ cd ./external/paho.mqtt.cpp/externals/paho-mqtt-c/
 mkdir build
 cd build
 cmake -DPAHO_BUILD_STATIC=TRUE -DPAHO_WITH_SSL=TRUE -DPAHO_ENABLE_TESTING=FALSE ..
-cd ..
 make -j8
-cd ../..
-cmake -Bbuild -H. -DPAHO_BUILD_SAMPLES=ON
 ```
 ##### Install dependencies
 
