@@ -26,6 +26,7 @@ public:
     bool is_passed(){return is_passed_;}
     void pass(){is_passed_ = true;}
     void reject(){is_passed_ = false;}
+    void pass_if(bool cond){is_passed_ = cond;}
 
     void add_destination(string queuid){destinations_.insert(queuid);}
     template<class Cont>
