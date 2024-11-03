@@ -36,7 +36,7 @@ public:
         }
     }
 
-    string process(MessageWrapper & msg_w)override{
+    string process_message(MessageWrapper & msg_w)override{
         bool res = true;
         if(string_.size() > 0){
             if(value_key_.size() > 0){

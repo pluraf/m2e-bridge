@@ -136,7 +136,7 @@ void Pipeline::process(){
                 }
             }
         }
-        if(msg_w.is_passed()) s_queue_.push(msg_w.msg());
+        if(msg_w.is_passed()) s_queue_.push(msg_w);
     }
 }
 
@@ -197,7 +197,7 @@ void Pipeline::process(Message const & msg, int filtra_ix){
             }
         }
     }
-    if(msg_w.is_passed()) s_queue_.push(msg_w.msg());
+    if(msg_w.is_passed()) s_queue_.push(msg_w);
 }
 
 
@@ -248,7 +248,7 @@ void Pipeline::run_sending(){
     try{
         connector_out_->connect();
         while(is_active_){
-            std::optional<Message> el;
+            std::optional<MessageWrapper> el;
             while((el = s_queue_.pop())){
                 connector_out_->send(* el);
             }

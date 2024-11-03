@@ -36,7 +36,7 @@ public:
         }
     }
 
-    string process(MessageWrapper & msg_w)override{
+    string process_message(MessageWrapper & msg_w)override{
         json const & payload = msg_w.msg().get_json();
         bool res = false;
         try{

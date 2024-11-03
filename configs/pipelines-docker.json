@@ -56,6 +56,10 @@
     },
     "filtras":[
       {
+        "type": "splitter",
+        "chunk_size": 1
+      },
+      {
         "type": "comparator",
         "operator": "gt",
         "decoder": "json",

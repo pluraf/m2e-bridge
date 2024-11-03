@@ -4,7 +4,7 @@
 
 #include <string>
 #include <iostream>
-#include <sstream> 
+#include <sstream>
 #include <stdexcept>
 #include <regex>
 
@@ -96,9 +96,9 @@ public:
 
         std::smatch match;
         std::regex pattern("\\{\\{(.*?)\\}\\}");
-        is_object_template_ = std::regex_search(object_name_template_.cbegin(), 
-                                                object_name_template_.cend(), 
-                                                match, 
+        is_object_template_ = std::regex_search(object_name_template_.cbegin(),
+                                                object_name_template_.cend(),
+                                                match,
                                                 pattern);
     }
 
@@ -146,7 +146,7 @@ public:
         return timestamp;
     }
 
-    std::string derive_object_name(Message & msg){
+    std::string derive_object_name(MessageWrapper & msg_w){
         std::string file_name = object_name_template_;
         std::regex pattern("\\{\\{(.*?)\\}\\}");
 
@@ -156,13 +156,13 @@ public:
         while(regex_search(pos, file_name.cend(), match, pattern)){
             std::string ve = match[1].str();
             if(ve == "topic"){
-                std::string vvalue = msg.get_topic(); 
+                std::string vvalue = msg_w.msg().get_topic();
 
                 vvalue.erase(remove(vvalue.begin(), vvalue.end(), '/'), vvalue.end());
 
                 unsigned int i = (pos - file_name.cbegin());
                 file_name.replace(i + match.position(), match.length(), vvalue);
-                pos = file_name.cbegin() + i + match.position() + vvalue.size(); 
+                pos = file_name.cbegin() + i + match.position() + vvalue.size();
             }else if(ve == "timestamp"){
                 std::string timestamp = generate_timestamp();
 
@@ -171,14 +171,14 @@ public:
                 pos = file_name.cbegin() + i + match.position() + timestamp.size();
             }else{
                 try{
-                    json const& payload = msg.get_raw();
-                    std::string vvalue = payload.at(ve);
+                    json const & metadata = msg_w.get_metadata();
+                    std::string vvalue = metadata.at(ve);
 
                     unsigned int i = (pos - file_name.cbegin());
                     file_name.replace(i + match.position(), match.length(), vvalue);
                     pos = file_name.cbegin() + i + match.position() + vvalue.size();
                 }catch(json::exception& e){
-                    throw std::runtime_error(fmt::format("Template variable {} not found in the payload!", ve));
+                    throw std::runtime_error(fmt::format("Template variable {} not found in the metadata!", ve));
                 }
             }
         }
@@ -186,9 +186,9 @@ public:
         return file_name;
     }
 
-    void send(Message & msg)override{
-        std::string file_name = derive_object_name(msg);
-        std::string file_content = msg.get_raw();
+    void send(MessageWrapper & msg_w)override{
+        std::string file_name = derive_object_name(msg_w);
+        std::string file_content = msg_w.msg().get_raw();
 
         gcloud::storage::ObjectWriteStream stream = client_.WriteObject(bucket_name_, file_name);
         stream << file_content;

@@ -13,7 +13,7 @@ public:
         keys_ = vector<string>(j_keys.begin(), j_keys.end());
     }
 
-    string process(MessageWrapper &msg_w)override{
+    string process_message(MessageWrapper &msg_w)override{
         if(decoder_ == MessageFormat::JSON){
             json & j_payload = msg_w.msg().get_json();
             for(auto const & key : keys_){

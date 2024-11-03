@@ -18,7 +18,7 @@ public:
         message_id_ = std::rand() % 65536;
     }
 
-    string process(MessageWrapper & msg_w)override{
+    string process_message(MessageWrapper & msg_w)override{
         string const & data = msg_w.msg().get_raw();
         if(data.size() > chunk_size_){
             msg_w_ = & msg_w;
@@ -31,7 +31,7 @@ public:
         }
     }
 
-    Message process()override{
+    Message generate_message()override{
         if(chunk_counter_ == -1) return Message();
         auto j_chunk = json::array();
         string const & orig_data = msg_w_->msg().get_raw();

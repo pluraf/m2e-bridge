@@ -10,6 +10,8 @@
 #include "filtras/eraser.h"
 #include "filtras/builder.h"
 #include "filtras/splitter.h"
+#include "filtras/limiter.h"
+#include "filtras/nop.h"
 
 
 class FiltraFactory {
@@ -25,6 +27,10 @@ public:
             return new BuilderFT(pi, json_descr);
         }else if(json_descr["type"] == "splitter"){
             return new SplitterFT(pi, json_descr);
+        }else if(json_descr["type"] == "limiter"){
+            return new LimiterFT(pi, json_descr);
+        }else if(json_descr["type"] == "nop"){
+            return new NopFT(pi, json_descr);
         }else{
             throw std::invalid_argument("Unknown filtra");
         }

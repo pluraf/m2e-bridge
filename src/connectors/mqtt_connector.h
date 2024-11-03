@@ -134,11 +134,11 @@ public:
         client_ptr_->disconnect()->wait();
     }
 
-    void send(Message & msg)override{
+    void send(MessageWrapper & msg_w)override{
         string derived_topic;
         if(is_topic_template_){
             try{
-                derived_topic = derive_topic(msg);
+                derived_topic = derive_topic(msg_w);
             }catch(std::runtime_error const & e){
                 std::cerr<<e.what()<<std::endl;
                 return;
@@ -150,8 +150,8 @@ public:
             mqtt::delivery_token_ptr pubtok;
             pubtok = client_ptr_->publish(
                 topic,
-                msg.get_raw().c_str(),
-                msg.get_raw().length(),
+                msg_w.msg().get_raw().c_str(),
+                msg_w.msg().get_raw().length(),
                 qos_,
                 false);
             pubtok->wait_for(TIMEOUT);
@@ -172,7 +172,7 @@ public:
         msg_queue_->exit_blocking_calls();
     }
 
-    std::string derive_topic(Message & msg){
+    std::string derive_topic(MessageWrapper & msg_w){
         using namespace std;
 
         regex pattern("\\{\\{(.*?)\\}\\}");
@@ -180,18 +180,18 @@ public:
 
         string topic = topic_template_;
         try{
-            json const & payload = msg.get_json();
+            json const & metadata = msg_w.get_metadata();
             auto pos = topic.cbegin();
             while(regex_search(pos, topic.cend(), match, pattern)){
                 string vname = match[1].str();
                 try{
-                    string vvalue = payload.at(vname);
+                    string vvalue = metadata.at(vname);
                     unsigned int i = (pos - topic.cbegin());
                     topic.replace(i + match.position(), match.length(), vvalue);
                     // Restore iterator after string modification
                     pos = topic.cbegin() + i + match.position() + vvalue.size();
                 }catch(json::exception){
-                    throw runtime_error(fmt::format("Topic template variable {} not found!", vname));
+                    throw runtime_error(fmt::format("Topic template variable [ {} ] not found!", vname));
                 }
             }
         }catch(json::exception){

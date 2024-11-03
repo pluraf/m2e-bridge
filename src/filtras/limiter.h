@@ -15,7 +15,7 @@ public:
         size_ = json_descr.at("size");
     }
 
-    string process(MessageWrapper & msg_w)override{
+    string process_message(MessageWrapper & msg_w)override{
         string const & data = msg_w.msg().get_raw();
         msg_w.pass_if(data.size() <= size_);
         return "";

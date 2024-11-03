@@ -17,6 +17,7 @@ public:
         alt_ = msg;
         is_initialized_ = true;
         is_passed_ = true;
+        metadata_ = json();
     }
     Message const & orig(){return orig_;}
     Message & msg(){return alt_;}
@@ -33,6 +34,12 @@ public:
     void add_destinations(Cont const & cont){destinations_.insert(cont.begin(), cont.end());}
     set<string> const & get_destinations(){return destinations_;}
     void clear_destinations(){destinations_.clear();}
+    void add_metadata(json const & metadata){
+        metadata_.merge_patch(metadata);
+    }
+    json const & get_metadata(){
+        return metadata_;
+    }
 
 private:
     Message orig_;
@@ -40,6 +47,7 @@ private:
     bool is_initialized_ {false};
     bool is_passed_ {false};
     set<string> destinations_;
+    json metadata_;
 };
 
 

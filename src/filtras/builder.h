@@ -12,7 +12,7 @@ public:
         payload_ = json_descr.at("payload");
     }
 
-    string process(MessageWrapper &msg_w)override{
+    string process_message(MessageWrapper &msg_w)override{
         if(encoder_ == MessageFormat::JSON){
             msg_w.msg().get_json() = payload_;
         }else{

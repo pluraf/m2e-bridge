@@ -105,7 +105,7 @@ private:
     std::condition_variable pipeline_event_;
 
     TSQueue<Message> r_queue_;
-    TSQueue<Message> s_queue_;
+    TSQueue<MessageWrapper> s_queue_;
     TSQueue<PipelineCommand> c_queue_;
     TSQueue<bool> e_queue_;
 

@@ -197,12 +197,12 @@ public:
         }
     }
 
-    void send(Message & msg)override{
+    void send(MessageWrapper & msg_w)override{
         try{
-            auto mb = pubsub::MessageBuilder{}.SetData(msg.get_raw());
+            auto mb = pubsub::MessageBuilder{}.SetData(msg_w.msg().get_raw());
             for(auto const & attribute : attributes_){
                 if(attribute.second.first){
-                    string av = derive_attribute(msg, attribute.second.second);
+                    string av = derive_attribute(msg_w, attribute.second.second);
                     mb.InsertAttribute(attribute.first, av);
                 }else{
                     mb.InsertAttribute(attribute.first, attribute.second.second);
@@ -217,7 +217,7 @@ public:
         }
     }
 
-    string derive_attribute(Message & msg, string const & atemplate){
+    string derive_attribute(MessageWrapper & msg_w, string const & atemplate){
         using namespace std;
 
         regex pattern_variable("\\{\\{(.*?)\\}\\}");
@@ -231,7 +231,7 @@ public:
             smatch match2;
             if(regex_search(ve.cbegin(), ve.cend(), match2, pattern_expression)){
                 int topic_level = stoi(match2[1].str());
-                string vvalue = msg.get_topic_level(topic_level);
+                string vvalue = msg_w.msg().get_topic_level(topic_level);
                 unsigned int i = (pos - attribute.cbegin());
                 attribute.replace(i + match1.position(), match1.length(), vvalue);
                 // Restore iterator after string modification

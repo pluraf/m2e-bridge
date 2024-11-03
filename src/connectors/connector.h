@@ -33,7 +33,7 @@ public:
     virtual void disconnect(){}
     virtual void stop(){is_active_=false;}
     virtual Message receive(){return Message();}
-    virtual void send(Message & msg){}
+    virtual void send(MessageWrapper & msg_w){}
 };
 
 

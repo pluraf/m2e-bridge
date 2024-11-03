@@ -26,9 +26,9 @@ public:
         return * el;
     }
 
-    void send(Message & msg)override{
+    void send(MessageWrapper & msg_w)override{
         TSQueue<Message> & q = InternalQueues::get_queue(queuid_);
-        q.push(msg);
+        q.push(msg_w.msg());
     }
 
     void stop()override{
