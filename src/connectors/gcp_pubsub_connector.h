@@ -187,6 +187,10 @@ public:
                 response = subscriber_ptr_->Pull(opts);
                 if(response) break;
             }
+            if(! response){
+                throw std::out_of_range("No messages");
+            }
+
             string msg_text = response->message.data();
             std::cout << "Received message " << msg_text << "\n";
             std::move(response->handler).ack();
