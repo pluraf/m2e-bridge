@@ -27,6 +27,10 @@ public:
         return pipelines_;
     }
 
+    bool get_auth_on(){
+        return config_.value("auth_on", true);
+    }
+
     bool add_pipeline(const std::string &pipeid, const json &pipelineData) {
         if(pipelines_.contains(pipeid)) {
             throw std::invalid_argument(fmt::format("Pipeline [ {} ] already exist!", pipeid));

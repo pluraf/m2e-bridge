@@ -176,7 +176,7 @@ public:
         }
     }
 
-    Message receive()override{
+    Message do_receive()override{
         try{
             auto opts = google::cloud::Options{}
                 .set<pubsub::RetryPolicyOption>(pubsub::LimitedTimeRetryPolicy(
@@ -197,7 +197,7 @@ public:
         }
     }
 
-    void send(MessageWrapper & msg_w)override{
+    void do_send(MessageWrapper & msg_w)override{
         try{
             auto mb = pubsub::MessageBuilder{}.SetData(msg_w.msg().get_raw());
             for(auto const & attribute : attributes_){

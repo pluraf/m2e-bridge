@@ -134,7 +134,7 @@ public:
         client_ptr_->disconnect()->wait();
     }
 
-    void send(MessageWrapper & msg_w)override{
+    void do_send(MessageWrapper & msg_w)override{
         string derived_topic;
         if(is_topic_template_){
             try{
@@ -162,7 +162,7 @@ public:
         }
     }
 
-    Message receive()override{
+    Message do_receive()override{
         mqtt::message mqtt_msg;
         msg_queue_->get(&mqtt_msg);  // blocking call
         return Message(mqtt_msg.get_payload(), mqtt_msg.get_topic());

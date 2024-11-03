@@ -33,25 +33,11 @@ enum class PipelineCommand{
     TERMINATE
 };
 
-inline std::string pipeline_state_to_string(PipelineState st){
-     switch (st) {
-        case PipelineState::STOPPED: return "stopped";
-        case PipelineState::RUNNING: return "running";
-        case PipelineState::FAILED: return "failed";
-        case PipelineState::MALFORMED: return "malformed";
-        case PipelineState::STARTING: return "starting";
-        case PipelineState::STOPPING: return "stopping";
-        case PipelineState::UNKN: return "unknown";
-    }
-}
 
-inline PipelineCommand pipeline_command_from_string(std::string command){
-    if(command == "stop") return PipelineCommand::STOP;
-    if(command == "start") return PipelineCommand::START;
-    if(command == "restart") return PipelineCommand::RESTART;
-    if(command == "terminate") return PipelineCommand::TERMINATE;
-    return PipelineCommand::UNKN;
-}
+struct PipelineStat{
+    time_t last_in;
+    time_t last_out;
+};
 
 
 class Pipeline:public PipelineIface{
@@ -75,6 +61,33 @@ public:
     PipelineState get_state() const;
     std::string get_id() const;
     std::string get_last_error() const;
+
+    PipelineStat get_statistics()const{
+        PipelineStat stat;
+        stat.last_in = connector_in_->get_statistics().last_in;
+        stat.last_out = connector_out_->get_statistics().last_out;
+        return stat;
+    }
+
+    static string state_to_string(PipelineState st){
+        switch (st) {
+            case PipelineState::STOPPED: return "stopped";
+            case PipelineState::RUNNING: return "running";
+            case PipelineState::FAILED: return "failed";
+            case PipelineState::MALFORMED: return "malformed";
+            case PipelineState::STARTING: return "starting";
+            case PipelineState::STOPPING: return "stopping";
+            case PipelineState::UNKN: return "unknown";
+        }
+    }
+
+    static PipelineCommand command_from_string(string command){
+        if(command == "stop") return PipelineCommand::STOP;
+        if(command == "start") return PipelineCommand::START;
+        if(command == "restart") return PipelineCommand::RESTART;
+        if(command == "terminate") return PipelineCommand::TERMINATE;
+        return PipelineCommand::UNKN;
+    }
 
 private:
     bool construct(json const & pjson);

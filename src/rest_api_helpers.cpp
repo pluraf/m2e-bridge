@@ -52,24 +52,3 @@ int parse_pipeline_ids(struct mg_connection *conn, std::vector<std::string> &pip
         return 1;
     }
 }
-
-
-json get_pipeline_state_as_json(Pipeline const & pipeline){
-
-    json json_object = json{
-        {"status", pipeline_state_to_string(pipeline.get_state())}
-    };
-    if(pipeline.get_state() == PipelineState::FAILED ||
-        pipeline.get_state() == PipelineState::MALFORMED ){
-        json_object["error"] = pipeline.get_last_error();
-    }
-    return json_object;
-}
-
-json get_all_pipelines_state_as_json(map<string, Pipeline *> const & pipelines){
-    json json_object;
-    for( auto const& [key, val]: pipelines){
-        json_object[key] = get_pipeline_state_as_json(* val);
-    }
-    return json_object;
-}

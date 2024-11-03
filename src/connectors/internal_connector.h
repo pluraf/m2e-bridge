@@ -13,7 +13,7 @@ public:
         queuid_ = config.at("name");
     }
 
-    Message receive()override{
+    Message do_receive()override{
         TSQueue<Message> & q = InternalQueues::get_queue(queuid_);
         auto el = q.pop();
         while(is_active_ && ! el){
@@ -26,7 +26,7 @@ public:
         return * el;
     }
 
-    void send(MessageWrapper & msg_w)override{
+    void do_send(MessageWrapper & msg_w)override{
         TSQueue<Message> & q = InternalQueues::get_queue(queuid_);
         q.push(msg_w.msg());
     }

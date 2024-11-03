@@ -186,7 +186,7 @@ public:
         return file_name;
     }
 
-    void send(MessageWrapper & msg_w)override{
+    void do_send(MessageWrapper & msg_w)override{
         std::string file_name = derive_object_name(msg_w);
         std::string file_content = msg_w.msg().get_raw();
 
@@ -201,7 +201,7 @@ public:
         std::cout << "Message sent to GCP Bucket as object: " << file_name << std::endl;
     }
 
-    Message receive()override {
+    Message do_receive()override{
         try{
             gcloud::storage::ObjectReadStream stream = client_.ReadObject(bucket_name_, object_name_template_);
             if(!stream){

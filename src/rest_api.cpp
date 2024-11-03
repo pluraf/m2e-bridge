@@ -17,9 +17,14 @@
 
 class AuthHandler:public CivetAuthHandler{
 public:
-    AuthHandler(std::string* public_key):public_key_(public_key) {}
+    AuthHandler(std::string* public_key, bool allow_anonymous){
+        public_key_ = public_key;
+        allow_anonymous_ = allow_anonymous;
+    }
 
     bool authorize(CivetServer *server, struct mg_connection *conn) override {
+        if(allow_anonymous_) return 1;
+
         const char* auth_token = mg_get_header(conn, "Authorization");
         if (auth_token != NULL && strlen(auth_token) > 7) {
             const char *token = auth_token + 7;  // Skip "Bearer "
@@ -35,6 +40,7 @@ public:
 
 private:
     std::string* public_key_;
+    bool allow_anonymous_ {false};
 };
 
 
@@ -169,16 +175,39 @@ public:
             const char * pipeid = last_segment + 1;
             auto pos = pipelines.find(pipeid);
             if(pos != pipelines.end()){
-               response = get_pipeline_state_as_json(* pos->second).dump();
+               response = get_pipeline_status(* pos->second).dump();
             }else{
                 mg_send_http_error(conn, 404, "%s", "Pipeid not found!");
             }
         }else{
-            response = get_all_pipelines_state_as_json(pipelines).dump();
+            response = create_response(pipelines).dump();
         }
         mg_send_http_ok(conn, "application/json", response.size());
         mg_write(conn, response.c_str(), response.size());
         return true;
+    }
+
+private:
+    json get_pipeline_status(Pipeline const & pipeline){
+        PipelineState state = pipeline.get_state();
+        json j_status = json{
+            {"status", Pipeline::state_to_string(state)}
+        };
+        string error = pipeline.get_last_error();
+        if(! error.empty()){
+            j_status["error"] = error;
+        }
+        PipelineStat stat = pipeline.get_statistics();
+        j_status["last_in"] = stat.last_in;
+        j_status["last_out"] = stat.last_out;
+        return j_status;
+    }
+    json create_response(map<string, Pipeline *> const & pipelines){
+        json json_object;
+        for( auto const& [key, val]: pipelines){
+            json_object[key] = get_pipeline_status(* val);
+        }
+        return json_object;
     }
 };
 
@@ -198,7 +227,7 @@ class PipelineControlApiHandler:public CivetHandler{
         string const & pipeid = segments[1];
         string const & command_str = segments[0];
 
-        PipelineCommand command = pipeline_command_from_string(command_str);
+        PipelineCommand command = Pipeline::command_from_string(command_str);
 
         if(command != PipelineCommand::START
                 && command != PipelineCommand::STOP
@@ -229,7 +258,7 @@ CivetServer* start_server(){
 
     CivetServer* server = new CivetServer(options);
 
-    server->addAuthHandler("/**", new AuthHandler(&public_key));
+    server->addAuthHandler("/**", new AuthHandler(&public_key, ! gc.get_auth_on()));
     server->addHandler("/pipeline/config/", new PipelineConfigApiHandler());
     server->addHandler("/pipeline/status/", new PipelineStatusApiHandler());
     server->addHandler("/pipeline/control/", new PipelineControlApiHandler());
