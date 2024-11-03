@@ -37,6 +37,8 @@ enum class PipelineCommand{
 struct PipelineStat{
     time_t last_in;
     time_t last_out;
+    unsigned long count_in;
+    unsigned long count_out;
 };
 
 
@@ -66,6 +68,8 @@ public:
         PipelineStat stat;
         stat.last_in = connector_in_->get_statistics().last_in;
         stat.last_out = connector_out_->get_statistics().last_out;
+        stat.count_in = connector_in_->get_statistics().count_in;
+        stat.count_out = connector_out_->get_statistics().count_out;
         return stat;
     }
 

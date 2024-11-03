@@ -200,6 +200,8 @@ private:
         PipelineStat stat = pipeline.get_statistics();
         j_status["last_in"] = stat.last_in;
         j_status["last_out"] = stat.last_out;
+        j_status["count_in"] = stat.count_in;
+        j_status["count_out"] = stat.count_out;
         return j_status;
     }
     json create_response(map<string, Pipeline *> const & pipelines){

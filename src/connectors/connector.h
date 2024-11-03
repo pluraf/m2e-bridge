@@ -19,6 +19,8 @@ enum class ConnectorMode {
 struct ConnectorStat{
     time_t last_in;
     time_t last_out;
+    unsigned long count_in;
+    unsigned long count_out;
 };
 
 
@@ -40,12 +42,14 @@ public:
     virtual void stop(){is_active_=false;}
     Message receive(){
         Message msg = do_receive();
+        ++stat_.count_in;
         auto now = chrono::system_clock::now().time_since_epoch();
         stat_.last_in = chrono::duration_cast<chrono::seconds>(now).count();
         return msg;
     }
     void send(MessageWrapper & msg_w){
         do_send(msg_w);
+        ++stat_.count_out;
         auto now = chrono::system_clock::now().time_since_epoch();
         stat_.last_out = chrono::duration_cast<chrono::seconds>(now).count();
     }
@@ -58,7 +62,7 @@ protected:
     virtual void do_send(MessageWrapper & msg_w){}
 
 private:
-    ConnectorStat stat_;
+    ConnectorStat stat_ {0};
 };
 
 
