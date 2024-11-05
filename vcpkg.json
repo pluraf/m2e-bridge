@@ -20,7 +20,14 @@
       "name": "aws-sdk-cpp",
       "default-features": false,
       "features": [
-        "s3"
+        "s3",
+        "sns",
+        "sqs",
+        "eventbridge",
+        "email",
+        "iotevents",
+        "iot",
+        "iot1click-devices"
       ]
     }
   ]
