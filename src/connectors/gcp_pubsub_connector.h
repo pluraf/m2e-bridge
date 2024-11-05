@@ -263,8 +263,8 @@ private:
         AuthBundle ab;
         bool res = db.retrieve_authbundle(authbundle_id_, ab);
         if(res){
-            if(ab.connector_type != ConnectorType::GCP_PUBSUB){
-                throw std::runtime_error("Incompatiable authbundle connector type");
+            if(ab.service_type != ServiceType::GCP){
+                throw std::runtime_error("Incompatiable authbundle service type");
             }
             if(ab.auth_type != AuthType::SERVICE_KEY){
                 throw std::runtime_error("Incompatiable authbundle auth type");

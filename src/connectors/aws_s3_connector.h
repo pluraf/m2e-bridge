@@ -1,9 +1,10 @@
 #ifndef __M2E_BRIDGE_AWS_S3_CONNECTOR_H__
 #define __M2E_BRIDGE_AWS_S3_CONNECTOR_H__
 
+
 #include <string>
 #include <iostream>
-#include <sstream> 
+#include <sstream>
 #include <stdexcept>
 #include <regex>
 
@@ -36,23 +37,22 @@ private:
     bool delete_after_processing_ {false};
 
     Aws::S3::S3Client client_;
-    Aws::Auth::AWSCredentials credentials_;
 
     void parse_authbundle(){
         Database db;
         AuthBundle ab;
         bool res = db.retrieve_authbundle(authbundle_id_, ab);
         if(res){
-            if(ab.connector_type != ConnectorType::AWS_S3){
-                throw std::runtime_error("Incompatiable authbundle connector type\n");
+            if(ab.service_type != ServiceType::AWS){
+                throw std::runtime_error("Incompatiable authbundle service type");
             }
-            if(ab.auth_type != AuthType::PASSWORD){
-                throw std::runtime_error("Incompatiable authbundle auth type\n");
+            if(ab.auth_type != AuthType::ACCESS_KEY){
+                throw std::runtime_error("Incompatiable authbundle auth type");
             }
             access_key_ = ab.username;
             secret_key_ = ab.password;
         }else{
-            throw std::runtime_error("Not able to retreive bundle\n");
+            throw std::runtime_error("Not able to retreive bundle");
         }
     }
 
@@ -64,26 +64,25 @@ public:
             authbundle_id_ = json_descr.at("authbundle_id").get<std::string>();
             parse_authbundle();
         }catch(json::exception){
-            throw std::runtime_error("authbundle_id cannot be null for s3 connector\n");
+            throw std::runtime_error("authbundle_id cannot be null for s3 connector");
         }
 
         try{
             bucket_name_ = json_descr.at("bucket_name").get<std::string>();
         }catch(json::exception){
-            throw std::runtime_error("Bucket name cannot be null for s3 connector\n");
+            throw std::runtime_error("Bucket name cannot be null for s3 connector");
         }
 
         try{
             object_name_template_ = json_descr.at("object_name").get<std::string>();
         }catch(json::exception){
-            throw std::runtime_error("Object name cannot be null for s3 connector\n");
+            throw std::runtime_error("Object name cannot be null for s3 connector");
         }
 
-        if(json_descr.contains("delete_after_processing")){
-            delete_after_processing_ = json_descr.at("delete_after_processing").get<bool>();
+        if(json_descr.contains("delete_received")){
+            delete_after_processing_ = json_descr.at("delete_received").get<bool>();
         }
 
-        Aws::Auth::AWSCredentials credentials_(access_key_.c_str(), secret_key_.c_str());
         auto provider = Aws::MakeShared<Aws::Auth::SimpleAWSCredentialsProvider>
                                         ("S3Connector", access_key_, secret_key_);
 
@@ -93,15 +92,13 @@ public:
 
         std::smatch match;
         std::regex pattern("\\{\\{(.*?)\\}\\}");
-        is_object_template_ = std::regex_search(object_name_template_.cbegin(), 
-                                                object_name_template_.cend(), 
-                                                match, 
+        is_object_template_ = std::regex_search(object_name_template_.cbegin(),
+                                                object_name_template_.cend(),
+                                                match,
                                                 pattern);
     }
 
     void connect()override{
-        std::cout << "Connecting to AWS S3 bucket: " << bucket_name_ << std::endl;
-
         Aws::S3::Model::ListObjectsRequest request;
         request.SetBucket(bucket_name_);
 
@@ -110,24 +107,19 @@ public:
             if(mode_ == ConnectorMode::IN){
                 throw std::runtime_error("Bucket '" + bucket_name_ + "' does not exist!");
             }else{
-                std::cerr << "Bucket not found. Attempting to create it..." << std::endl;
-
                 Aws::S3::Model::CreateBucketRequest create_request;
                 create_request.SetBucket(bucket_name_);
 
                 auto create_outcome = client_.CreateBucket(create_request);
-                if(!create_outcome.IsSuccess()){
-                    std::cerr << "Failed to create bucket: " 
-                            << create_outcome.GetError().GetMessage() << std::endl;
-                    throw std::runtime_error("Error creating bucket: " + 
+                if(! create_outcome.IsSuccess()){
+                    throw std::runtime_error("Error creating bucket: " +
                                              create_outcome.GetError().GetMessage());
                 }else{
-                    std::cout << "Bucket created successfully." << std::endl;
                     outcome = client_.ListObjects(request);
                 }
             }
         }else{
-        std::cout << "Bucket exists. Proceeding with connection..." << std::endl;
+            std::cout << "Bucket exists. Proceeding with connection..." << std::endl;
         }
 
         if(outcome.IsSuccess()){
@@ -150,7 +142,7 @@ public:
         return timestamp;
     }
 
-    std::string derive_object_name(Message & msg){
+    std::string derive_object_name(MessageWrapper & msg_w){
         std::string file_name = object_name_template_;
         std::regex pattern("\\{\\{(.*?)\\}\\}");
 
@@ -160,13 +152,13 @@ public:
         while(regex_search(pos, file_name.cend(), match, pattern)){
             std::string ve = match[1].str();
             if(ve == "topic"){
-                std::string vvalue = msg.get_topic(); 
+                std::string vvalue = msg_w.msg().get_topic();
 
                 vvalue.erase(remove(vvalue.begin(), vvalue.end(), '/'), vvalue.end());
 
                 unsigned int i = (pos - file_name.cbegin());
                 file_name.replace(i + match.position(), match.length(), vvalue);
-                pos = file_name.cbegin() + i + match.position() + vvalue.size(); 
+                pos = file_name.cbegin() + i + match.position() + vvalue.size();
             }else if(ve == "timestamp"){
                 std::string timestamp = generate_timestamp();
 
@@ -174,10 +166,9 @@ public:
                 file_name.replace(i + match.position(), match.length(), timestamp);
                 pos = file_name.cbegin() + i + match.position() + timestamp.size();
             }else{
+                json const & metadata = msg_w.get_metadata();
                 try{
-                    json const& payload = msg.get_raw();
-                    std::string vvalue = payload.at(ve);
-
+                    std::string vvalue = metadata.at(ve);
                     unsigned int i = (pos - file_name.cbegin());
                     file_name.replace(i + match.position(), match.length(), vvalue);
                     pos = file_name.cbegin() + i + match.position() + vvalue.size();
@@ -190,9 +181,9 @@ public:
         return file_name;
     }
 
-    void send(Message & msg)override{
-        std::string file_name = derive_object_name(msg);
-        std::string file_content = msg.get_raw();
+    void do_send(MessageWrapper & msg_w)override{
+        std::string file_name = derive_object_name(msg_w);
+        std::string file_content = msg_w.msg().get_raw();
 
         Aws::S3::Model::PutObjectRequest request;
         request.SetBucket(bucket_name_);
@@ -205,11 +196,9 @@ public:
         if (!outcome.IsSuccess()) {
             throw std::runtime_error("Failed to upload file to S3: " + outcome.GetError().GetMessage());
         }
-
-        std::cout << "File uploaded to AWS S3 as object: " << file_name << std::endl;
     }
 
-    Message receive()override {
+    Message do_receive()override {
         Aws::S3::Model::GetObjectRequest request;
         request.SetBucket(bucket_name_);
         request.SetKey(object_name_template_);
@@ -222,8 +211,6 @@ public:
         std::ostringstream stream;
         stream << outcome.GetResultWithOwnership().GetBody().rdbuf();
         std::string file_content = stream.str();
-
-        std::cout << "Message received from AWS S3: " << file_content << std::endl;
 
         if(delete_after_processing_){
             Aws::S3::Model::DeleteObjectRequest delete_request;

@@ -206,17 +206,17 @@ private:
         AuthBundle ab;
         bool res = db.retrieve_authbundle(authbundle_id_, ab);
         if(res){
-            switch(ab.connector_type){
-                case ConnectorType::MQTT311:
+            switch(ab.service_type){
+                case ServiceType::MQTT311:
                     conn_opts_.set_mqtt_version(MQTTVERSION_3_1_1);
                     mqtt_version_ = MQTTVERSION_3_1_1;
                     break;
-                case ConnectorType::MQTT50:
+                case ServiceType::MQTT50:
                     conn_opts_.set_mqtt_version(MQTTVERSION_5);
                     mqtt_version_ = MQTTVERSION_5;
                     break;
                 default:
-                    throw std::runtime_error("Incompatiable  authbundle connector type");
+                    throw std::runtime_error("Incompatiable authbundle service type");
             }
             std::string token;
             switch(ab.auth_type){

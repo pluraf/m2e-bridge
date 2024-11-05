@@ -65,11 +65,15 @@ public:
     std::string get_last_error() const;
 
     PipelineStat get_statistics()const{
-        PipelineStat stat;
-        stat.last_in = connector_in_->get_statistics().last_in;
-        stat.last_out = connector_out_->get_statistics().last_out;
-        stat.count_in = connector_in_->get_statistics().count_in;
-        stat.count_out = connector_out_->get_statistics().count_out;
+        PipelineStat stat = {};
+        if(connector_in_){
+            stat.last_in = connector_in_->get_statistics().last_in;
+            stat.count_in = connector_in_->get_statistics().count_in;
+        }
+        if(connector_out_){
+            stat.last_out = connector_out_->get_statistics().last_out;
+            stat.count_out = connector_out_->get_statistics().count_out;
+        }
         return stat;
     }
 

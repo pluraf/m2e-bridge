@@ -12,42 +12,32 @@
 
 #include "global_config.h"
 
-enum class ConnectorType{
-    GCP_PUBSUB,
-    GCP_BUCKET,
+enum class ServiceType{
+    GCP,
     MQTT311,
     MQTT50,
     EMAIL,
-    AWS_S3,
+    AWS,
     NONE
 };
 
-ConnectorType get_connector_type(std::string val){
-    if(val == "gcp_pubsub")
-        return ConnectorType::GCP_PUBSUB;
-    else if(val == "gcp_bucket")
-        return ConnectorType::GCP_BUCKET;
-    else if(val == "mqtt311")
-        return ConnectorType::MQTT311;
-    else if(val == "mqtt50")
-        return ConnectorType::MQTT50;
-    else if(val == "email")
-        return ConnectorType::EMAIL;
-    else if(val == "aws_s3")
-        return ConnectorType::AWS_S3;
-    else
-        return ConnectorType::NONE;
+ServiceType get_service_type(string const & val){
+    if(val == "gcp") return ServiceType::GCP;
+    if(val == "mqtt311") return ServiceType::MQTT311;
+    if(val == "mqtt50") return ServiceType::MQTT50;
+    if(val == "email") return ServiceType::EMAIL;
+    if(val == "aws") return ServiceType::AWS;
+    return ServiceType::NONE;
 }
 
-std::string connector_type_to_string(ConnectorType ct){
+std::string service_type_to_string(ServiceType ct){
      switch (ct) {
-        case ConnectorType::GCP_PUBSUB: return "gcp_pubsub";
-        case ConnectorType::GCP_BUCKET: return "gcp_bucket";
-        case ConnectorType::MQTT311: return "mqtt311";
-        case ConnectorType::MQTT50: return "mqtt50";
-        case ConnectorType::EMAIL: return "email";
-        case ConnectorType::AWS_S3: return "aws_s3";
-        case ConnectorType::NONE: return "";
+        case ServiceType::GCP: return "gcp";
+        case ServiceType::MQTT311: return "mqtt311";
+        case ServiceType::MQTT50: return "mqtt50";
+        case ServiceType::EMAIL: return "email";
+        case ServiceType::AWS: return "aws";
+        case ServiceType::NONE: return "";
         default: return "";
     }
 }
@@ -56,6 +46,7 @@ enum class AuthType{
     JWT_ES256,
     PASSWORD,
     SERVICE_KEY,
+    ACCESS_KEY,
     NONE
 };
 
@@ -66,6 +57,8 @@ AuthType get_auth_type(std::string val){
         return AuthType::PASSWORD;
     else if(val == "service_key")
         return AuthType::SERVICE_KEY;
+    else if(val == "access_key")
+        return AuthType::ACCESS_KEY;
     else
         return AuthType::NONE;
 }
@@ -75,6 +68,7 @@ std::string auth_type_to_string(AuthType at){
         case AuthType::JWT_ES256: return "jwt_es256";
         case AuthType::PASSWORD: return "password";
         case AuthType::SERVICE_KEY: return "service_key";
+        case AuthType::ACCESS_KEY: return "access_key";
         case AuthType::NONE: return "";
         default: return "";
     }
@@ -82,7 +76,7 @@ std::string auth_type_to_string(AuthType at){
 
 struct AuthBundle {
     std::string authbundle_id;
-    ConnectorType connector_type;
+    ServiceType service_type;
     AuthType auth_type;
     std::string username;
     std::string password;
@@ -93,7 +87,7 @@ struct AuthBundle {
 
 void print_authbundle(const AuthBundle& bundle) {
     std::cout << "AuthBundle ID: " << bundle.authbundle_id << std::endl;
-    std::cout << "Connector Type: " << connector_type_to_string(bundle.connector_type) << std::endl;
+    std::cout << "Service Type: " << service_type_to_string(bundle.service_type) << std::endl;
     std::cout << "Auth Type: " << auth_type_to_string(bundle.auth_type) << std::endl;
     std::cout << "Username: " << bundle.username << std::endl;
     std::cout << "Password: " << bundle.password << std::endl;
@@ -114,11 +108,11 @@ public:
         db_ = nullptr;
     }
 
-    bool retrieve_authbundle(std::string authbundle_id, AuthBundle& authbundle) {
+    bool retrieve_authbundle(std::string authbundle_id, AuthBundle & authbundle) {
         open_db(SQLITE_OPEN_READONLY);
         sqlite3_stmt* stmt;
         int res;
-        const char * sql = R"(SELECT authbundle_id, connector_type,
+        const char * sql = R"(SELECT authbundle_id, service_type,
                     auth_type, username, password,
                     keyname, description, keydata
                     FROM authbundles WHERE authbundle_id = ?;)";
@@ -140,7 +134,7 @@ public:
         // Execute the query
         if (sqlite3_step(stmt) == SQLITE_ROW) {
             authbundle.authbundle_id = get_string(sqlite3_column_text(stmt, 0));
-            authbundle.connector_type = get_connector_type(get_string(sqlite3_column_text(stmt, 1)));
+            authbundle.service_type = get_service_type(get_string(sqlite3_column_text(stmt, 1)));
             authbundle.auth_type = get_auth_type(get_string(sqlite3_column_text(stmt, 2)));
             authbundle.username = get_string(sqlite3_column_text(stmt, 3));
             authbundle.password = get_string(sqlite3_column_text(stmt, 4));
@@ -188,5 +182,6 @@ private:
 
 
 };
+
 
 #endif  // __M2E_BRIDGE_DATABASE_H__

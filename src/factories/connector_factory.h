@@ -4,13 +4,15 @@
 #include <iostream>
 #include <string>
 
+#include "aws_sdk_manager.h"
+
 #include "connectors/mqtt_connector.h"
 #include "connectors/gcp_pubsub_connector.h"
 #include "connectors/email_connector.h"
 #include "connectors/internal_connector.h"
 #include "connectors/gcp_bucket_connector.h"
 #include "connectors/aws_s3_connector.h"
-#include "connectors/aws_sdk_manager.h"
+
 
 
 class ConnectorFactory{
@@ -32,7 +34,7 @@ public:
             AwsSdkManager::Instance();
             return new S3Connector(pipeid, mode, config);
         }else{
-            return new Connector(pipeid, mode, config);
+            throw std::invalid_argument(fmt::format("Unknown Connector type [ {} ]", conn_type));
         }
     }
 };
