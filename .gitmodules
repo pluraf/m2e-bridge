@@ -1,4 +1,4 @@
 [submodule "paho.mqtt.cpp"]
 	path = external/paho.mqtt.cpp
-	url = git@github.com:pluraf/paho.mqtt.cpp.git
+	url = https://github.com/pluraf/paho.mqtt.cpp.git
 	branch = main
