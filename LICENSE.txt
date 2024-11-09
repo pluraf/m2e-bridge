@@ -1,6 +1,6 @@
-/* SPDX-License-Identifier: MIT */
+SPDX-License-Identifier: MIT
 
-/*
+
 Copyright (c) 2024 Pluraf Embedded AB <code@pluraf.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -20,40 +20,3 @@ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 IN THE SOFTWARE.
-*/
-
-
-#ifndef __M2E_BRIDGE_ALIASES_H__
-#define __M2E_BRIDGE_ALIASES_H__
-
-
-#include <vector>
-#include <string>
-#include <map>
-#include <set>
-#include <sstream>
-#include <iostream>
-#include <chrono>
-#include <ctime>
-
-#include <nlohmann/json.hpp>
-
-
-namespace chrono = std::chrono;
-
-using json = nlohmann::json;
-using ordered_json = nlohmann::ordered_json;
-
-using std::string;
-using std::vector;
-using std::map;
-using std::set;
-using std::stringstream;
-using std::pair;
-using std::time_t;
-
-
-typedef pair<string,string> hops_t;
-
-
-#endif  // __M2E_BRIDGE_ALIASES_H__
