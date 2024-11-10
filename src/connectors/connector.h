@@ -31,7 +31,6 @@ IN THE SOFTWARE.
 #include <string>
 
 #include "m2e_message/message_wrapper.h"
-#include "route.h"
 
 
 enum class ConnectorMode {
