@@ -177,6 +177,18 @@ public:
 
         // Enable TLS
         curl_easy_setopt(curl, CURLOPT_USE_SSL, CURLUSESSL_ALL);
+
+        // Set timeout
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
+        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 5L);
+
+        CURLcode res = curl_easy_perform(curl);
+
+        if(res != CURLE_OK) {
+            std::cerr << "Connection failed: " << curl_easy_strerror(res) << std::endl;
+        }else{
+            std::cout << "Connection success" << std::endl;
+        }
     }
 
     void do_send(MessageWrapper & msg_w)override{
