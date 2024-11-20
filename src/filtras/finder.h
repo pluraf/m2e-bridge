@@ -95,7 +95,7 @@ public:
     }
 
     bool find_in_keys(MessageWrapper & msg_w){
-        if(decoder_ == MessageFormat::JSON){
+        if(msg_format_ == MessageFormat::JSON){
             json const & j_payload = msg_w.msg().get_json();
             for(auto const & key : keys_){
                 if(! j_payload.contains(key)){
@@ -108,7 +108,7 @@ public:
     }
 
     bool find_in_value(MessageWrapper & msg_w){
-        if(decoder_ == MessageFormat::JSON){
+        if(msg_format_ == MessageFormat::JSON){
             json const & j_payload = msg_w.msg().get_json();
             if(j_payload.contains(value_key_)){
                 return find_in_string(j_payload[value_key_]);

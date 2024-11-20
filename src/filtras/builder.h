@@ -38,7 +38,7 @@ public:
     }
 
     string process_message(MessageWrapper &msg_w)override{
-        if(encoder_ == MessageFormat::JSON){
+        if(msg_format_ == MessageFormat::JSON){
             msg_w.msg().get_json() = payload_;
         }else{
             throw std::runtime_error("Builder: Unknown encoder type");

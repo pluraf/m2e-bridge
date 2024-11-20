@@ -30,6 +30,7 @@ pkg_check_modules(ZeroMQ REQUIRED libzmq)
 find_package(CURL REQUIRED)
 find_package(aws-cpp-sdk-core CONFIG REQUIRED)
 find_package(aws-cpp-sdk-s3 CONFIG REQUIRED)
+find_package(Poco REQUIRED Foundation)
 
 find_path(JWT_CPP_INCLUDE_DIRS "jwt-cpp/jwt.h"
             PATH_SUFFIXES include
@@ -51,6 +52,7 @@ target_link_libraries(m2e-bridge PRIVATE ${ZeroMQ_LIBRARIES})
 target_link_libraries(m2e-bridge PRIVATE CURL::libcurl)
 target_link_libraries(m2e-bridge PRIVATE aws-cpp-sdk-core)
 target_link_libraries(m2e-bridge PRIVATE aws-cpp-sdk-s3)
+target_link_libraries(m2e-bridge PRIVATE Poco::Foundation)
 
 target_include_directories(m2e-bridge PRIVATE ${JWT_CPP_INCLUDE_DIRS})
 

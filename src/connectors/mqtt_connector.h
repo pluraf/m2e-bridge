@@ -33,10 +33,11 @@ IN THE SOFTWARE.
 #include <stdexcept>
 #include <random>
 #include <regex>
+
 #include <fmt/core.h>
 #include <jwt-cpp/jwt.h>
-
 #include "mqtt/async_client.h"
+#include "Poco/String.h"
 
 #include "connector.h"
 #include "database.h"
@@ -85,7 +86,6 @@ class ActionListener : public virtual mqtt::iaction_listener
     }
 
     void on_success(const mqtt::token& tok) override {
-        std::cout << name_ << " success";
         if (tok.get_message_id() != 0)
             std::cout << " for token: [" << tok.get_message_id() << "]" << std::endl;
         auto top = tok.get_topics();
@@ -103,31 +103,48 @@ class MqttConnector: public Connector{
 public:
     MqttConnector(std::string pipeid, ConnectorMode mode, json const & json_descr):
             Connector(pipeid, mode, json_descr){
+        // server
         try{
             server_ = json_descr.at("server").get<string>();
         }catch(json::exception){
-            throw std::runtime_error("Server url cannot be null for mqtt connector");
+            server_ = "mqtt://127.0.0.1:1884";
         }
+        // version
+        try{
+            auto version = Poco::trim(json_descr.at("version").get<string>());
+            if(version == "5"){
+                mqtt_version_ = MQTTVERSION_5;
+            }else if(version == "3.11"){
+                mqtt_version_ = MQTTVERSION_3_1_1;
+            }
+        }catch(json::exception){
+            mqtt_version_ = MQTTVERSION_5;
+        }
+        // topic
         try{
             topic_template_ = json_descr.at("topic").get<string>();
         }catch(json::exception){
            throw std::runtime_error("Topic cannot be null for mqtt connector");
         }
+        // client_id
         try{
             client_id_ = json_descr.at("client_id").get<string>();
         }catch(json::exception){
             client_id_ = generate_random_id(10);
         }
+        // retry_attempts
         try{
             n_retry_attempts_ = json_descr.at("retry_attempts").get<int>();
         }catch(json::exception){
             n_retry_attempts_ = N_RETRY_ATTEMPTS;
         }
+        // qos
         try{
             qos_ = json_descr.at("qos").get<int>();
         }catch(json::exception){
             qos_ = QOS;
         }
+        // authbundle_id
         try{
             authbundle_id_ = json_descr.at("authbundle_id").get<string>();
         }catch(json::exception){
@@ -136,12 +153,15 @@ public:
 
         std::smatch match;
         std::regex pattern("\\{\\{(.*?)\\}\\}");
-        is_topic_template_ = std::regex_search(topic_template_.cbegin(), topic_template_.cend(), match, pattern);
+        is_topic_template_ = std::regex_search(
+            topic_template_.cbegin(), topic_template_.cend(), match, pattern
+        );
     }
 
     void connect()override{
         msg_queue_ = std::make_unique<mqtt::thread_queue<mqtt::message>>(1000);
         conn_opts_.set_clean_session(false);
+        conn_opts_.set_mqtt_version(mqtt_version_);
         if( !authbundle_id_.empty()){
             parse_authbundle();
         }
@@ -231,18 +251,6 @@ private:
         AuthBundle ab;
         bool res = db.retrieve_authbundle(authbundle_id_, ab);
         if(res){
-            switch(ab.service_type){
-                case ServiceType::MQTT311:
-                    conn_opts_.set_mqtt_version(MQTTVERSION_3_1_1);
-                    mqtt_version_ = MQTTVERSION_3_1_1;
-                    break;
-                case ServiceType::MQTT50:
-                    conn_opts_.set_mqtt_version(MQTTVERSION_5);
-                    mqtt_version_ = MQTTVERSION_5;
-                    break;
-                default:
-                    throw std::runtime_error("Incompatiable authbundle service type");
-            }
             std::string token;
             switch(ab.auth_type){
                 case AuthType::PASSWORD:
@@ -262,11 +270,11 @@ private:
                     conn_opts_.set_password(token);
                     break;
                 default:
-                    throw std::runtime_error("Incompatiable  authbundle auth type");
+                    throw std::runtime_error("Incompatiable authbundle auth type!");
             }
         }
         else{
-            throw std::runtime_error("Not able to retreive bundle");
+            throw std::runtime_error("Not able to retreive authbundle!");
         }
     }
 
@@ -282,7 +290,7 @@ private:
     std::unique_ptr<mqtt::thread_queue<mqtt::message>> msg_queue_;
     std::unique_ptr<Callback> callback_ptr_;
     string authbundle_id_;
-    int mqtt_version_ = MQTTVERSION_3_1_1;
+    int mqtt_version_ = MQTTVERSION_5;
 
 private:
     class Callback : public virtual mqtt::callback, public virtual mqtt::iaction_listener{

@@ -4,6 +4,22 @@
   "description": "M2E Bridge",
   "dependencies": [
     {
+      "name": "aws-sdk-cpp",
+      "default-features": false,
+      "features": [
+        "email",
+        "eventbridge",
+        "iot",
+        "iot1click-devices",
+        "iotevents",
+        "s3",
+        "sns",
+        "sqs"
+      ]
+    },
+    "civetweb",
+    "fmt",
+    {
       "name": "google-cloud-cpp",
       "default-features": false,
       "features": [
@@ -11,24 +27,9 @@
         "storage"
       ]
     },
-    "nlohmann-json",
-    "civetweb",
     "jwt-cpp",
+    "nlohmann-json",
     "sqlite3",
-    "fmt",
-    {
-      "name": "aws-sdk-cpp",
-      "default-features": false,
-      "features": [
-        "s3",
-        "sns",
-        "sqs",
-        "eventbridge",
-        "email",
-        "iotevents",
-        "iot",
-        "iot1click-devices"
-      ]
-    }
+    "poco"
   ]
 }

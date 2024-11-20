@@ -38,18 +38,11 @@ public:
     Filtra(PipelineIface const & pipeline, json const & config):name_(){
         name_ = config.value("name", "");
 
-        std::string const & decoder = config.value("decoder", "raw");
-        if(decoder == "json"){
-            decoder_ = MessageFormat::JSON;
-        }else if(decoder == "raw"){
-            decoder_ = MessageFormat::RAW;
-        }
-
-        std::string const & encoder = config.value("encoder", "raw");
-        if(encoder == "json"){
-            encoder_ = MessageFormat::JSON;
-        }else if(encoder == "raw"){
-            encoder_ = MessageFormat::RAW;
+        std::string const & msg_format = config.value("msg_format", "raw");
+        if(msg_format == "json"){
+            msg_format_ = MessageFormat::JSON;
+        }else if(msg_format == "raw"){
+            msg_format_ = MessageFormat::RAW;
         }
 
         logical_negation_ = config.value("logical_negation", false);
@@ -83,8 +76,7 @@ protected:
     virtual string process_message(MessageWrapper &msg_w) = 0;
     virtual Message generate_message(){return Message();}
 
-    MessageFormat decoder_ {MessageFormat::UNKN};
-    MessageFormat encoder_ {MessageFormat::UNKN};
+    MessageFormat msg_format_ {MessageFormat::UNKN};
     bool logical_negation_ {false};
     vector<string> queue_ids_;
 

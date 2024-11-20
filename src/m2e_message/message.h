@@ -41,7 +41,6 @@ public:
 
     Message(string const & data, string const & topic){
         is_serialized_ = true;
-        is_deserialized_ = false;
         msg_raw_ = data;
         msg_topic_ = topic;
         is_valid_ = true;
@@ -49,7 +48,6 @@ public:
 
     Message(json const & j_data, string const & topic, MessageFormat format){
         is_serialized_ = false;
-        is_deserialized_ = true;
         decoded_json_ = j_data;
         msg_topic_ = topic;
         format_ = format;
@@ -73,20 +71,10 @@ public:
     }
 
     json & get_json(){
-        if(format_ == MessageFormat::UNKN){
-            throw std::runtime_error("Decoder is already set to a different type");
-        }
-
-        if(! is_deserialized_){
-            if(format_ == MessageFormat::JSON){
-                decoded_json_ = json::parse(msg_raw_);
-            }else if(format_ == MessageFormat::CBOR){
-                decoded_json_ = json::from_cbor(msg_raw_);
-            }else{
-                throw std::logic_error("Message can not be represented as JSON");
-            }
-            is_deserialized_ = true;
-            is_serialized_ = false;
+        if(is_serialized_){
+           decoded_json_ = json::parse(msg_raw_);
+           is_serialized_ = false;
+           format_ = MessageFormat::JSON;
         }
         return decoded_json_;
     }
@@ -116,7 +104,6 @@ private:
     std::string msg_topic_;
     mutable json decoded_json_;
     mutable bool is_serialized_ {false};
-    mutable bool is_deserialized_ {false};
     mutable std::vector<std::string> topic_levels_;
     string empty_level_ {""};
     MessageFormat format_ {MessageFormat::UNKN};
