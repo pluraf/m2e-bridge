@@ -112,10 +112,9 @@ public:
             allowed_params = allowed_params_mqtt;
             allowed_params_size = sizeof(allowed_params_mqtt) / sizeof(allowed_params_mqtt[0]);
 
-            if(!connector.contains("topic") || !connector["topic"].is_string() ||
-               !connector.contains("server") || !connector["server"].is_string()) {
+            if(! connector.contains("topic") || ! connector["topic"].is_string()) {
                 return false;
-               }
+            }
         }else if(type == "gcp_pubsub") {
             allowed_params = allowed_params_gcp_pubsub;
             allowed_params_size = sizeof(allowed_params_gcp_pubsub) / sizeof(allowed_params_gcp_pubsub[0]);
