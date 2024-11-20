@@ -54,7 +54,7 @@ public:
         }else if(conn_type == "queue"){
             return new InternalConnector(pipeid, mode, config);
         }else if(conn_type == "gcp_bucket"){
-            return new gcp::CloudStorageConnector(pipeid, mode, config);
+            return new CloudStorageConnector(pipeid, mode, config);
         }else if(conn_type == "aws_s3"){
             AwsSdkManager::Instance();
             return new S3Connector(pipeid, mode, config);

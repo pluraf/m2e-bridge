@@ -44,8 +44,6 @@ IN THE SOFTWARE.
 #include "database.h"
 
 
-namespace gcp {
-
 namespace gcloud = ::google::cloud;
 
 
@@ -254,7 +252,6 @@ public:
             throw std::runtime_error("Error pulling messages from gcp storage");
         }
     }
-};
 };
 
 
