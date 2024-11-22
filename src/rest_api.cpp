@@ -80,7 +80,7 @@ public:
             if(parse_request_body(conn, pipeline_data) != 0){
                 mg_send_http_error(conn, 400, "Could not parse request!");
             }else{
-                if(!gc.validate_pipeline_data(pipeline_data)){
+                if(! gc.validate_pipeline_data(pipeline_data)){
                     mg_send_http_error(conn, 422, "Invalid pipeline configuration!");
                 }
                 else{

@@ -212,6 +212,7 @@ void Pipeline::process(Message const & msg, int filtra_ix){
         }else{
             if(! hops.second.empty()){
                 filtra_ix = find_filtra_index(hops.second);
+                msg_w.pass(); // let message to flow forward
             }else{
                 break;
             }
