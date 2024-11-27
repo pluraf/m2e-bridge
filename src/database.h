@@ -133,6 +133,54 @@ public:
         db_ = nullptr;
     }
 
+    bool insert_authbundle(const AuthBundle& authbundle) {
+        open_db(SQLITE_OPEN_READWRITE);
+        const char* sql = R"(INSERT INTO authbundles (authbundle_id, service_type, auth_type, username, password, keyname, description, keydata)
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?);)";
+        sqlite3_stmt* stmt;
+        int res = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
+        if (res != SQLITE_OK) {
+            std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db_) << std::endl;
+            close_db();
+            return false;
+        }
+
+        std::string service_type_str = service_type_to_string(authbundle.service_type);
+        std::string auth_type_str = auth_type_to_string(authbundle.auth_type);
+
+        sqlite3_bind_text(stmt, 1, authbundle.authbundle_id.c_str(), -1, nullptr);
+        sqlite3_bind_text(stmt, 2, service_type_str.c_str(), -1, nullptr);
+        sqlite3_bind_text(stmt, 3, auth_type_str.c_str(), -1, nullptr);
+        sqlite3_bind_text(stmt, 4, authbundle.username.c_str(), -1, nullptr);
+        sqlite3_bind_text(stmt, 5, authbundle.password.c_str(), -1, nullptr);
+        sqlite3_bind_text(stmt, 6, authbundle.keyname.c_str(), -1, nullptr);
+        sqlite3_bind_text(stmt, 7, authbundle.description.c_str(), -1, nullptr);
+        sqlite3_bind_blob(stmt, 8, authbundle.keydata.data(), authbundle.keydata.size(), nullptr);
+
+        res = sqlite3_step(stmt);
+        sqlite3_finalize(stmt);
+        close_db();
+        return res == SQLITE_DONE;
+    }
+
+    bool delete_authbundle(const std::string& authbundle_id) {
+        open_db(SQLITE_OPEN_READWRITE);
+        const char* sql = "DELETE FROM authbundles WHERE authbundle_id = ?;";
+        sqlite3_stmt* stmt;
+        int res = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
+        if (res != SQLITE_OK) {
+            std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db_) << std::endl;
+            close_db();
+            return false;
+        }
+        sqlite3_bind_text(stmt, 1, authbundle_id.c_str(), -1, nullptr);
+
+        res = sqlite3_step(stmt);
+        sqlite3_finalize(stmt);
+        close_db();
+        return res == SQLITE_DONE;
+    }
+
     bool retrieve_authbundle(std::string authbundle_id, AuthBundle & authbundle) {
         open_db(SQLITE_OPEN_READONLY);
         sqlite3_stmt* stmt;
