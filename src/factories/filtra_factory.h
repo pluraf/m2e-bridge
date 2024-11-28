@@ -37,6 +37,7 @@ IN THE SOFTWARE.
 #include "filtras/splitter.h"
 #include "filtras/limiter.h"
 #include "filtras/nop.h"
+#include "filtras/throttle.h"
 
 
 class FiltraFactory {
@@ -56,6 +57,8 @@ public:
             return new LimiterFT(pi, json_descr);
         }else if(json_descr["type"] == "nop"){
             return new NopFT(pi, json_descr);
+        }else if(json_descr["type"] == "throttle"){
+            return new ThrottleFT(pi, json_descr);
         }else{
             throw std::invalid_argument("Unknown filtra");
         }
