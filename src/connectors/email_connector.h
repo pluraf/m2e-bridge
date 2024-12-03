@@ -42,6 +42,7 @@ const int  SMTP_PORT = 587;  //Default SMTP port 587
 
 
 class EmailConnector: public Connector {
+    friend class EmailConnectorTests;
 private:
     std::string smtp_server_;
     std::string to_;
