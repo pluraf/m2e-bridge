@@ -10,3 +10,4 @@
 #include "filtras/test_limiter.h"
 #include "filtras/test_nop.h"
 #include "filtras/test_splitter.h"
+#include "filtras/test_throttle.h"
