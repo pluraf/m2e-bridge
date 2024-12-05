@@ -147,7 +147,7 @@ public:
                             mg_send_http_ok(conn, "text/plain", 0);
                         }
                     }catch(std::invalid_argument const & e){
-                            mg_send_http_error(conn, 404, "%s", e.what());
+                        mg_send_http_error(conn, 404, "%s", e.what());
                     }
                 }
             }
@@ -159,27 +159,24 @@ public:
 
     bool handleDelete(CivetServer * server, struct mg_connection * conn)override{
         std::vector<std::string> pipeline_ids;
+        const struct mg_request_info * req_info = mg_get_request_info(conn);
         PipelineSupervisor * ps = PipelineSupervisor::get_instance();
-        if(parse_pipeline_ids(conn, pipeline_ids) != 0){
-            mg_send_http_error(conn, 400, "Could not parse request!");
-        }else{
-            // TODO: Write changes to the disk in the end of the loop
-            json deleted;
-            deleted["deleted"] = json::array();
-            for(const auto &pipeid : pipeline_ids){
-                try{
-                    if(!ps->delete_pipeline(pipeid)) {
-                        mg_send_http_error(conn, 500, "Failed to delete pipeline!");
-                        return true;
-                    }
-                    deleted["deleted"].push_back(pipeid);
-                }catch(std::invalid_argument){
-                    continue;
+
+        const char * last_segment = strrchr(req_info->request_uri, '/');
+        if(last_segment && strlen(last_segment) > 1){
+            char const * pipeid = last_segment + 1;
+            try{
+                if(! ps->delete_pipeline(pipeid)){
+                    mg_send_http_error(conn, 500, "Failed to delete pipeline!");
+                    return true;
                 }
+            }catch(std::invalid_argument){
+                mg_send_http_error(conn, 404, "");
+                return true;
             }
-            std::string serialized = deleted.dump();
-            mg_send_http_ok(conn, "application/json", serialized.size());
-            mg_write(conn, serialized.c_str(), serialized.size());
+            mg_send_http_ok(conn, "plain/text", 0);
+        }else{
+            mg_send_http_error(conn, 400, "Pipeline ID is missing in URI");
         }
         return true;
     }
