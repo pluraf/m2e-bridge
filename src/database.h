@@ -43,6 +43,7 @@ enum class ServiceType{
     MQTT50,
     EMAIL,
     AWS,
+    AZURE,
     NONE
 };
 
@@ -52,6 +53,7 @@ ServiceType get_service_type(string const & val){
     if(val == "mqtt50") return ServiceType::MQTT50;
     if(val == "email") return ServiceType::EMAIL;
     if(val == "aws") return ServiceType::AWS;
+    if(val == "azure") return ServiceType::AZURE;
     return ServiceType::NONE;
 }
 
@@ -62,6 +64,7 @@ std::string service_type_to_string(ServiceType ct){
         case ServiceType::MQTT50: return "mqtt50";
         case ServiceType::EMAIL: return "email";
         case ServiceType::AWS: return "aws";
+        case ServiceType::AZURE: return "azure";
         case ServiceType::NONE: return "";
         default: return "";
     }

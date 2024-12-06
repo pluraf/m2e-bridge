@@ -37,6 +37,7 @@ IN THE SOFTWARE.
 #include "connectors/internal_connector.h"
 #include "connectors/gcp_bucket_connector.h"
 #include "connectors/aws_s3_connector.h"
+#include "connectors/azure_service_bus_connector.h"
 
 
 
@@ -58,6 +59,8 @@ public:
         }else if(conn_type == "aws_s3"){
             AwsSdkManager::Instance();
             return new S3Connector(pipeid, mode, config);
+        }else if(conn_type == "azure"){
+            return new ServiceBusConnector(pipeid, mode, config);
         }else{
             throw std::invalid_argument(fmt::format("Unknown Connector type [ {} ]", conn_type));
         }
