@@ -27,8 +27,6 @@ IN THE SOFTWARE.
 #define __M2E_BRIDGE_THROTTLE_FT_H__
 
 
-#include <chrono>
-
 #include "filtra.h"
 
 
@@ -37,20 +35,12 @@ public:
     ThrottleFT(PipelineIface const & pi, json const & json_descr):Filtra(pi, json_descr){
         rate_ = json_descr["rate"];
         delay_ms_ = 1000/rate_;
-        first_msg_ = true; 
     }
 
     string process_message(MessageWrapper &msg_w)override{
-        auto now = std::chrono::steady_clock::now();
+        auto now = chrono::steady_clock::now();
 
-        if(first_msg_){
-            last_msg_time_ = now;
-            first_msg_ = false;
-            msg_w.pass();
-            return "";
-        }
-
-        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_msg_time_).count();
+        auto elapsed = chrono::duration_cast<std::chrono::milliseconds>(now - last_msg_time_).count();
 
         if(elapsed >= delay_ms_){
             last_msg_time_ = now;
@@ -63,10 +53,9 @@ public:
     }
 
 private:
-    int rate_;  // Per seconds
-    int delay_ms_;
-    std::chrono::steady_clock::time_point last_msg_time_;
-    bool first_msg_;
+    double rate_;  // Per seconds
+    double delay_ms_;
+    chrono::steady_clock::time_point last_msg_time_ {};
 };
 
 
