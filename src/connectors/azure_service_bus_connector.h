@@ -27,25 +27,26 @@ IN THE SOFTWARE.
 #define __M2E_BRIDGE_AZURE_SERVICE_BUS_CONNECTOR_H__
 
 
-
 #include <iostream>
 #include <string>
 #include <map>
 #include <atomic>
 #include <stdexcept>
 #include <regex>
-
 #include <iomanip>
+
 #include <openssl/hmac.h>
 #include <openssl/evp.h>
 #include <curl/curl.h>
+
+#include <Poco/Base64Encoder.h>
+#include <Poco/URI.h>
 
 #include "connector.h"
 #include "database.h"
 
 
-
-class ServiceBusConnector: public Connector{
+class ServiceBusConnector:public Connector{
 private:
     std::string authbundle_id_;
     std::string connection_string_;
@@ -78,7 +79,7 @@ private:
             }
             connection_string_ = ab.password;
         }else{
-            throw std::runtime_error("Not able to retreive bundle");
+            throw std::runtime_error("Not able to retrieve authbundle");
         }
     }
 
@@ -108,39 +109,18 @@ private:
         }
     }
 
-    std::string base64_encode(const unsigned char *input, int length){
-        static const char table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-        std::string encoded;
-        for(int i = 0; i < length; i += 3){
-            int value = 0;
-            for(int j = i; j < i + 3; ++j){
-                value <<= 8;
-                if(j < length) value |= input[j];
-            }
-            for(int j = 0; j < 4; ++j){
-                if(i * 8 + j * 6 < length * 8){
-                    encoded.push_back(table[(value >> (18 - j * 6)) & 0x3F]);
-                }else{
-                    encoded.push_back('=');
-                }
-            }
-        }
-        return encoded;
+    std::string base64_encode(unsigned const char * input, int length){
+        std::stringstream ss;
+        Poco::Base64Encoder encoder(ss);
+        encoder.write(reinterpret_cast<char const *>(input), length);
+        encoder.close();
+        return ss.str();
     }
 
-    std::string url_encode(const std::string &value){
-        std::ostringstream escaped;
-        escaped.fill('0');
-        escaped << std::hex;
-
-        for(char c : value){
-            if(isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~'){
-                escaped << c;
-            }else{
-                escaped << '%' << std::uppercase << std::setw(2) << int((unsigned char)c) << std::nouppercase;
-            }
-        }
-        return escaped.str();
+    string url_encode(string const & value){
+        string encoded;
+        Poco::URI::encode(value, "", encoded);
+        return encoded;
     }
 
     std::string generate_sas_token(const std::string& resource_uri){
@@ -179,7 +159,6 @@ private:
         ((std::string*)userp)->append((char*)contents, size * nmemb);
         return size * nmemb;
     }
-
 
 public:
     ServiceBusConnector(std::string pipeid, ConnectorMode mode, json const & json_descr):
@@ -252,93 +231,77 @@ public:
     }
 
     void do_send(MessageWrapper & msg_w)override{
-        try{
-            std::string payload = msg_w.msg().get_raw();
-            std::string content_type = "text/plain; charset=utf-8";
+        std::string payload = msg_w.msg().get_raw();
+        std::string content_type = "text/plain; charset=utf-8";
 
-            // Set CURL options
-            curl_easy_setopt(curl_, CURLOPT_URL, (resource_uri_ + "/messages").c_str());
-            curl_easy_setopt(curl_, CURLOPT_POST, 1L);
-            curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, payload.c_str());
+        // Set CURL options
+        curl_easy_setopt(curl_, CURLOPT_URL, (resource_uri_ + "/messages").c_str());
+        curl_easy_setopt(curl_, CURLOPT_POST, 1L);
+        curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, payload.c_str());
 
-            // Set headers
-            struct curl_slist* headers = nullptr;
-            refresh_sas_token();
-            std::cout << "sas token: " << sas_token_ << std::endl;
-            headers = curl_slist_append(headers, ("Authorization: " + sas_token_).c_str());
-            headers = curl_slist_append(headers, ("Content-Type: " +  content_type).c_str());
-            curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, headers);
+        // Set headers
+        struct curl_slist* headers = nullptr;
+        refresh_sas_token();
+        headers = curl_slist_append(headers, ("Authorization: " + sas_token_).c_str());
+        headers = curl_slist_append(headers, ("Content-Type: " +  content_type).c_str());
+        curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, headers);
 
-            // Perform the request
-            res_ = curl_easy_perform(curl_);
-            if(res_ != CURLE_OK){
-                throw std::runtime_error(curl_easy_strerror(res_));
-            }else{
-                // Clean up
-                curl_slist_free_all(headers);
-
-                std::cout << "Message sent successfully: " << payload << std::endl;
-            }
-        }catch(const std::exception& e){
-            std::cerr << "Error sending message: " << e.what() << std::endl;
+        // Perform the request
+        res_ = curl_easy_perform(curl_);
+        if(res_ != CURLE_OK){
+            throw std::runtime_error(curl_easy_strerror(res_));
+        }else{
+            curl_slist_free_all(headers);  // Clean up
         }
     }
 
     Message do_receive()override{
-        try{
-            std::string receive_url = resource_uri_;
-            if(is_topic_){
-                receive_url += "/subscriptions/" + subscription_name_ + "/messages/head?api-version=2013-08";
-            }else{
-                receive_url += "/messages/head?api-version=2013-08";
-            }
-           // Set CURL options
+        std::string receive_url = resource_uri_;
+        if(is_topic_){
+            receive_url += "/subscriptions/" + subscription_name_ + "/messages/head?api-version=2013-08";
+        }else{
+            receive_url += "/messages/head?api-version=2013-08";
+        }
+        // Set CURL options
+        curl_easy_setopt(curl_, CURLOPT_URL, receive_url.c_str());
+        curl_easy_setopt(curl_, CURLOPT_HTTPGET, 1L);
+
+        // Set headers
+        struct curl_slist* headers = nullptr;
+        refresh_sas_token();
+        headers = curl_slist_append(headers, ("Authorization: " + sas_token_).c_str());
+        curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, headers);
+
+        // Store the response
+        std::string response;
+        curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, write_callback);
+        curl_easy_setopt(curl_, CURLOPT_WRITEDATA, &response);
+
+        // Perform the request
+        res_ = curl_easy_perform(curl_);
+        if(res_ != CURLE_OK){
+            throw std::runtime_error(curl_easy_strerror(res_));
+        }
+
+        if(response.empty()){
+            throw std::out_of_range("No messages");
+        }
+
+        if(delete_after_processing_){
             curl_easy_setopt(curl_, CURLOPT_URL, receive_url.c_str());
-            curl_easy_setopt(curl_, CURLOPT_HTTPGET, 1L);
+            curl_easy_setopt(curl_, CURLOPT_CUSTOMREQUEST, "DELETE");
 
-            // Set headers
-            struct curl_slist* headers = nullptr;
-            refresh_sas_token();
-            headers = curl_slist_append(headers, ("Authorization: " + sas_token_).c_str());
             curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, headers);
-
-            // Store the response
-            std::string response;
-            curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, write_callback);
-            curl_easy_setopt(curl_, CURLOPT_WRITEDATA, &response);
-
-            // Perform the request
             res_ = curl_easy_perform(curl_);
             if(res_ != CURLE_OK){
                 throw std::runtime_error(curl_easy_strerror(res_));
             }
-
-            if(response.empty()){
-                throw std::out_of_range("No messages");
-            }
-
-            std::cout << "Received message " << response << std::endl;
-
-            if(delete_after_processing_){
-                curl_easy_setopt(curl_, CURLOPT_URL, receive_url.c_str());
-                curl_easy_setopt(curl_, CURLOPT_CUSTOMREQUEST, "DELETE");
-
-                curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, headers);
-                res_ = curl_easy_perform(curl_);
-                if(res_ != CURLE_OK){
-                    throw std::runtime_error(curl_easy_strerror(res_));
-                }
-            }
-
-            // Clean up
-            curl_slist_free_all(headers);
-
-            return Message(response, entity_path_);
-
-        }catch(const std::exception& e){
-            std::cerr << "Error receiving message: " << e.what() << std::endl;
-            throw std::runtime_error("Error pulling messages from azure service bus");
         }
+
+        // Clean up
+        curl_slist_free_all(headers);
+
+        return Message(response, entity_path_);
     }
 
     void disconnect()override{
@@ -347,7 +310,6 @@ public:
         }
     }
 };
-
 
 
 #endif  // __M2E_BRIDGE_AZURE_SERVICE_BUS_CONNECTOR_H__

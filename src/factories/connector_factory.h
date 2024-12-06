@@ -59,7 +59,7 @@ public:
         }else if(conn_type == "aws_s3"){
             AwsSdkManager::Instance();
             return new S3Connector(pipeid, mode, config);
-        }else if(conn_type == "azure"){
+        }else if(conn_type == "azure_sbc"){
             return new ServiceBusConnector(pipeid, mode, config);
         }else{
             throw std::invalid_argument(fmt::format("Unknown Connector type [ {} ]", conn_type));
