@@ -56,6 +56,49 @@ target_link_libraries(m2e-bridge PRIVATE Poco::Foundation)
 
 target_include_directories(m2e-bridge PRIVATE ${JWT_CPP_INCLUDE_DIRS})
 
+
+option(ENABLE_TESTS OFF)
+message(STATUS "ENABLE_TESTS is set to ${ENABLE_TESTS}")
+
+if(ENABLE_TESTS)
+    include(FetchContent)
+    FetchContent_Declare(
+        Catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG        v3.4.0
+    )
+    FetchContent_MakeAvailable(Catch2)
+
+    file(GLOB_RECURSE TESTS_HEASERS "tests/*.h")
+
+    add_executable(tests ./tests/test.cpp ${MQTT_SOURCES})
+
+    target_include_directories(tests PRIVATE ${CMAKE_SOURCE_DIR}/src)
+    target_include_directories(tests PRIVATE ${JWT_CPP_INCLUDE_DIRS})
+
+    target_link_libraries(tests PRIVATE 
+        Catch2::Catch2WithMain
+        nlohmann_json::nlohmann_json
+        google-cloud-cpp::pubsub
+        google-cloud-cpp::storage
+        civetweb::civetweb-cpp
+        OpenSSL::SSL
+        OpenSSL::Crypto
+        SQLite::SQLite3
+        fmt::fmt
+        CURL::libcurl
+        aws-cpp-sdk-core
+        aws-cpp-sdk-s3
+        ${ZeroMQ_LIBRARIES}
+        Poco::Foundation
+        "${CMAKE_SOURCE_DIR}/external/paho.mqtt.cpp/externals/paho-mqtt-c/build/src/libpaho-mqtt3as.a"
+        "${CMAKE_SOURCE_DIR}/external/paho.mqtt.cpp/externals/paho-mqtt-c/build/src/libpaho-mqtt3cs.a"
+    )
+
+    enable_testing()
+    add_test(NAME Tests COMMAND tests)
+endif()
+
 #target_link_libraries(MyProject PRIVATE fmt::fmt)
 
 #set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
