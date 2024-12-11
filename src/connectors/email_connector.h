@@ -32,6 +32,7 @@ IN THE SOFTWARE.
 #include <memory>
 #include <iostream>
 #include <vector>
+#include <regex>
 
 #include <curl/curl.h>
 
@@ -53,6 +54,9 @@ private:
     std::string username_;  // Email address to send mail from
     std::string password_;  // Password for pluraf mail address
     std::string authbundle_id_;
+
+    std::string subject_;
+    bool search_ = false;
 
     CURL * curl;
     CURLcode res = CURLE_OK;
@@ -97,9 +101,31 @@ private:
 
     static size_t write_callback(void *ptr, size_t size, size_t nmemb, void *userp){
         std::string *data = static_cast<std::string*>(userp);
-        data->append(static_cast<char*>(ptr), size * nmemb);
+        const char *incoming_data = static_cast<char*>(ptr);
+        size_t total_size = size * nmemb;
 
-        return size * nmemb;
+        data->append(incoming_data, total_size);
+
+        return total_size;
+    }
+
+    std::string extract_uid(const std::string data){
+        std::regex number_regex(R"(\d+)");
+        std::sregex_iterator begin(data.begin(), data.end(), number_regex), end;
+        std::vector<std::string> uids;
+
+        for(auto it = begin; it != end; ++it){
+            uids.push_back(it->str());
+        }
+
+        if(uids.empty()){
+            throw std::runtime_error("No mail found with this subject");
+        }
+
+        auto max_uid = std::max_element(uids.begin(), uids.end(), [](const std::string& a, const std::string& b){
+                                        return std::stoul(a) < std::stoul(b);
+                                    });
+        return *max_uid;
     }
 
 public:
@@ -142,9 +168,14 @@ public:
             }catch(json::exception){
                 imap_port_ = IMAP_PORT;
             }
-        }else{
-            throw std::runtime_error("Unsupported connector mode!");
-        }
+
+            if(json_descr.contains("subject")){
+                search_ = true;
+                subject_ = json_descr.at("subject").get<std::string>();
+            }
+            }else{
+                throw std::runtime_error("Unsupported connector mode!");
+            }
     }
 
     void send_email(const std::string& subject, const std::string& body) {
@@ -160,7 +191,7 @@ public:
         };
         upload_ctx.email_content = &email_content;
 
-        if(curl) {
+        if(curl){
             struct curl_slist* recipients = nullptr;
 
             curl_easy_setopt(curl, CURLOPT_MAIL_FROM, ("<" + username_ + ">").c_str());
@@ -173,7 +204,7 @@ public:
 
             res = curl_easy_perform(curl);
 
-            if(res != CURLE_OK) {
+            if(res != CURLE_OK){
                 std::cerr << curl_easy_strerror(res) << std::endl;
             }else{
                 std::cout << "Email sent successfully" << std::endl;
@@ -193,7 +224,7 @@ public:
         if(mode_ == ConnectorMode::OUT){
             url = "smtp://" + smtp_server_ + ":" + std::to_string(smtp_port_);
         }else{
-            url = "imaps://" + imap_server_ + ":" + std::to_string(imap_port_) + "/INBOX/;UID=*/;SECTION=TEXT";
+            url = "imaps://" + imap_server_ + ":" + std::to_string(imap_port_) + "/INBOX";
         }
 
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
@@ -207,7 +238,7 @@ public:
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
         curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 5L);
 
-        CURLcode res = curl_easy_perform(curl);
+        res = curl_easy_perform(curl);
 
         if(res != CURLE_OK) {
             std::cerr << "Connection failed: " << curl_easy_strerror(res) << std::endl;
@@ -225,6 +256,36 @@ public:
 
     Message do_receive()override{
         std::string email_data;
+        std::string url;
+
+        if(search_){
+            std::string search_data;
+            std::string search_command = "UID SEARCH SUBJECT \"" + subject_ + "\"";
+
+            curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, search_command.c_str());
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &search_data);
+
+            res = curl_easy_perform(curl);
+            if(res != CURLE_OK){
+                throw std::runtime_error("Search failed: " + std::string(curl_easy_strerror(res)));
+            }
+
+            if(search_data.empty()){
+                throw std::runtime_error("No emails found matching the subject");
+            }
+
+            std::string uid = extract_uid(search_data);
+            url = "imaps://" + imap_server_ + ":" + std::to_string(imap_port_) +
+                  "/INBOX/;UID=" + uid + "/;SECTION=TEXT";
+
+            curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, nullptr);
+        }else{
+            url = "imaps://" + imap_server_ + ":" + std::to_string(imap_port_) +
+                  "/INBOX/;UID=*/;SECTION=TEXT";
+        }
+
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &email_data);
 
