@@ -112,14 +112,16 @@ private:
     std::string base64_encode(unsigned const char * input, int length){
         std::stringstream ss;
         Poco::Base64Encoder encoder(ss);
+        encoder.rdbuf()->setLineLength(0);
         encoder.write(reinterpret_cast<char const *>(input), length);
         encoder.close();
+
         return ss.str();
     }
 
     string url_encode(string const & value){
-        string encoded;
-        Poco::URI::encode(value, "", encoded);
+        std::string encoded;
+        Poco::URI::encode(value, "=", encoded);
         return encoded;
     }
 
