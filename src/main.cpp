@@ -30,6 +30,7 @@ IN THE SOFTWARE.
 #include <atomic>
 #include <csignal>
 #include <fmt/core.h>
+#include <curl/curl.h>
 
 #include "m2e_aliases.h"
 #include "pipeline.h"
@@ -66,6 +67,11 @@ int main(int argc, char* argv[]){
         return 1;
     }
 
+    if (curl_global_init(CURL_GLOBAL_DEFAULT) != 0) {
+        std::cerr << "Failed to initialize libcurl!\n";
+        return 1;
+    }
+
     PipelineSupervisor *ps = PipelineSupervisor::get_instance();
     ps->start_all();
 
@@ -82,6 +88,8 @@ int main(int argc, char* argv[]){
     gs.notify_exit();
 
     ps->terminate_all();
+
+    curl_global_cleanup();
 
     stop_server(server);
 

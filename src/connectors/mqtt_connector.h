@@ -171,7 +171,7 @@ public:
         // Install the callback(s) before connecting.
         callback_ptr_ = std::make_unique<Callback>(this);
         client_ptr_->set_callback(* callback_ptr_);
-        client_ptr_->connect(conn_opts_, nullptr, * callback_ptr_);
+        client_ptr_->connect(conn_opts_, nullptr, * callback_ptr_)->wait();
     }
 
     void disconnect()override{

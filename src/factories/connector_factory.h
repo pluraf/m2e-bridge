@@ -37,9 +37,8 @@ IN THE SOFTWARE.
 #include "connectors/internal_connector.h"
 #include "connectors/gcp_bucket_connector.h"
 #include "connectors/aws_s3_connector.h"
+#include "connectors/http_connector.h"
 #include "connectors/azure_service_bus_connector.h"
-
-
 
 class ConnectorFactory{
 public:
@@ -59,6 +58,8 @@ public:
         }else if(conn_type == "aws_s3"){
             AwsSdkManager::Instance();
             return new S3Connector(pipeid, mode, config);
+        }else if(conn_type == "http"){
+            return new HttpConnector(pipeid, mode, config);
         }else if(conn_type == "azure_sbc"){
             return new ServiceBusConnector(pipeid, mode, config);
         }else{

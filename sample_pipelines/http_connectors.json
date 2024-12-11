@@ -1,0 +1,106 @@
+{
+   "httpost-httpget":{
+    "connector_in": {
+        "type": "http",
+        "url": "http://127.0.0.1:8000/",
+        "request_freq_limit":6,
+        "https_verify_cert": false,
+        "method": "GET"
+    },
+      "filtras":[],
+      "connector_out": {
+        "type": "http",
+        "url": "http://127.0.0.1:8000/items/?item_id=1",
+        "method": "POST",
+        "payload": {
+            "name": "item1",
+            "price": 10
+        }
+    }
+  },
+   "httpget-mqtt":{
+    "connector_in": {
+        "type": "http",
+        "url": "http://127.0.0.1:8000/",
+        "request_freq_limit":6,
+        "https_verify_cert": false,
+        "method": "GET"
+    },
+      "filtras":[],
+      "connector_out":{
+        "type":"mqtt",
+        "topic":"/topic2",
+        "server":"mqtt://localhost:1884",
+        "client_id":"xyz"
+      
+    }
+  },
+  "mqtt-httpget":{
+    "connector_in":{
+        "type":"mqtt",
+        "topic":"/topic1",
+        "server":"mqtt://localhost:1884"
+      
+    },
+      "filtras":[],
+    
+    "connector_out": {
+        "type": "http",
+        "url": "http://127.0.0.1:8000/items/5",
+        "https_verify_cert": false,
+        "method": "GET"
+    }
+  },
+  "mqtt-httppost":{
+    "connector_in":{
+        "type":"mqtt",
+        "topic":"/topic1",
+        "server":"mqtt://localhost:1884"
+      
+    },
+      "filtras":[],
+    
+    "connector_out": {
+        "type": "http",
+        "url": "http://127.0.0.1:8000/items/?item_id=1",
+        "method": "POST",
+        "payload": {
+            "name": "item1",
+            "price": 10
+        }
+    }
+  },
+  "mqtt-httpput":{
+    "connector_in":{
+        "type":"mqtt",
+        "topic":"/topic1",
+        "server":"mqtt://localhost:1884"
+      
+    },
+      "filtras":[],
+    
+    "connector_out": {
+        "type": "http",
+        "url": "http://127.0.0.1:8000/items/1",
+        "method": "PUT",
+        "payload": {
+            "name": "item1",
+            "price": 100
+        }
+    }
+  },
+  "mqtt-httpdelete":{
+    "connector_in":{
+        "type":"mqtt",
+        "topic":"/topic1",
+        "server":"mqtt://localhost:1884"
+    },
+      "filtras":[],
+    
+    "connector_out": {
+        "type": "http",
+        "url": "http://127.0.0.1:8000/items/2",
+        "method": "DELETE"
+    }
+  }
+}
