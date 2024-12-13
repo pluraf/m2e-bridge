@@ -29,7 +29,7 @@ IN THE SOFTWARE.
 #include <curl/curl.h>
 #include <string>
 #include <regex>
-#include <thread> 
+#include <thread>
 #include <chrono>
 
 #include <curl/curl.h>
@@ -116,7 +116,7 @@ private:
                 std::string credentials = ab.username + ":" + ab.password;
                 std::string encoded_credentials = base64_encode(credentials);
                 header_["Authorization"]= "Basic "+ encoded_credentials;
-                
+
             }else if(ab.auth_type == AuthType::BEARER){
                 header_["Authorization"]= "Bearer "+ ab.password;
             }else{
@@ -158,7 +158,7 @@ private:
         else{
             curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
         }
-        
+
         struct curl_slist* headers = nullptr;
         for (auto it = header_.begin(); it != header_.end(); ++it) {
             if (!it.value().is_string()){
@@ -185,7 +185,7 @@ private:
         if (headers) {
             curl_slist_free_all(headers);
         }
-        
+
         return response;
     }
 
@@ -276,7 +276,7 @@ public:
         if(curl) {
             curl_easy_cleanup(curl);
         }
-    }    
+    }
 
     void do_send(MessageWrapper & msg_w)override{
         HttpResponse response = send_request();
@@ -296,4 +296,48 @@ public:
         return Message(response.resp_str, "http");
     }
 };
-#endif
+
+
+nlohmann::json http_connector_schema_ = {
+    "http", {
+        {"type", {
+            {"type", "string"},
+            {"enum", {"http"}},
+            {"required", true}
+        }},
+        {"authbundle_id", {
+            {"type", "string"},
+            {"required", true}
+        }},
+        {"url", {
+            {"type", "string"},
+            {"required", true}
+        }},
+        {"https_verify_cert", {
+            {"type", "boolean"},
+            {"default", true},
+            {"required", false}
+        }},
+        {"method", {
+            {"type", "string"},
+            {"required", true}
+        }},
+        {"header", {
+            {"type", "string"},
+            {"required", false}
+        }},
+        {"payload", {
+            {"type", "string"},
+            {"default", ""},
+            {"required", false}
+        }},
+        {"request_freq_limit", {
+            {"type", "integer"},
+            {"default", 0},
+            {"required", false}
+        }}
+    }
+};
+
+
+#endif  // __M2E_BRIDGE_HTTP_CONNECTOR_H__

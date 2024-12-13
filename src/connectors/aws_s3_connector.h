@@ -256,4 +256,32 @@ public:
 };
 
 
+nlohmann::json aws_s3_connector_schema_ = {
+    "aws_s3", {
+        {"type", {
+            {"type", "string"},
+            {"enum", {"aws_s3"}},
+            {"required", true}
+        }},
+        {"authbundle_id", {
+            {"type", "string"},
+            {"required", true}
+        }},
+        {"bucket_name", {
+            {"type", "string"},
+            {"required", true}
+        }},
+        {"object_name", {
+            {"type", "string"},
+            {"required", true}
+        }},
+        {"delete_received", {
+            {"type", "boolean"},
+            {"default", false},
+            {"required", false}
+        }}
+    }
+};
+
+
 #endif

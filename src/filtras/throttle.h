@@ -59,4 +59,59 @@ private:
 };
 
 
+nlohmann::json throttle_filtra_schema_ = {
+    "throttle", {
+        {"type", {
+            {"type", "string"},
+            {"enum", {"throttle"}},
+            {"required", true}
+        }},
+        {"name", {
+            {"type", "string"},
+            {"default", ""},
+            {"required", false}
+        }},
+        {"msg_format", {
+            {"type", "string"},
+            {"enum", {"json", "raw"}},
+            {"default", "raw"},
+            {"required", false}
+        }},
+        {"logical_negation", {
+            {"type", "boolean"},
+            {"default", false},
+            {"required", false}
+        }},
+        {"queues", {
+            {"type", "array"},
+            {"items", {{"type", "string"}}},
+            {"required", false}
+        }},
+        {"metadata", {
+            {"type", "object"},
+            {"required", false}
+        }},
+        {"goto", {
+            {"type", "string"},
+            {"default", ""},
+            {"required", false}
+        }},
+        {"goto_passed", {
+            {"type", "string"},
+            {"default", ""},
+            {"required", false}
+        }},
+        {"goto_rejected", {
+            {"type", "string"},
+            {"default", ""},
+            {"required", false}
+        }},
+        {"rate", {
+            {"type", "integer"},
+            {"required", true}
+        }}
+    }
+};
+
+
 #endif  // __M2E_BRIDGE_THROTTLE_FT_H__

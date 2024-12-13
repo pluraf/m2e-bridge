@@ -85,7 +85,7 @@ public:
             authbundle_id_ = json_descr.at("authbundle_id").get<std::string>();
             parse_authbundle();
         }catch(json::exception){
-            throw std::runtime_error("authbundle_id cannot be null for bucket connector\n");
+            throw std::runtime_error("authbundle_id cannot be null for bucket connector");
         }
 
         try{
@@ -97,13 +97,13 @@ public:
         try{
             bucket_name_ = json_descr.at("bucket_name").get<std::string>();
         }catch(json::exception){
-            throw std::runtime_error("Bucket name cannot be null for bucket connector\n");
+            throw std::runtime_error("Bucket name cannot be null for bucket connector");
         }
 
         try{
             object_name_template_ = json_descr.at("object_name").get<std::string>();
         }catch(json::exception){
-            throw std::runtime_error("Object name cannot be null for bucket connector_out\n");
+            throw std::runtime_error("Object name cannot be null for bucket connector");
         }
 
         if(json_descr.contains("delete_after_processing")){
@@ -255,4 +255,35 @@ public:
 };
 
 
-#endif
+nlohmann::json gcp_bucket_connector_schema_ = {
+    "gcp_bucket", {
+        {"type", {
+            {"type", "string"},
+            {"enum", {"gcp_bucket"}},
+            {"required", true}
+        }},
+        {"authbundle_id", {
+            {"type", "string"},
+            {"required", true}
+        }},
+        {"project_id", {
+            {"type", "string"},
+            {"required", true}
+        }},
+        {"bucket_name", {
+            {"type", "string"},
+            {"required", true}
+        }},
+        {"object_name", {
+            {"type", "string"},
+            {"required", true}
+        }},
+        {"delete_after_processing", {
+            {"type", "boolean"},
+            {"required", false}
+        }}
+    }
+};
+
+
+#endif  // __M2E_BRIDGE_GCP_BUCKET_CONNECTOR_H__

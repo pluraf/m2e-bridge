@@ -414,3 +414,40 @@ void Pipeline::schedule_event(std::chrono::milliseconds msec){
         this->pipeline_event_.notify_one();
     }).detach();
 }
+
+
+nlohmann::json get_schemas(){
+    return {
+        {"connectors", {
+            mqtt_connector_schema_,
+            gcp_pubsub_connector_schema_,
+            email_connector_schema_,
+            internal_connector_schema_,
+            gcp_bucket_connector_schema_,
+            aws_s3_connector_schema_,
+            http_connector_schema_,
+            service_bus_connector_schema_,
+        }},
+        {"filtras", {
+            comparator_filtra_schema_,
+            finder_filtra_schema_,
+            eraser_filtra_schema_,
+            builder_filtra_schema_,
+            splitter_filtra_schema_,
+            limiter_filtra_schema_,
+            nop_filtra_schema_,
+            throttle_filtra_schema_,
+        }}
+    };
+}
+
+nlohmann::json get_schema_by_type(const std::string& type){
+    nlohmann::json pipeline_components = get_schemas();
+    if(pipeline_components["connectors"].contains(type)){
+        return pipeline_components["conectors"][type];
+    }else if(pipeline_components["filtras"].contains(type)){
+        return pipeline_components["filtras"][type];
+    }else{
+        throw std::runtime_error("Unknown type");
+    }
+}

@@ -127,4 +127,74 @@ private:
 };
 
 
+nlohmann::json finder_filtra_schema_ = {
+    "finder", {
+        {"type", {
+            {"type", "string"},
+            {"enum", {"finder"}},
+            {"required", true}
+        }},
+        {"name", {
+            {"type", "string"},
+            {"default", ""},
+            {"required", false}
+        }},
+        {"msg_format", {
+            {"type", "string"},
+            {"enum", {"json", "raw"}},
+            {"default", "raw"},
+            {"required", false}
+        }},
+        {"logical_negation", {
+            {"type", "boolean"},
+            {"default", false},
+            {"required", false}
+        }},
+        {"queues", {
+            {"type", "array"},
+            {"items", {{"type", "string"}}},
+            {"required", false}
+        }},
+        {"metadata", {
+            {"type", "object"},
+            {"required", false}
+        }},
+        {"goto", {
+            {"type", "string"},
+            {"default", ""},
+            {"required", false}
+        }},
+        {"goto_passed", {
+            {"type", "string"},
+            {"default", ""},
+            {"required", false}
+        }},
+        {"goto_rejected", {
+            {"type", "string"},
+            {"default", ""},
+            {"required", false}
+        }},
+        {"operator", {
+            {"type", "string"},
+            {"enum", {"contain", "contained", "match"}},
+            {"default", "match"},
+            {"required", true}
+        }},
+        {"string", {
+            {"type", "string"},
+            {"required", false}
+        }},
+        {"keys", {
+            {"type", "array"},
+            {"items", {{"type", "string"}}},
+            {"required", false}
+        }},
+        {"value_key", {
+            {"type", "string"},
+            {"required", false}
+        }}
+    }
+};
+
+
 #endif  // __M2E_BRIDGE_FINDER_FT_H__

@@ -161,4 +161,8 @@ private:
 };
 
 
+nlohmann::json get_schemas();
+nlohmann::json get_schema_by_type(const std::string& type);
+
+
 #endif

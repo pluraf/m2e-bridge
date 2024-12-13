@@ -305,4 +305,35 @@ private:
 };
 
 
-#endif
+nlohmann::json gcp_pubsub_connector_schema_ = {
+    "gcp_pubsub", {
+        {"type", {
+            {"type", "string"},
+            {"enum", {"gcp_pubsub"}},
+            {"required", true}
+        }},
+        {"authbundle_id", {
+            {"type", "string"},
+            {"required", true}
+        }},
+        {"project_id", {
+            {"type", "string"},
+            {"required", true}
+        }},
+        {"subscription_id", {
+            {"type", "string"},
+            {"required", false}
+        }},
+        {"topic_id", {
+            {"type", "string"},
+            {"required", {{"in", false}, {"out", true}}}
+        }},
+        {"attributes", {
+            {"type", "string"},
+            {"required", false}
+        }}
+    }
+};  // Either subscription_id or topic_is should be present for in mode
+
+
+#endif  // __M2E_BRIDGE_GCP_PUBSUB_CONNECTOR_H__

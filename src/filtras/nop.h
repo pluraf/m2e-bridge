@@ -40,4 +40,55 @@ public:
 };
 
 
+nlohmann::json nop_filtra_schema_ = {
+    "nop", {
+        {"type", {
+            {"type", "string"},
+            {"enum", {"nop"}},
+            {"required", true}
+        }},
+        {"name", {
+            {"type", "string"},
+            {"default", ""},
+            {"required", false}
+        }},
+        {"msg_format", {
+            {"type", "string"},
+            {"enum", {"json", "raw"}},
+            {"default", "raw"},
+            {"required", false}
+        }},
+        {"logical_negation", {
+            {"type", "boolean"},
+            {"default", false},
+            {"required", false}
+        }},
+        {"queues", {
+            {"type", "array"},
+            {"items", {{"type", "string"}}},
+            {"required", false}
+        }},
+        {"metadata", {
+            {"type", "object"},
+            {"required", false}
+        }},
+        {"goto", {
+            {"type", "string"},
+            {"default", ""},
+            {"required", false}
+        }},
+        {"goto_passed", {
+            {"type", "string"},
+            {"default", ""},
+            {"required", false}
+        }},
+        {"goto_rejected", {
+            {"type", "string"},
+            {"default", ""},
+            {"required", false}
+        }}
+    }
+};
+
+
 #endif  // __M2E_BRIDGE_NOP_FT_H__

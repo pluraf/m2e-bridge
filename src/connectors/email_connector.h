@@ -306,4 +306,47 @@ public:
     }
 };
 
-#endif
+
+nlohmann::json email_connector_schema_ = {
+    "email", {
+        {"type", {
+            {"type", "string"},
+            {"enum", {"email"}},
+            {"required", true}
+        }},
+        {"authbundle_id", {
+            {"type", "string"},
+            {"required", true}
+        }},
+        {"address", {
+            {"type", "string"},
+            {"required", true}
+        }},
+        {"smtp_server", {
+            {"type", "string"},
+            {"required", {{"in", false}, {"out", true}}}
+        }},
+        {"smtp_port", {
+            {"type", "integer"},
+            {"default", 587},
+            {"required", false}
+        }},
+        {"imap_server", {
+            {"type", "string"},
+            {"required", {{"in", true}, {"out", false}}}
+        }},
+        {"imap_port", {
+            {"type", "integer"},
+            {"default", 993},
+            {"required", false}
+        }},
+        {"subject", {
+            {"type", "string"},
+            {"required", false}
+        }},
+    }
+};
+
+
+
+#endif  // __M2E_BRIDGE_EMAIL_CONNECTOR_H__

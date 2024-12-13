@@ -363,4 +363,48 @@ private:
 };
 
 
+nlohmann::json mqtt_connector_schema_ = {
+    "mqtt", {
+        {"type", {
+            {"type", "string"},
+            {"enum", {"mqtt"}},
+            {"required", true}
+        }},
+        {"authbundle_id", {
+            {"type", "string"},
+            {"required", true}
+        }},
+        {"server", {
+            {"type", "string"},
+            {"default", "mqtt://127.0.0.1:1884"},
+            {"required", false}
+        }},
+        {"version", {
+            {"type", "string"},
+            {"enum", {"5", "3.11"}},
+            {"default", "5"},
+            {"required", false}
+        }},
+        {"topic", {
+            {"type", "string"},
+            {"required", true}
+        }},
+        {"client_id", {
+            {"type", "string"},
+            {"required", false}
+        }},
+        {"retry_attempts", {
+            {"type", "integer"},
+            {"default", 10},
+            {"required", false}
+        }},
+        {"qos", {
+            {"type", "integer"},
+            {"default", 1},
+            {"required", false}
+        }}
+    }
+};
+
+
 #endif  // __M2E_BRIDGE_MQTT_CONNECTOR_H__

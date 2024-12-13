@@ -67,4 +67,23 @@ private:
 };
 
 
+nlohmann::json internal_connector_schema_ = {
+    "queue", {
+        {"type", {
+            {"type", "string"},
+            {"enum", {"queue"}},
+            {"required", true}
+        }},
+        {"authbundle_id", {
+            {"type", "string"},
+            {"required", true}
+        }},
+        {"name", {
+            {"type", "string"},
+            {"required", true}
+        }}
+    }
+};
+
+
 #endif  // __M2E_BRIDGE_INTERNAL_CONNECTOR_H__

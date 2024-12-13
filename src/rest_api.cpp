@@ -271,6 +271,24 @@ class PipelineControlApiHandler:public CivetHandler{
 };
 
 
+class PipelineComponentsApiHandler:public CivetHandler{
+    bool handleGet(CivetServer * server, struct mg_connection * conn)override{
+        std::string response;
+        const struct mg_request_info * req_info = mg_get_request_info(conn);
+
+        try{
+            nlohmann::json pipeline_components = get_schemas();
+            response = pipeline_components.dump(4);
+        }catch(json::exception const & e){
+                mg_send_http_error(conn, 404, "");
+        }
+
+        mg_send_http_ok(conn, "application/json", response.size());
+        mg_write(conn, response.c_str(), response.size());
+        return true;
+    }
+};
+
 CivetServer* start_server(){
     static std::string public_key = load_public_key(gc.get_jwt_public_key_path());
 
@@ -286,6 +304,7 @@ CivetServer* start_server(){
     server->addHandler("/pipeline/config/", new PipelineConfigApiHandler());
     server->addHandler("/pipeline/status/", new PipelineStatusApiHandler());
     server->addHandler("/pipeline/control/", new PipelineControlApiHandler());
+    server->addHandler("/pipeline/pipeline_components/", new PipelineComponentsApiHandler());
 
     return server;
 }
