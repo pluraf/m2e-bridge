@@ -41,6 +41,8 @@ IN THE SOFTWARE.
 enum class ZmqRequest{
     API_VERSION,
     STATUS,
+    SET_API_AUTH_ON,
+    SET_API_AUTH_OFF,
     NONE
 };
 
@@ -50,6 +52,10 @@ inline ZmqRequest zmq_request_from_string(std::string request){
         return ZmqRequest::API_VERSION;
     }else if(request == "status"){
         return ZmqRequest::STATUS;
+    }else if(request == "set_api_auth_on"){
+        return ZmqRequest::SET_API_AUTH_ON;
+    }else if(request == "set_api_auth_off"){
+        return ZmqRequest::SET_API_AUTH_OFF;
     }else{
         return ZmqRequest::NONE;
     }

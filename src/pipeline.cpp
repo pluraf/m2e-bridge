@@ -321,7 +321,7 @@ void Pipeline::execute_start(){
     if(state_ != PipelineState::STOPPED){
         return;
     }
-
+    last_error_ = "";
     is_active_ = true;
 
     sending_thread_ = new std::thread(& Pipeline::run_sending, this);

@@ -52,8 +52,13 @@ public:
         return pipelines_;
     }
 
-    bool get_auth_on(){
-        return config_.value("auth_on", true);
+    bool get_api_authorization(){
+        return config_.value("api_authorization", true);
+    }
+
+    bool set_api_authorization(bool value){
+        config_["api_authorization"] = value;
+        return true;
     }
 
     bool add_pipeline(const std::string &pipeid, const json &pipelineData) {

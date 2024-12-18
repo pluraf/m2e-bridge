@@ -42,12 +42,12 @@ IN THE SOFTWARE.
 
 class AuthHandler:public CivetAuthHandler{
 public:
-    AuthHandler(std::string* public_key, bool allow_anonymous){
+    AuthHandler(std::string* public_key){
         public_key_ = public_key;
-        allow_anonymous_ = allow_anonymous;
     }
 
     bool authorize(CivetServer *server, struct mg_connection *conn) override {
+        allow_anonymous_ = ! gc.get_api_authorization();
         if(allow_anonymous_) return 1;
 
         const char* auth_token = mg_get_header(conn, "Authorization");
@@ -282,7 +282,7 @@ CivetServer* start_server(){
 
     CivetServer* server = new CivetServer(options);
 
-    server->addAuthHandler("/**", new AuthHandler(&public_key, ! gc.get_auth_on()));
+    server->addAuthHandler("/**", new AuthHandler(&public_key));
     server->addHandler("/pipeline/config/", new PipelineConfigApiHandler());
     server->addHandler("/pipeline/status/", new PipelineStatusApiHandler());
     server->addHandler("/pipeline/control/", new PipelineControlApiHandler());

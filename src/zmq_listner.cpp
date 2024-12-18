@@ -24,6 +24,7 @@ IN THE SOFTWARE.
 
 
 #include "zmq_listner.h"
+#include "global_config.h"
 
 
 //Initialize static member to null
@@ -91,6 +92,21 @@ std::string ZmqListner::get_response(ZmqRequest req){
             return M2E_BRIDGE_VERSION;
         case ZmqRequest::STATUS:
             return "running";
+        case ZmqRequest::SET_API_AUTH_OFF:
+            if(gc.set_api_authorization(false)){
+                return "ok";
+            }
+            else{
+                return "fail";
+            }
+            
+        case ZmqRequest::SET_API_AUTH_ON:
+            if(gc.set_api_authorization(true)){
+                return "ok";
+            }
+            else{
+                return "fail";
+            }
         default:
             return "Hello from m2e-bridge";
     }
