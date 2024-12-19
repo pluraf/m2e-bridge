@@ -58,6 +58,16 @@ public:
 
     bool set_api_authorization(bool value){
         config_["api_authorization"] = value;
+        return save_config();
+    }
+
+    bool save_config(){
+        std::ofstream ofs(config_path_);
+        if(! ofs.is_open()) {
+            return false;
+        }
+        ofs << config_.dump(4);
+        ofs.close();
         return true;
     }
 
@@ -168,6 +178,7 @@ public:
     }
 
     void load(std::string const & config_path){
+        config_path_ = config_path;
         // Load main config
         std::ifstream file(config_path);
         if(! file){
@@ -202,6 +213,7 @@ private:
     json config_;
     ordered_json pipelines_;
     std::string authbundles_db_path_;
+    std::string config_path_;
 };
 
 
