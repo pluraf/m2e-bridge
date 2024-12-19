@@ -304,7 +304,7 @@ CivetServer* start_server(){
     server->addHandler("/pipeline/config/", new PipelineConfigApiHandler());
     server->addHandler("/pipeline/status/", new PipelineStatusApiHandler());
     server->addHandler("/pipeline/control/", new PipelineControlApiHandler());
-    server->addHandler("/pipeline/pipeline_components/", new PipelineComponentsApiHandler());
+    server->addHandler("/pipeline/schema/", new PipelineComponentsApiHandler());
 
     return server;
 }
