@@ -59,7 +59,7 @@ private:
 };
 
 
-nlohmann::json throttle_filtra_schema_ = {
+json throttle_filtra_schema_ = {
     "throttle", {
         {"type", {
             {"type", "string"},

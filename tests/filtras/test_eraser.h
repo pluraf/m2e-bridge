@@ -10,17 +10,17 @@
 TEST_CASE("EraserFT", "[eraser_filtra]"){
     MockPipeline mock_pi;
 
-    nlohmann::json filtras = {
+    json filtras = {
         {"type", "eraser"},
         {"msg_format", "json"},
         {"keys", {"temp", "hum", "moi"}},
         {"goto_passed", "out"}
     };
 
-    nlohmann::json keys = filtras.at("keys");
+    json keys = filtras.at("keys");
     vector<string> v_keys = vector<string>(keys.begin(), keys.end());
 
-    nlohmann::json initial_msg = {{"value1", "value2", "temp", "hum"}};
+    json initial_msg = {{"value1", "value2", "temp", "hum"}};
     Message msg(initial_msg.dump(), "/topc/test", MessageFormat::JSON);
     MessageWrapper msg_w(msg);
 

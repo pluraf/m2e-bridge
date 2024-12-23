@@ -66,7 +66,7 @@ TEST_CASE("ConnectorF", "[connector_factory]"){
             {"qos", 1},
             {"retry_attempts", 5},
             {"authbundle_id", "e3ad4683b2394c5498321c85e71f1d70"}
-        }), 
+        }),
         std::make_tuple("gcp_pubsub", nlohmann::json{
             {"type", "gcp_pubsub"},
             {"authbundle_id", "95b0bfe15c05408c91ce6933ea85d904"},
@@ -134,7 +134,7 @@ TEST_CASE("ConnectorF", "[connector_factory]"){
 
 
     SECTION("email"){
-        nlohmann::json email_config = {{"type", "email"},
+        json email_config = {{"type", "email"},
                                        {"smtp_server", "smtp.test.com"},
                                        {"to", "mock@pluraf.com"},
                                        {"authbundle_id", "test_email"}

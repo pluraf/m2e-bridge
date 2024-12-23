@@ -49,7 +49,7 @@ public:
     }
 
     static void run_tests_with_correct_credentials(){
-        nlohmann::json config = {
+        json config = {
             {"type", "email"},
             {"to", "mock_recipient@smtp.com"},
             {"authbundle_id", "test_t"},
@@ -107,7 +107,7 @@ public:
     }
 
     static void run_tests_with_wrong_credentials(){
-        nlohmann::json config = {
+        json config = {
             {"type", "email"},
             {"to", "recipient@smtp.com"},
             {"authbundle_id", "test_f"},

@@ -363,7 +363,7 @@ private:
 };
 
 
-nlohmann::json mqtt_connector_schema_ = {
+json mqtt_connector_schema_ = {
     "mqtt", {
         {"type", {
             {"type", "string"},

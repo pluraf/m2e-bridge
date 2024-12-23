@@ -256,7 +256,7 @@ public:
 };
 
 
-nlohmann::json aws_s3_connector_schema_ = {
+json aws_s3_connector_schema_ = {
     "aws_s3", {
         {"type", {
             {"type", "string"},

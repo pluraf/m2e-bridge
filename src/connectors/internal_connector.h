@@ -67,7 +67,7 @@ private:
 };
 
 
-nlohmann::json internal_connector_schema_ = {
+json internal_connector_schema_ = {
     "queue", {
         {"type", {
             {"type", "string"},

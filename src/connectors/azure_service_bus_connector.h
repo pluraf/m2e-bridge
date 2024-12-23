@@ -314,7 +314,7 @@ public:
 };
 
 
-nlohmann::json service_bus_connector_schema_ = {
+json service_bus_connector_schema_ = {
     "azure_sbc", {
         {"type", {
             {"type", "string"},

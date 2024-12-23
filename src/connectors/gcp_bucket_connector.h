@@ -255,7 +255,7 @@ public:
 };
 
 
-nlohmann::json gcp_bucket_connector_schema_ = {
+json gcp_bucket_connector_schema_ = {
     "gcp_bucket", {
         {"type", {
             {"type", "string"},

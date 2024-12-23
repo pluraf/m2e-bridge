@@ -127,7 +127,7 @@ private:
 };
 
 
-nlohmann::json finder_filtra_schema_ = {
+json finder_filtra_schema_ = {
     "finder", {
         {"type", {
             {"type", "string"},

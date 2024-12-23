@@ -40,7 +40,7 @@ public:
 };
 
 
-nlohmann::json nop_filtra_schema_ = {
+json nop_filtra_schema_ = {
     "nop", {
         {"type", {
             {"type", "string"},

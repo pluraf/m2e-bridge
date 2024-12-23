@@ -10,7 +10,7 @@
 TEST_CASE("LimiterFT", "[limiter_filtra]"){
     MockPipeline mock_pi;
 
-    nlohmann::json filtras = {
+    json filtras = {
         {"type", "limiter"},
         {"encoder", "json"},
         {"decoder", "json"},
@@ -20,7 +20,7 @@ TEST_CASE("LimiterFT", "[limiter_filtra]"){
 
     unsigned long size = filtras.at("size");
 
-    nlohmann::json initial_msg = {"value1", 2, 3, "value5"};
+    json initial_msg = {"value1", 2, 3, "value5"};
     Message msg(initial_msg.dump(), "/topc/test", MessageFormat::JSON);
     MessageWrapper msg_w(msg);
 

@@ -298,7 +298,7 @@ public:
 };
 
 
-nlohmann::json http_connector_schema_ = {
+json http_connector_schema_ = {
     "http", {
         {"type", {
             {"type", "string"},

@@ -10,7 +10,7 @@
 TEST_CASE("BuilderFT", "[builder_filtra]"){
     MockPipeline mock_pi;
 
-    nlohmann::json filtras = {
+    json filtras = {
         {"name", "cooler_on"},
         {"type", "builder"},
         {"msg_format", "json"},
@@ -18,7 +18,7 @@ TEST_CASE("BuilderFT", "[builder_filtra]"){
         {"goto_passed", "out"}
     };
 
-    nlohmann::json payload = filtras.at("payload");
+    json payload = filtras.at("payload");
 
     std::string key;
     bool value;
@@ -27,7 +27,7 @@ TEST_CASE("BuilderFT", "[builder_filtra]"){
         value = it.value();
     }
 
-    nlohmann::json initial_msg_j = {{key, false}};
+    json initial_msg_j = {{key, false}};
     Message msg_j(initial_msg_j.dump(), "/topc/test", MessageFormat::JSON);
     MessageWrapper msg_w_j(msg_j);
 

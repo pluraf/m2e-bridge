@@ -82,7 +82,7 @@ private:
 };
 
 
-nlohmann::json splitter_filtra_schema_ = {
+json splitter_filtra_schema_ = {
     "splitter", {
         {"type", {
             {"type", "string"},

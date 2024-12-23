@@ -10,14 +10,14 @@
 TEST_CASE("NopFT", "[nop_filtra]"){
     MockPipeline mock_pi;
 
-    nlohmann::json filtras = {
+    json filtras = {
         {"type", "nop"},
         {"encoder", "json"},
         {"decoder", "json"},
         {"goto_passed", "out"}
     };
 
-    nlohmann::json initial_msg = {{"value1", "2", "3", "value4"}};
+    json initial_msg = {{"value1", "2", "3", "value4"}};
     Message msg(initial_msg.dump(), "/topc/test", MessageFormat::JSON);
     MessageWrapper msg_w(msg);
 

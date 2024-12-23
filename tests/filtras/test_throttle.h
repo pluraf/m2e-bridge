@@ -11,14 +11,14 @@
 TEST_CASE("ThrottleFT", "[throttle_filtra]"){
     MockPipeline mock_pi;
 
-    nlohmann::json filtras = {
+    json filtras = {
         {"type", "throttle"},
         {"msg_format", "json"},
         {"rate", 1},
         {"goto_passed", "out"}
     };
 
-    nlohmann::json initial_msg = "Hello!";
+    json initial_msg = "Hello!";
     Message msg(initial_msg, "/topc/test");
 
     ThrottleFT throttle_ft(mock_pi, filtras);

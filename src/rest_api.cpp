@@ -277,7 +277,7 @@ class PipelineComponentsApiHandler:public CivetHandler{
         const struct mg_request_info * req_info = mg_get_request_info(conn);
 
         try{
-            nlohmann::json pipeline_components = get_schemas();
+            json pipeline_components = get_schemas();
             response = pipeline_components.dump(4);
         }catch(json::exception const & e){
                 mg_send_http_error(conn, 404, "");

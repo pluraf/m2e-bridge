@@ -111,7 +111,7 @@ private:
 };
 
 
-nlohmann::json comparator_filtra_schema_ = {
+json comparator_filtra_schema_ = {
     "comparator", {
         {"type", {
             {"type", "string"},

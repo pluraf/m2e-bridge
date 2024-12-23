@@ -52,7 +52,7 @@ private:
 };
 
 
-nlohmann::json builder_filtra_schema_ = {
+json builder_filtra_schema_ = {
     "builder", {
         {"type", {
             {"type", "string"},

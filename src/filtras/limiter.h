@@ -51,7 +51,7 @@ private:
 };
 
 
-nlohmann::json limiter_filtra_schema_ = {
+json limiter_filtra_schema_ = {
     "limiter", {
         {"type", {
             {"type", "string"},

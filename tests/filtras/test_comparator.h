@@ -33,7 +33,7 @@ float random_float = generate_random_number("float");
 TEST_CASE("ComparatorFT", "[comparator_filtra]"){
     MockPipeline mock_pi;
 
-    nlohmann::json filtras = {
+    json filtras = {
         {"type", "comparator"},
         {"operator", "eq"},
         {"value_key", "temp"},
@@ -45,19 +45,19 @@ TEST_CASE("ComparatorFT", "[comparator_filtra]"){
     int compar = filtras.at("comparand");
     std::string val_key = filtras.at("value_key");
 
-    nlohmann::json initial_msg_i = {{val_key, random_int}};
+    json initial_msg_i = {{val_key, random_int}};
     Message msg_i(initial_msg_i, "/topc/test", MessageFormat::JSON);
     MessageWrapper msg_wi(msg_i);
 
-    nlohmann::json initial_msg_f = {{val_key, random_float}};
+    json initial_msg_f = {{val_key, random_float}};
     Message msg_f(initial_msg_f, "/topc/test", MessageFormat::JSON);
     MessageWrapper msg_wf(msg_f);
 
-    nlohmann::json const & msg_payload_i = msg_wi.msg().get_json();
-    nlohmann::json const & msg_payload_f = msg_wf.msg().get_json();
+    json const & msg_payload_i = msg_wi.msg().get_json();
+    json const & msg_payload_f = msg_wf.msg().get_json();
 
-    nlohmann::json const & msg_value_i = msg_payload_i.at(val_key);
-    nlohmann::json const & msg_value_f = msg_payload_f.at(val_key);
+    json const & msg_value_i = msg_payload_i.at(val_key);
+    json const & msg_value_f = msg_payload_f.at(val_key);
 
     REQUIRE(msg_value_i.is_number_integer());
     REQUIRE(msg_value_f.is_number_float());
@@ -159,7 +159,7 @@ TEST_CASE("ComparatorFT", "[comparator_filtra]"){
 
     SECTION("Type of key_val"){
         ComparatorFT comparator_ft(mock_pi, filtras);
-        nlohmann::json initial_msg = {{val_key, "value"}};
+        json initial_msg = {{val_key, "value"}};
         Message msg(initial_msg.dump(), "/topc/test", MessageFormat::JSON);
         MessageWrapper msg_w(msg);
         REQUIRE_THROWS_AS(comparator_ft.process_message(msg_w), std::invalid_argument);

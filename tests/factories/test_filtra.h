@@ -12,7 +12,7 @@ TEST_CASE("FiltraF", "[filtra_factory]"){
 
     std::string type = GENERATE("builder", "comparator", "eraser", "finder", "limiter", "nop", "splitter", "throttle", "unknown");
 
-    nlohmann::json filtras = {
+    json filtras = {
         {"name", "cooler_on"},
         {"type", type},
         {"msg_format", "json"},

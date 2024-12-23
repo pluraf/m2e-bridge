@@ -307,7 +307,7 @@ public:
 };
 
 
-nlohmann::json email_connector_schema_ = {
+json email_connector_schema_ = {
     "email", {
         {"type", {
             {"type", "string"},

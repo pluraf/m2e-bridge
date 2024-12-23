@@ -10,7 +10,7 @@
 TEST_CASE("FinderFT - String", "[finder_filtra]"){
     MockPipeline mock_pi;
 
-    nlohmann::json filtras = {
+    json filtras = {
         {"type", "finder"},
         {"operator", "contain"},
         {"logical_negation", false},
@@ -111,7 +111,7 @@ TEST_CASE("FinderFT - String", "[finder_filtra]"){
 TEST_CASE("FinderFT - Keys", "[finder_filtra]"){
     MockPipeline mock_pi;
 
-    nlohmann::json filtras = {
+    json filtras = {
         {"type", "finder"},
         {"operator", "contain"},
         {"msg_format", "json"},
@@ -123,17 +123,17 @@ TEST_CASE("FinderFT - Keys", "[finder_filtra]"){
 
     bool logical_negation = filtras.at("logical_negation");
 
-    nlohmann::json keys = filtras.at("keys");
+    json keys = filtras.at("keys");
 
-    nlohmann::json initial_msg_1 = {{"temp", "value1"}, {"hum", "value2"}};
+    json initial_msg_1 = {{"temp", "value1"}, {"hum", "value2"}};
     Message msg_1(initial_msg_1, "/topc/test", MessageFormat::JSON);
     MessageWrapper msg_w_1(msg_1);
 
-    nlohmann::json initial_msg_2 = {{"value1", "value1"}, {"value2", "value2"}};
+    json initial_msg_2 = {{"value1", "value1"}, {"value2", "value2"}};
     Message msg_2(initial_msg_2, "/topc/test", MessageFormat::JSON);
     MessageWrapper msg_w_2(msg_2);
 
-    nlohmann::json initial_msg_3 = {{"temp", "value1"}, {"hum", "value2"}, {"moi", "value3"}};
+    json initial_msg_3 = {{"temp", "value1"}, {"hum", "value2"}, {"moi", "value3"}};
     Message msg_3(initial_msg_3, "/topc/test", MessageFormat::JSON);
     MessageWrapper msg_w_3(msg_3);
 
@@ -170,7 +170,7 @@ TEST_CASE("FinderFT - Keys", "[finder_filtra]"){
 TEST_CASE("FinderFT - Value Key", "[finder_filtra]"){
     MockPipeline mock_pi;
 
-    nlohmann::json filtras = {
+    json filtras = {
         {"type", "finder"},
         {"operator", "contain"},
         {"msg_format", "json"},
@@ -185,19 +185,19 @@ TEST_CASE("FinderFT - Value Key", "[finder_filtra]"){
 
     std::string val_key = filtras.at("value_key");
 
-    nlohmann::json initial_msg_1 = {{"temp", "value"}, {"hum", "value"}};
+    json initial_msg_1 = {{"temp", "value"}, {"hum", "value"}};
     Message msg_1(initial_msg_1, "/topc/test", MessageFormat::JSON);
     MessageWrapper msg_w_1(msg_1);
 
-    nlohmann::json initial_msg_2 = {{"hum", "value"}, {"moi", "value"}};
+    json initial_msg_2 = {{"hum", "value"}, {"moi", "value"}};
     Message msg_2(initial_msg_2, "/topc/test", MessageFormat::JSON);
     MessageWrapper msg_w_2(msg_2);
 
-    nlohmann::json initial_msg_3 = {{"temp", "temp correct value"}, {"hum", "value"}};
+    json initial_msg_3 = {{"temp", "temp correct value"}, {"hum", "value"}};
     Message msg_3(initial_msg_3, "/topc/test", MessageFormat::JSON);
     MessageWrapper msg_w_3(msg_3);
 
-    nlohmann::json initial_msg_4 = {{"temp", "correct value"}, {"moi", "value"}};
+    json initial_msg_4 = {{"temp", "correct value"}, {"moi", "value"}};
     Message msg_4(initial_msg_4, "/topc/test", MessageFormat::JSON);
     MessageWrapper msg_w_4(msg_4);
 

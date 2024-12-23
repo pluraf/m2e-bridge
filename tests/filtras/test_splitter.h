@@ -10,7 +10,7 @@
 TEST_CASE("SplitterFT", "[splitter_filtra]"){
     MockPipeline mock_pi;
 
-    nlohmann::json filtras = {
+    json filtras = {
         {"type", "splitter"},
         {"encoder", "json"},
         {"chunk_size", 5},
@@ -41,7 +41,7 @@ TEST_CASE("SplitterFT", "[splitter_filtra]"){
 
             REQUIRE_FALSE(chunk_msg.get_raw().empty());
 
-            nlohmann::json chunk_json = nlohmann::json::from_cbor(chunk_msg.get_raw());
+            json chunk_json = nlohmann::json::from_cbor(chunk_msg.get_raw());
             std::vector<std::uint8_t> chunk_binary = chunk_json[chunk_size-1].get_binary();
             std::string chunk_data(chunk_binary.begin(), chunk_binary.end());
 

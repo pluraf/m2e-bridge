@@ -416,7 +416,7 @@ void Pipeline::schedule_event(std::chrono::milliseconds msec){
 }
 
 
-nlohmann::json get_schemas(){
+json get_schemas(){
     return {
         {"connectors", {
             mqtt_connector_schema_,
@@ -441,8 +441,8 @@ nlohmann::json get_schemas(){
     };
 }
 
-nlohmann::json get_schema_by_type(const std::string& type){
-    nlohmann::json pipeline_components = get_schemas();
+json get_schema_by_type(const std::string& type){
+    json pipeline_components = get_schemas();
     if(pipeline_components["connectors"].contains(type)){
         return pipeline_components["conectors"][type];
     }else if(pipeline_components["filtras"].contains(type)){

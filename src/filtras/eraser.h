@@ -57,7 +57,7 @@ private:
 };
 
 
-nlohmann::json eraser_filtra_schema_ = {
+json eraser_filtra_schema_ = {
     "eraser", {
         {"type", {
             {"type", "string"},
