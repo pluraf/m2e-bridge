@@ -44,6 +44,7 @@ ServiceType get_service_type(string const & val){
     if(val == "aws") return ServiceType::AWS;
     if(val == "http") return ServiceType::HTTP;
     if(val == "azure") return ServiceType::AZURE;
+    if(val == "slack") return ServiceType::SLACK;
     return ServiceType::NONE;
 }
 
@@ -57,6 +58,7 @@ std::string service_type_to_string(ServiceType ct){
         case ServiceType::AWS: return "aws";
         case ServiceType::HTTP: return "http";
         case ServiceType::AZURE: return "azure";
+        case ServiceType::SLACK: return "slack";
         case ServiceType::NONE: return "";
         default: return "";
     }

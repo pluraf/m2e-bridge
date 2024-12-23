@@ -47,6 +47,7 @@ enum class ServiceType{
     AWS,
     HTTP,
     AZURE,
+    SLACK,
     NONE
 };
 

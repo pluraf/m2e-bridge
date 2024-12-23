@@ -39,6 +39,7 @@ IN THE SOFTWARE.
 #include "connectors/aws_s3_connector.h"
 #include "connectors/http_connector.h"
 #include "connectors/azure_service_bus_connector.h"
+#include "connectors/slack_conector.h"
 
 class ConnectorFactory{
 public:
@@ -62,6 +63,8 @@ public:
             return new HttpConnector(pipeid, mode, config);
         }else if(conn_type == "azure_sbc"){
             return new ServiceBusConnector(pipeid, mode, config);
+        }else if(conn_type == "slack"){
+            return new SlackConnector(pipeid, mode, config);
         }else{
             throw std::invalid_argument(fmt::format("Unknown Connector type [ {} ]", conn_type));
         }
