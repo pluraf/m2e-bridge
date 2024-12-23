@@ -127,7 +127,7 @@ private:
 };
 
 
-json finder_filtra_schema_ = {
+static const json finder_filtra_schema_ = {
     "finder", {
         {"type", {
             {"type", "string"},

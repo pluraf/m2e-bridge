@@ -255,7 +255,7 @@ public:
 };
 
 
-json gcp_bucket_connector_schema_ = {
+static const json gcp_bucket_connector_schema_ = {
     "gcp_bucket", {
         {"type", {
             {"type", "string"},

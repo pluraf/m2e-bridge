@@ -307,7 +307,7 @@ public:
 };
 
 
-json email_connector_schema_ = {
+static const json email_connector_schema_ = {
     "email", {
         {"type", {
             {"type", "string"},

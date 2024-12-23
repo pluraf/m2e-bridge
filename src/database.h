@@ -26,6 +26,7 @@ IN THE SOFTWARE.
 #ifndef __M2E_BRIDGE_DATABASE_H__
 #define __M2E_BRIDGE_DATABASE_H__
 
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -36,6 +37,7 @@ IN THE SOFTWARE.
 #include <stdexcept>
 
 #include "global_config.h"
+
 
 enum class ServiceType{
     GCP,
@@ -48,30 +50,6 @@ enum class ServiceType{
     NONE
 };
 
-ServiceType get_service_type(string const & val){
-    if(val == "gcp") return ServiceType::GCP;
-    if(val == "mqtt311") return ServiceType::MQTT311;
-    if(val == "mqtt50") return ServiceType::MQTT50;
-    if(val == "email") return ServiceType::EMAIL;
-    if(val == "aws") return ServiceType::AWS;
-    if(val == "http") return ServiceType::HTTP;
-    if(val == "azure") return ServiceType::AZURE;
-    return ServiceType::NONE;
-}
-
-std::string service_type_to_string(ServiceType ct){
-     switch (ct) {
-        case ServiceType::GCP: return "gcp";
-        case ServiceType::MQTT311: return "mqtt311";
-        case ServiceType::MQTT50: return "mqtt50";
-        case ServiceType::EMAIL: return "email";
-        case ServiceType::AWS: return "aws";
-        case ServiceType::HTTP: return "http";
-        case ServiceType::AZURE: return "azure";
-        case ServiceType::NONE: return "";
-        default: return "";
-    }
-}
 
 enum class AuthType{
     JWT_ES256,
@@ -83,35 +61,6 @@ enum class AuthType{
     NONE
 };
 
-AuthType get_auth_type(std::string val){
-    if(val == "jwt_es256")
-        return AuthType::JWT_ES256;
-    else if(val == "password")
-        return AuthType::PASSWORD;
-    else if(val == "service_key")
-        return AuthType::SERVICE_KEY;
-    else if(val == "access_key")
-        return AuthType::ACCESS_KEY;
-    else if(val == "bearer")
-        return AuthType::BEARER;
-    else if(val == "basic")
-        return AuthType::BASIC;
-    else
-        return AuthType::NONE;
-}
-
-std::string auth_type_to_string(AuthType at){
-    switch (at) {
-        case AuthType::JWT_ES256: return "jwt_es256";
-        case AuthType::PASSWORD: return "password";
-        case AuthType::SERVICE_KEY: return "service_key";
-        case AuthType::ACCESS_KEY: return "access_key";
-        case AuthType::BASIC: return "basic";
-        case AuthType::BEARER: return "bearer";
-        case AuthType::NONE: return "";
-        default: return "";
-    }
-}
 
 struct AuthBundle {
     std::string authbundle_id;
@@ -124,21 +73,17 @@ struct AuthBundle {
     std::string description;
 };
 
-void print_authbundle(const AuthBundle& bundle) {
-    std::cout << "AuthBundle ID: " << bundle.authbundle_id << std::endl;
-    std::cout << "Service Type: " << service_type_to_string(bundle.service_type) << std::endl;
-    std::cout << "Auth Type: " << auth_type_to_string(bundle.auth_type) << std::endl;
-    std::cout << "Username: " << bundle.username << std::endl;
-    std::cout << "Password: " << bundle.password << std::endl;
-    std::cout << "Keyname: " << bundle.keyname << std::endl;
-    std::cout << "Keydata: " << bundle.keydata << std::endl;
-    std::cout << "Description: " << bundle.description << std::endl;
-}
 
-std::string get_string(const unsigned char * val){
-    return (val == nullptr)? std::string() :
-        std::string(reinterpret_cast<const char*>(val));
-}
+ServiceType get_service_type(string const & val);
+
+std::string service_type_to_string(ServiceType ct);
+
+AuthType get_auth_type(std::string val);
+
+std::string auth_type_to_string(AuthType at);
+
+void print_authbundle(const AuthBundle& bundle);
+
 
 class Database {
 public:
@@ -267,7 +212,10 @@ private:
         }
     }
 
-
+    std::string get_string(const unsigned char * val){
+        return (val == nullptr)? std::string() :
+            std::string(reinterpret_cast<const char*>(val));
+    }
 };
 
 

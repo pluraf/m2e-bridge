@@ -305,7 +305,7 @@ private:
 };
 
 
-json gcp_pubsub_connector_schema_ = {
+static const json gcp_pubsub_connector_schema_ = {
     "gcp_pubsub", {
         {"type", {
             {"type", "string"},

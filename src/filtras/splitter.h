@@ -82,7 +82,7 @@ private:
 };
 
 
-json splitter_filtra_schema_ = {
+static const json splitter_filtra_schema_ = {
     "splitter", {
         {"type", {
             {"type", "string"},

@@ -59,7 +59,7 @@ private:
 };
 
 
-json throttle_filtra_schema_ = {
+static const json throttle_filtra_schema_ = {
     "throttle", {
         {"type", {
             {"type", "string"},

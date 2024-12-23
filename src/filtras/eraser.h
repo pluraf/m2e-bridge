@@ -57,7 +57,7 @@ private:
 };
 
 
-json eraser_filtra_schema_ = {
+static const json eraser_filtra_schema_ = {
     "eraser", {
         {"type", {
             {"type", "string"},

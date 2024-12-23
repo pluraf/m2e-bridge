@@ -38,6 +38,7 @@ IN THE SOFTWARE.
 #include "pipeline_supervisor.h"
 #include "rest_api_helpers.h"
 #include "global_config.h"
+#include "schema.h"
 
 
 class AuthHandler:public CivetAuthHandler{

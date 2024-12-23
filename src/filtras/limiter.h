@@ -51,7 +51,7 @@ private:
 };
 
 
-json limiter_filtra_schema_ = {
+static const json limiter_filtra_schema_ = {
     "limiter", {
         {"type", {
             {"type", "string"},

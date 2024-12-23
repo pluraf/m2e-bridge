@@ -314,7 +314,7 @@ public:
 };
 
 
-json service_bus_connector_schema_ = {
+static const json service_bus_connector_schema_ = {
     "azure_sbc", {
         {"type", {
             {"type", "string"},

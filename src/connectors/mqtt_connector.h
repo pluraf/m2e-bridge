@@ -363,7 +363,7 @@ private:
 };
 
 
-json mqtt_connector_schema_ = {
+static const json mqtt_connector_schema_ = {
     "mqtt", {
         {"type", {
             {"type", "string"},

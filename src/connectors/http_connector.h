@@ -298,7 +298,7 @@ public:
 };
 
 
-json http_connector_schema_ = {
+static const json http_connector_schema_ = {
     "http", {
         {"type", {
             {"type", "string"},

@@ -111,7 +111,7 @@ private:
 };
 
 
-json comparator_filtra_schema_ = {
+static const json comparator_filtra_schema_ = {
     "comparator", {
         {"type", {
             {"type", "string"},

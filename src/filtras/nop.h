@@ -40,7 +40,7 @@ public:
 };
 
 
-json nop_filtra_schema_ = {
+static const json nop_filtra_schema_ = {
     "nop", {
         {"type", {
             {"type", "string"},

@@ -35,9 +35,9 @@ IN THE SOFTWARE.
 #include "m2e_aliases.h"
 #include "pipeline_iface.h"
 #include "tsqueue.h"
-#include "filtra.h"
-#include "connectors/connector.h"
 #include "m2e_message/message_wrapper.h"
+#include "filtras/filtra.h"
+#include "connectors/connector.h"
 
 
 enum class PipelineState{
@@ -159,10 +159,6 @@ private:
     bool is_active_;
 
 };
-
-
-json get_schemas();
-json get_schema_by_type(const std::string& type);
 
 
 #endif

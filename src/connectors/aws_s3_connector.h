@@ -256,7 +256,7 @@ public:
 };
 
 
-json aws_s3_connector_schema_ = {
+static const json aws_s3_connector_schema_ = {
     "aws_s3", {
         {"type", {
             {"type", "string"},

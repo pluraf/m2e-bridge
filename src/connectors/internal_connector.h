@@ -67,7 +67,7 @@ private:
 };
 
 
-json internal_connector_schema_ = {
+static const json internal_connector_schema_ = {
     "queue", {
         {"type", {
             {"type", "string"},

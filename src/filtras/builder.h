@@ -52,7 +52,7 @@ private:
 };
 
 
-json builder_filtra_schema_ = {
+static const json builder_filtra_schema_ = {
     "builder", {
         {"type", {
             {"type", "string"},
