@@ -1,7 +1,7 @@
 #ifndef TEST_FILTRA_HELPER_H
 #define TEST_FILTRA_HELPER_H
 
-#include "../src/filtra.h"
+#include "../src/filtras/filtra.h"
 
 class MockPipeline:public PipelineIface {
 public:

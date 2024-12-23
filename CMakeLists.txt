@@ -71,12 +71,12 @@ if(ENABLE_TESTS)
 
     file(GLOB_RECURSE TESTS_HEASERS "tests/*.h")
 
-    add_executable(tests ./tests/test.cpp ${MQTT_SOURCES})
+    add_executable(tests ./tests/test.cpp ${MQTT_SOURCES} ./src/database.cpp)
 
     target_include_directories(tests PRIVATE ${CMAKE_SOURCE_DIR}/src)
     target_include_directories(tests PRIVATE ${JWT_CPP_INCLUDE_DIRS})
 
-    target_link_libraries(tests PRIVATE 
+    target_link_libraries(tests PRIVATE
         Catch2::Catch2WithMain
         nlohmann_json::nlohmann_json
         google-cloud-cpp::pubsub
