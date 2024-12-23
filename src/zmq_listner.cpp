@@ -93,7 +93,7 @@ std::string ZmqListner::get_response(ZmqRequest req){
         case ZmqRequest::STATUS:
             return "running";
         case ZmqRequest::SET_API_AUTH_OFF:
-            if(gc.set_api_authorization(false)){
+            if(gc.set_api_authentication(false)){
                 return "ok";
             }
             else{
@@ -101,7 +101,7 @@ std::string ZmqListner::get_response(ZmqRequest req){
             }
             
         case ZmqRequest::SET_API_AUTH_ON:
-            if(gc.set_api_authorization(true)){
+            if(gc.set_api_authentication(true)){
                 return "ok";
             }
             else{

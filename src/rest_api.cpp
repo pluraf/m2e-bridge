@@ -47,7 +47,7 @@ public:
     }
 
     bool authorize(CivetServer *server, struct mg_connection *conn) override {
-        allow_anonymous_ = ! gc.get_api_authorization();
+        allow_anonymous_ = ! gc.get_api_authentication();
         if(allow_anonymous_) return 1;
 
         const char* auth_token = mg_get_header(conn, "Authorization");

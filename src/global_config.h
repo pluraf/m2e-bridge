@@ -52,12 +52,12 @@ public:
         return pipelines_;
     }
 
-    bool get_api_authorization(){
-        return config_.value("api_authorization", true);
+    bool get_api_authentication(){
+        return config_.value("api_authentication", true);
     }
 
-    bool set_api_authorization(bool value){
-        config_["api_authorization"] = value;
+    bool set_api_authentication(bool value){
+        config_["api_authentication"] = value;
         return save_config();
     }
 
