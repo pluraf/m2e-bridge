@@ -35,9 +35,9 @@ sudo apt install libzmq3-dev
 ##### Build package
 
 ```
-cd build  
-cmake --preset default ..  
-make -j6  
+cd build
+cmake --preset default ..
+make -j6
 ```
 
 To run built package from m2e-bridge folder:
@@ -45,6 +45,38 @@ To run built package from m2e-bridge folder:
 
 eg:
 ./build/m2e-bridge configs/m2e-bridge.json
+
+### How do I build and run tests? ###
+
+##### Build with tests
+
+```
+cd build
+cmake --preset default -DENABLE_TESTS=ON ..
+make -j6
+```
+
+To see all options for tests:
+./tests --help
+
+To list all tests:
+./tests --list-tests
+
+To list all tags:
+./tests --list-tags
+
+To run all tests:
+./tests
+
+To run tests with displaying successfull outputs:
+./tests -s
+
+To run spesific test:
+./tests <test_tag>
+
+eg:
+./tests [nop_filtra]
+
 
 ### Integrations ###
 
