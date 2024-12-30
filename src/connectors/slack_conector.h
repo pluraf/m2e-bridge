@@ -13,7 +13,9 @@
 class SlackConnector : public Connector {
 private:
     std::string webhook_url_;
+    std::string oauth_token_;
     std::string authbundle_id_;
+    std::string channel_id_;
     CURL* curl;
 
     void parse_authbundle(){
@@ -27,7 +29,19 @@ private:
             if(ab.auth_type != AuthType::ACCESS_KEY){
                 throw std::runtime_error("Incompatiable authbundle auth type");
             }
-            webhook_url_ = ab.password;
+
+            // Need different passwords for different connector modes
+            switch (mode_){
+                case ConnectorMode::IN:
+                    oauth_token_ = ab.password;
+                    break;
+                case ConnectorMode::OUT:
+                    webhook_url_ = ab.password;
+                    break;
+                default:
+                    throw std::runtime_error("Not supported connector mode");
+            }
+
         }else{
             throw std::runtime_error("Not able to retrieve authbundle");
         }
@@ -37,7 +51,9 @@ private:
         std::string* data = static_cast<std::string*>(userp);
         const char* incoming_data = static_cast<char*>(ptr);
         size_t total_size = size * nmemb;
+
         data->append(incoming_data, total_size);
+
         return total_size;
     }
 
@@ -49,6 +65,14 @@ public:
             parse_authbundle();
         }catch(json::exception&){
             throw std::runtime_error("authbundle_id cannot be null for Slack connector");
+        }
+
+        if(mode_ == ConnectorMode::IN){
+            try {
+                channel_id_ = json_descr.at("channel_id").get<std::string>();
+            }catch(json::exception&){
+                throw std::runtime_error("channel_id cannot be null for Slack connector_out");
+            }
         }
     }
 
@@ -89,6 +113,53 @@ public:
         send_message(msg_w.msg().get_raw());
     }
 
+    Message do_receive()override{
+        std::string response_data;
+
+        // Prepare URL
+        std::string url = "https://slack.com/api/conversations.history";
+        std::string post_data = "{\"channel\":\"" + channel_id_ + "\", \"limit\": 1}";
+
+        // Set CURL options
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_POST, 1L);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data.c_str());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, post_data.size());
+
+        struct curl_slist* headers = nullptr;
+        headers = curl_slist_append(headers, ("Authorization: Bearer " + oauth_token_).c_str());
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_data);
+
+        // Perform the request
+        CURLcode res = curl_easy_perform(curl);
+        curl_slist_free_all(headers);
+
+        if(res != CURLE_OK){
+            throw std::runtime_error("Failed to fetch Slack messages: " + std::string(curl_easy_strerror(res)));
+        }
+
+        // Parse JSON response
+        nlohmann::json json_response = nlohmann::json::parse(response_data);
+        if(!json_response.contains("ok") || !json_response["ok"].get<bool>()){
+            throw std::runtime_error("Error fetching messages: " + json_response.dump());
+        }
+
+        // Extract the last message
+        std::string message_;
+        if(!json_response["messages"].empty()){
+            message_ = json_response["messages"][0].at("text");
+        }else{
+            message_ = "";
+        }
+
+        return Message(message_, "Slack");
+    }
+
+
     void disconnect() override{
         if(curl){
             curl_easy_cleanup(curl);
@@ -108,6 +179,10 @@ nlohmann::json slack_connector_schema_ = {
         {"authbundle_id", {
             {"type", "string"},
             {"required", true}
+        }},
+        {"channel_id", {
+            {"type", "string"},
+            {"required", {{"in", false}, {"out", true}}}
         }},
     }
 };
