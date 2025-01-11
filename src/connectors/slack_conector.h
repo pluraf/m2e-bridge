@@ -1,6 +1,7 @@
 #ifndef __M2E_BRIDGE_SLACK_CONNECTOR_H__
 #define __M2E_BRIDGE_SLACK_CONNECTOR_H__
 
+
 #include <string>
 #include <iostream>
 #include <stdexcept>
@@ -10,13 +11,14 @@
 #include "connector.h"
 #include "database.h"
 
+
 class SlackConnector : public Connector {
 private:
     std::string webhook_url_;
     std::string oauth_token_;
     std::string authbundle_id_;
     std::string channel_id_;
-    CURL* curl;
+    CURL* curl_;
 
     void parse_authbundle(){
         Database db;
@@ -77,23 +79,23 @@ public:
     }
 
     void send_message(const std::string& message){
-        nlohmann::json payload = {
+        json payload = {
             {"text", message}
         };
         std::string payload_str = payload.dump();
 
         // Set CURL options
-        curl_easy_setopt(curl, CURLOPT_URL, webhook_url_.c_str());
-        curl_easy_setopt(curl, CURLOPT_POST, 1L);
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload_str.c_str());
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, payload_str.size());
+        curl_easy_setopt(curl_, CURLOPT_URL, webhook_url_.c_str());
+        curl_easy_setopt(curl_, CURLOPT_POST, 1L);
+        curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, payload_str.c_str());
+        curl_easy_setopt(curl_, CURLOPT_POSTFIELDSIZE, payload_str.size());
 
         struct curl_slist* headers = nullptr;
         headers = curl_slist_append(headers, "Content-Type: application/json");
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, headers);
 
         // Perform the request
-        CURLcode res = curl_easy_perform(curl);
+        CURLcode res = curl_easy_perform(curl_);
         if(res != CURLE_OK){
             throw std::runtime_error("Failed to send Slack message: " + std::string(curl_easy_strerror(res)));
         }
@@ -102,8 +104,8 @@ public:
     }
 
     void connect() override{
-        curl = curl_easy_init();
-        if(!curl){
+        curl_ = curl_easy_init();
+        if(!curl_){
             throw std::runtime_error("Failed to initialize CURL");
         }
         std::cout << "SlackConnector connected successfully" << std::endl;
@@ -121,21 +123,21 @@ public:
         std::string post_data = "{\"channel\":\"" + channel_id_ + "\", \"limit\": 1}";
 
         // Set CURL options
-        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-        curl_easy_setopt(curl, CURLOPT_POST, 1L);
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data.c_str());
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, post_data.size());
+        curl_easy_setopt(curl_, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl_, CURLOPT_POST, 1L);
+        curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, post_data.c_str());
+        curl_easy_setopt(curl_, CURLOPT_POSTFIELDSIZE, post_data.size());
 
         struct curl_slist* headers = nullptr;
         headers = curl_slist_append(headers, ("Authorization: Bearer " + oauth_token_).c_str());
         headers = curl_slist_append(headers, "Content-Type: application/json");
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, headers);
 
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_data);
+        curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, write_callback);
+        curl_easy_setopt(curl_, CURLOPT_WRITEDATA, &response_data);
 
         // Perform the request
-        CURLcode res = curl_easy_perform(curl);
+        CURLcode res = curl_easy_perform(curl_);
         curl_slist_free_all(headers);
 
         if(res != CURLE_OK){
@@ -143,7 +145,7 @@ public:
         }
 
         // Parse JSON response
-        nlohmann::json json_response = nlohmann::json::parse(response_data);
+        json json_response = json::parse(response_data);
         if(!json_response.contains("ok") || !json_response["ok"].get<bool>()){
             throw std::runtime_error("Error fetching messages: " + json_response.dump());
         }
@@ -161,15 +163,15 @@ public:
 
 
     void disconnect() override{
-        if(curl){
-            curl_easy_cleanup(curl);
+        if(curl_){
+            curl_easy_cleanup(curl_);
         }
         std::cout << "SlackConnector disconnected" << std::endl;
     }
 };
 
 
-nlohmann::json slack_connector_schema_ = {
+json slack_connector_schema_ = {
     "slack", {
         {"type", {
             {"type", "string"},
