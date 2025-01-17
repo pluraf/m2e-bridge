@@ -82,8 +82,12 @@ public:
     }
 
 protected:
-    virtual Message do_receive(){return Message();}
-    virtual void do_send(MessageWrapper & msg_w){}
+    virtual Message do_receive(){
+        throw std::runtime_error("do_receive not implemented");
+    }
+    virtual void do_send(MessageWrapper & msg_w){
+        throw std::runtime_error("do_receive not implemented");
+    }
 
 private:
     ConnectorStat stat_ {0};
