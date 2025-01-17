@@ -46,6 +46,7 @@ IN THE SOFTWARE.
 #include "connectors/http_connector.h"
 #include "connectors/internal_connector.h"
 #include "connectors/mqtt_connector.h"
+#include "connectors/slack_connector.h"
 
 
 static json get_schemas(){
@@ -59,6 +60,7 @@ static json get_schemas(){
             aws_s3_connector_schema_,
             http_connector_schema_,
             service_bus_connector_schema_,
+            slack_connector_schema_
         }},
         {"filtras", {
             comparator_filtra_schema_,
@@ -68,7 +70,7 @@ static json get_schemas(){
             splitter_filtra_schema_,
             limiter_filtra_schema_,
             nop_filtra_schema_,
-            throttle_filtra_schema_,
+            throttle_filtra_schema_
         }}
     };
 }
