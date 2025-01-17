@@ -39,7 +39,8 @@ IN THE SOFTWARE.
 #include "connectors/aws_s3_connector.h"
 #include "connectors/http_connector.h"
 #include "connectors/azure_service_bus_connector.h"
-#include "connectors/slack_conector.h"
+#include "connectors/slack_connector.h"
+
 
 class ConnectorFactory{
 public:

@@ -105,7 +105,7 @@ public:
 };
 
 
-json slack_connector_schema_ = {
+static const json slack_connector_schema_ = {
     "slack", {
         {"type", {
             {"type", "string"},
