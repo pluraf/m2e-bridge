@@ -28,10 +28,6 @@ private:
             if(ab.service_type != ServiceType::SLACK){
                 throw std::runtime_error("Incompatiable authbundle service type");
             }
-            if(ab.auth_type != AuthType::ACCESS_KEY){
-                throw std::runtime_error("Incompatiable authbundle auth type");
-            }
-
             // Need different passwords for different connector modes
             switch (mode_){
                 case ConnectorMode::IN:
@@ -41,11 +37,11 @@ private:
                     webhook_url_ = ab.password;
                     break;
                 default:
-                    throw std::runtime_error("Not supported connector mode");
+                    throw std::runtime_error("Unsupported connector mode!");
             }
 
         }else{
-            throw std::runtime_error("Not able to retrieve authbundle");
+            throw std::runtime_error("Not able to retrieve authbundle!");
         }
     }
 
@@ -160,7 +156,6 @@ public:
 
         return Message(message_, "Slack");
     }
-
 
     void disconnect() override{
         if(curl_){

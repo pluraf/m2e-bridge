@@ -162,7 +162,7 @@ public:
         msg_queue_ = std::make_unique<mqtt::thread_queue<mqtt::message>>(1000);
         conn_opts_.set_clean_session(false);
         conn_opts_.set_mqtt_version(mqtt_version_);
-        if( !authbundle_id_.empty()){
+        if(! authbundle_id_.empty()){
             parse_authbundle();
         }
         client_ptr_ = std::make_shared<mqtt::async_client>(
