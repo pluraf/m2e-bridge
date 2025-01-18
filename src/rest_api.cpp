@@ -32,12 +32,14 @@ IN THE SOFTWARE.
 
 #include "jwt-cpp/jwt.h"
 #include "global_config.h"
+#include "m2e_exceptions.h"
 #include "rest_api.h"
 #include "jwt_helpers.h"
 #include "pipeline.h"
 #include "pipeline_supervisor.h"
 #include "rest_api_helpers.h"
 #include "global_config.h"
+#include "validator.h"
 #include "schema.h"
 
 
@@ -81,7 +83,7 @@ public:
             if(parse_request_body(conn, pipeline_data) != 0){
                 mg_send_http_error(conn, 400, "Could not parse request!");
             }else{
-                if(! gc.validate_pipeline_data(pipeline_data)){
+                if(! validate_pipeline(pipeline_data)){
                     mg_send_http_error(conn, 422, "Invalid pipeline configuration!");
                 }
                 else{
@@ -94,6 +96,8 @@ public:
                             mg_send_http_ok(conn, "text/plain", 0);
                         }
                     }catch(std::invalid_argument const & e){
+                        mg_send_http_error(conn, 422, "%s", e.what());
+                    }catch(DuplicateError const & e){
                         mg_send_http_error(conn, 422, "%s", e.what());
                     }
                 }
@@ -137,7 +141,7 @@ public:
             if(parse_request_body(conn, pipeline_data) != 0){
                 mg_send_http_error(conn, 400, "Could not parse request!");
             }else{
-                if(!gc.validate_pipeline_data(pipeline_data)){
+                if(! validate_pipeline(pipeline_data)){
                     mg_send_http_error(conn, 422, "Invalid pipeline configuration!");
                 }else{
                     const char * pipeid = last_segment + 1;

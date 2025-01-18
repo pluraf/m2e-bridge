@@ -49,7 +49,6 @@ struct ConnectorStat{
 
 
 class Connector{
-
 protected:
     ConnectorMode mode_ {ConnectorMode::UNKN};
     std::string pipeid_;
@@ -80,7 +79,30 @@ public:
     ConnectorStat get_statistics(){
         return stat_;
     }
-
+    static json const & get_schema(){
+        static json schema = {
+            "type", {
+                {"type", "string"},
+                {"required", true}
+            },
+            "authbundle_id", {
+                {"type", "string"},
+                {"required", true}
+            }
+        };
+        return schema;
+    }
+/*
+    static bool validate_config(json const & config){
+        json const & schema = get_schema();
+        for(auto const & iprop : schema.items()){
+            if(iprop.value().value("required", false) && ! config.contains(iprop.key())){
+                return false;
+            }
+        }
+        return true;
+    }
+*/
 protected:
     virtual Message do_receive(){
         throw std::runtime_error("do_receive not implemented");

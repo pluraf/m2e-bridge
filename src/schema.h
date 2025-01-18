@@ -38,15 +38,7 @@ IN THE SOFTWARE.
 #include "filtras/splitter.h"
 #include "filtras/throttle.h"
 
-#include "connectors/aws_s3_connector.h"
-#include "connectors/azure_service_bus_connector.h"
-#include "connectors/email_connector.h"
-#include "connectors/gcp_bucket_connector.h"
-#include "connectors/gcp_pubsub_connector.h"
-#include "connectors/http_connector.h"
-#include "connectors/internal_connector.h"
-#include "connectors/mqtt_connector.h"
-#include "connectors/slack_connector.h"
+#include "connectors/all.h"
 
 
 static json get_schemas(){

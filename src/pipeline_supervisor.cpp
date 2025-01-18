@@ -26,6 +26,7 @@ IN THE SOFTWARE.
 
 #include "pipeline_supervisor.h"
 #include "global_config.h"
+#include "m2e_exceptions.h"
 
 
 PipelineSupervisor * PipelineSupervisor::instance_ = nullptr;
@@ -57,7 +58,7 @@ void PipelineSupervisor::terminate_all(){
 bool PipelineSupervisor::add_pipeline(string const & pipeid, json const & pipeline_data){
     auto pos = pipelines_.find(pipeid);
     if(pos != pipelines_.end()){
-        return false;
+        throw DuplicateError("Pipeline already exist!");
     }
     if(gc.add_pipeline(pipeid, pipeline_data) != 0){
         return false;
