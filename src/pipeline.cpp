@@ -37,16 +37,8 @@ IN THE SOFTWARE.
 
 Pipeline::Pipeline(std::string const & pipeid, json const & pjson){
     pipeid_ = pipeid;
-    bool success = construct(pjson);
-    if(success){
-        state_ = PipelineState::STOPPED;
-        is_alive_ = true;
-        control_thread_ = new std::thread(& Pipeline::run_control, this);
-    }else{
-        state_ = PipelineState::MALFORMED;
-        // perform cleaning
-        free_resources();
-    }
+    config_ = pjson;
+    prepare();
 }
 
 
@@ -93,7 +85,22 @@ bool Pipeline::construct(json const & pjson){
         last_error_ = e.what();
         return false;
     }
+
     return true;
+ }
+
+
+ void Pipeline::prepare(){
+    bool success = construct(config_);
+    if(success){
+        is_alive_ = true;
+        state_ = PipelineState::STOPPED;
+        control_thread_ = new std::thread(& Pipeline::run_control, this);
+    }else{
+        state_ = PipelineState::MALFORMED;
+        // perform cleaning
+        free_resources();
+    }
  }
 
 
@@ -368,27 +375,30 @@ void Pipeline::execute_stop(){
 
 
 void Pipeline::execute(PipelineCommand cmd){
+    if(! is_alive_) prepare();
+    if(! is_alive_) return;
+
     c_queue_.push(cmd);
 }
 
 
 void Pipeline::start() {
-    c_queue_.push(PipelineCommand::START);
+    execute(PipelineCommand::START);
 }
 
 
 void Pipeline::restart() {
-    c_queue_.push(PipelineCommand::RESTART);
+    execute(PipelineCommand::RESTART);
 }
 
 
 void Pipeline::stop(){
-    c_queue_.push(PipelineCommand::STOP);
+    execute(PipelineCommand::STOP);
 }
 
 
 void Pipeline::terminate(){
-    c_queue_.push(PipelineCommand::TERMINATE);
+    execute(PipelineCommand::TERMINATE);
 }
 
 

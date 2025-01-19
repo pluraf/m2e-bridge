@@ -85,7 +85,7 @@ public:
             }else{
                 auto vres = validate_pipeline(pipeline_data);
                 if(! vres.first){
-                    mg_send_http_error(conn, 422, vres.second.c_str());
+                    mg_send_http_error(conn, 422, "%s", vres.second.c_str());
                 }
                 else{
                     const char * pipeid = last_segment + 1;
@@ -144,7 +144,7 @@ public:
             }else{
                 auto vres = validate_pipeline(pipeline_data);
                 if(! vres.first){
-                    mg_send_http_error(conn, 422, vres.second.c_str());
+                    mg_send_http_error(conn, 422, "%s", vres.second.c_str());
                 }else{
                     const char * pipeid = last_segment + 1;
                     try{

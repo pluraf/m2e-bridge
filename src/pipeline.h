@@ -124,6 +124,7 @@ public:
 
 private:
     bool construct(json const & pjson);
+    void prepare();
     void execute_stop();
     void execute_start();
     void process(Message const & msg, int filtra_ix = 0);
@@ -139,6 +140,7 @@ private:
     Connector * connector_out_ {nullptr};
     std::vector<Filtra *> filtras_;
     std::string pipeid_;
+    json config_;
 
     std::thread * processing_thread_ {nullptr};
     std::thread * receiving_thread_ {nullptr};
@@ -155,8 +157,8 @@ private:
     TSQueue<PipelineCommand> c_queue_;
     TSQueue<bool> e_queue_;
 
-    bool is_alive_;
-    bool is_active_;
+    bool is_alive_ {false};
+    bool is_active_ {false};
 
 };
 
