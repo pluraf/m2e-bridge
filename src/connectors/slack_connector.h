@@ -26,11 +26,11 @@ private:
         bool res = db.retrieve_authbundle(authbundle_id_, ab);
         if(res){
             if(ab.service_type != ServiceType::SLACK){
-                throw std::runtime_error("Incompatiable authbundle service type");
+                throw incompatible_dependency("Incompatiable authbundle service type");
             }
             webhook_url_ = ab.password;
         }else{
-            throw std::runtime_error("Not able to retrieve authbundle!");
+            throw missing_dependency("Not able to retrieve authbundle!");
         }
     }
 
@@ -50,12 +50,12 @@ public:
         try {
             authbundle_id_ = json_descr.at("authbundle_id").get<std::string>();
             parse_authbundle();
-        }catch(json::exception&){
-            throw std::runtime_error("authbundle_id cannot be null for Slack connector");
+        }catch(json::exception){
+            throw configuration_error("authbundle_id cannot be null for Slack connector");
         }
 
         if(mode_ == ConnectorMode::IN){
-            throw std::runtime_error("SlackConnector does not support IN mode!");
+            throw configuration_error("SlackConnector does not support IN mode!");
         }
     }
 

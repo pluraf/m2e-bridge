@@ -30,6 +30,7 @@ IN THE SOFTWARE.
 #include <iostream>
 #include <string>
 
+#include "m2e_exceptions.h"
 #include "m2e_message/message_wrapper.h"
 
 

@@ -27,21 +27,30 @@ IN THE SOFTWARE.
 #define __M2E_BRIDGE_M2E_EXCEPTIONS_H__
 
 
-#include <exception>
+#include <stdexcept>
 #include <string>
 
 
-class DuplicateError : public std::exception{
-public:
-    DuplicateError(std::string const & msg) : msg_(msg) {}
 
-    const char * what() const noexcept override {
-        return msg_.c_str();
-    }
 
-private:
-    std::string msg_;
 
+class duplicate_error : public std::runtime_error{
+    using std::runtime_error::runtime_error;
+};
+
+
+class missing_dependency : public std::runtime_error{
+    using std::runtime_error::runtime_error;
+};
+
+
+class incompatible_dependency : public std::runtime_error{
+    using std::runtime_error::runtime_error;
+};
+
+
+class configuration_error : public std::logic_error{
+    using std::logic_error::logic_error;
 };
 
 

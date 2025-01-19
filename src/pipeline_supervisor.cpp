@@ -58,7 +58,7 @@ void PipelineSupervisor::terminate_all(){
 bool PipelineSupervisor::add_pipeline(string const & pipeid, json const & pipeline_data){
     auto pos = pipelines_.find(pipeid);
     if(pos != pipelines_.end()){
-        throw DuplicateError("Pipeline already exist!");
+        throw duplicate_error("Pipeline already exist!");
     }
     if(gc.add_pipeline(pipeid, pipeline_data) != 0){
         return false;

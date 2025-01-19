@@ -30,11 +30,11 @@ IN THE SOFTWARE.
 #include "m2e_aliases.h"
 
 
-bool validate_connector(json const & config);
+pair<bool, string> validate_connector(json const & config);
 
-bool validate_filtra(json const & config);
+pair<bool, string> validate_filtra(json const & config);
 
-bool validate_pipeline(json const & config);
+pair<bool, string> validate_pipeline(json const & config);
 
 
 #endif  // __M2E_BRIDGE_VALIDATOR_H__

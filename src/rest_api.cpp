@@ -83,8 +83,9 @@ public:
             if(parse_request_body(conn, pipeline_data) != 0){
                 mg_send_http_error(conn, 400, "Could not parse request!");
             }else{
-                if(! validate_pipeline(pipeline_data)){
-                    mg_send_http_error(conn, 422, "Invalid pipeline configuration!");
+                auto vres = validate_pipeline(pipeline_data);
+                if(! vres.first){
+                    mg_send_http_error(conn, 422, vres.second.c_str());
                 }
                 else{
                     const char * pipeid = last_segment + 1;
@@ -97,7 +98,7 @@ public:
                         }
                     }catch(std::invalid_argument const & e){
                         mg_send_http_error(conn, 422, "%s", e.what());
-                    }catch(DuplicateError const & e){
+                    }catch(duplicate_error const & e){
                         mg_send_http_error(conn, 422, "%s", e.what());
                     }
                 }
@@ -141,8 +142,9 @@ public:
             if(parse_request_body(conn, pipeline_data) != 0){
                 mg_send_http_error(conn, 400, "Could not parse request!");
             }else{
-                if(! validate_pipeline(pipeline_data)){
-                    mg_send_http_error(conn, 422, "Invalid pipeline configuration!");
+                auto vres = validate_pipeline(pipeline_data);
+                if(! vres.first){
+                    mg_send_http_error(conn, 422, vres.second.c_str());
                 }else{
                     const char * pipeid = last_segment + 1;
                     try{

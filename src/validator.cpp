@@ -29,7 +29,7 @@ IN THE SOFTWARE.
 #include "connectors/all.h"
 
 
-bool validate_connector(ConnectorMode mode, json const & config){
+pair<bool, string> validate_connector(ConnectorMode mode, json const & config){
     try{
         string const & conn_type = config.at("type");
         if(conn_type == "mqtt"){
@@ -50,32 +50,33 @@ bool validate_connector(ConnectorMode mode, json const & config){
             ServiceBusConnector("pipeid", mode, config);
         }else if(conn_type == "slack"){
             SlackConnector("pipeid", mode, config);
+        }else{
+            return {false, "Unknown connector type: " + conn_type + "!"};
         }
-        return true;
-    }catch(std::out_of_range){
-        return false;
-    }catch(json::exception){
-        return false;
+        return {true, ""};
+    }catch(std::out_of_range const & e){
+        return {false, e.what()};
+    }catch(json::exception const & e){
+        return {false, e.what()};
+    }catch(std::runtime_error const & e){
+        return {false, e.what()};
     }
 }
 
 
-bool validate_filtra(json const & config){
-    return false;
+pair<bool, string> validate_filtra(json const & config){
+    return {true, ""};
 }
 
 
-bool validate_pipeline(json const & config){
-    if(! config.contains("connector_in")
-            || ! config["connector_in"].is_object()
-            || ! config.contains("connector_out")
-            || ! config["connector_out"].is_object()){
-        return false;
-    }
+pair<bool, string> validate_pipeline(json const & config){
+    if(! config.contains("connector_in")) return {false, "Missing connector_in"};
+    if(! config.contains("connector_out")) return {false, "Missing connector_out"};
 
     // Validate connectors
-    if(! validate_connector(ConnectorMode::IN, config["connector_in"])) return false;
-    if(! validate_connector(ConnectorMode::OUT, config["connector_out"])) return false;
+    auto res = validate_connector(ConnectorMode::IN, config["connector_in"]);
+    if(! res.first) return res;
 
-    return true;
+    res = validate_connector(ConnectorMode::OUT, config["connector_out"]);
+    return res;
 }
