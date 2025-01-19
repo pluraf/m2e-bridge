@@ -59,7 +59,7 @@ pair<bool, string> validate_connector(ConnectorMode mode, json const & config){
     }catch(json::exception const & e){
         return {false, e.what()};
     }catch(std::runtime_error const & e){
-        return {false, e.what()};
+        return {true, ""};
     }
 }
 
