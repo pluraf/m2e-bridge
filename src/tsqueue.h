@@ -27,14 +27,27 @@ IN THE SOFTWARE.
 #define __M2E_BRIDGE_TSQUEUE_H__
 
 
+#include <memory>
+#include <utility>
+#include <tuple>
+#include <unordered_map>
 #include <queue>
 #include <mutex>
 #include <optional>
+#include <limits>
 #include <condition_variable>
 
 
 template <typename T>
 class TSQueue {
+    std::unordered_map<size_t, std::tuple<std::queue<std::shared_ptr<T>>, size_t> buffers_;
+    size_t max_taken_key_ {0};
+
+    std::queue<T> queue_;
+    std::mutex mtx_;
+    std::mutex bmtx_;
+    std::condition_variable cv_;
+    size_t size_limit_;
 public:
     TSQueue():size_limit_(100){};
 
@@ -42,27 +55,57 @@ public:
         cv_.notify_one();
     }
 
+    size_t subscribe(size_t buffer_size=100){
+        std::lock_guard<std::mutex> lock(bmtx_);
+        if(max_taken_key_ == std::numeric_limits<size_t>::max()){
+            throw std::overflow_error("Too many subscribers!");
+        }
+        buffers_.emplace(++max_taken_key_, std::make_pair({}, buffer_size));
+        return max_taken_key_;
+    }
+
+    void unsubscribe(size_t subscriber_id){
+        std::lock_guard<std::mutex> lock(bmtx_);
+        buffers_.erase(subscriber_id);
+    }
+
     void wait(){
         std::unique_lock<std::mutex> lock(mtx_);
+
+        
+
         cv_.wait(lock);
     }
 
-    void push(const T& el){
+    void push(T const * el){
         std::lock_guard<std::mutex> lock(mtx_);
-        if(queue_.size() < size_limit_){
-            queue_.push(el);
-            cv_.notify_one();
+
+        auto ptr = std::shared_ptr<T>{el};
+
+        for (const auto & [subscriber_id, qs] : buffers_){
+            auto & [queue, queue_size_max] = qs;
+            if(queue.size() < queue_size_max){
+                queue.push(ptr);
+            }
         }
+        cv_.notify_all();
     }
 
-    std::optional<T> pop(){
-        std::lock_guard<std::mutex> lock(mtx_);
-        if (queue_.empty()) {
-            return std::nullopt;
+    std::optional<T&> peek(size_t subscriber_id){
+        auto & [queue, size] = buffers_.at(subscriber_id);
+
+        std::unique_lock<std::mutex> lock(mtx_);
+        cv_.wait(lock, [queue]{ return ! queue.empty() || exit_; });
+
+
+        return queue_.front();
+    }
+
+    void remove(size_t subscriber_id){
+        auto & [queue, size] = buffers_.at(subscriber_id);
+        if (! queue_.empty()){
+            queue_.pop();
         }
-        T el = queue_.front();
-        queue_.pop();
-        return el;
     }
 
     bool empty()const{
@@ -72,12 +115,6 @@ public:
     size_t size() const {
         return queue_.size();
     }
-
-private:
-    std::queue<T> queue_;
-    std::mutex mtx_;
-    std::condition_variable cv_;
-    std::size_t size_limit_;
 };
 
 
