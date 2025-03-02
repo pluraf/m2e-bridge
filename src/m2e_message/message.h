@@ -86,7 +86,7 @@ public:
         return * this;
     }
 
-    Message(Message && other):
+    Message(Message && other)noexcept:
         msg_raw_(std::move(other.msg_raw_)),
         topic_levels_(std::move(other.topic_levels_)),
         is_serialized_(other.is_serialized_),
@@ -95,7 +95,7 @@ public:
         format_(other.format_),
         is_valid_(other.is_valid_) {}
 
-    Message & operator=(Message && other){
+    Message & operator=(Message && other)noexcept{
         if(this != & other){
             msg_raw_ = std::move(other.msg_raw_);
             topic_levels_ = std::move(other.topic_levels_);
