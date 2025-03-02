@@ -28,6 +28,7 @@ IN THE SOFTWARE.
 
 
 #include <iostream>
+#include <regex>
 
 #include "m2e_aliases.h"
 
@@ -36,6 +37,14 @@ enum class MessageFormat {UNKN, RAW, JSON, CBOR};
 
 
 class Message{
+    bool is_valid_ {false};
+    std::string msg_raw_;
+    std::string msg_topic_;
+    mutable json decoded_json_;
+    mutable bool is_serialized_ {false};
+    mutable std::vector<std::string> topic_levels_;
+    string empty_level_ {""};
+    MessageFormat format_ {MessageFormat::UNKN};
 public:
     Message() = default;
 
@@ -53,6 +62,53 @@ public:
         format_ = format;
         is_valid_ = true;
     }
+
+    Message(Message const & other){
+        msg_raw_ = other.msg_raw_;
+        topic_levels_ = other.topic_levels_;
+        is_serialized_ = other.is_serialized_;
+        decoded_json_ = other.decoded_json_;
+        msg_topic_ = other.msg_topic_;
+        format_ = other.format_;
+        is_valid_ = other.is_valid_;
+    }
+
+    Message & operator=(Message const & other){
+        if(this != & other){
+            msg_raw_ = other.msg_raw_;
+            topic_levels_ = other.topic_levels_;
+            is_serialized_ = other.is_serialized_;
+            decoded_json_ = other.decoded_json_;
+            msg_topic_ = other.msg_topic_;
+            format_ = other.format_;
+            is_valid_ = other.is_valid_;
+        }
+        return * this;
+    }
+
+    Message(Message && other):
+        msg_raw_(std::move(other.msg_raw_)),
+        topic_levels_(std::move(other.topic_levels_)),
+        is_serialized_(other.is_serialized_),
+        decoded_json_(std::move(other.decoded_json_)),
+        msg_topic_(std::move(other.msg_topic_)),
+        format_(other.format_),
+        is_valid_(other.is_valid_) {}
+
+    Message & operator=(Message && other){
+        if(this != & other){
+            msg_raw_ = std::move(other.msg_raw_);
+            topic_levels_ = std::move(other.topic_levels_);
+            is_serialized_ = other.is_serialized_;
+            decoded_json_ = std::move(other.decoded_json_);
+            msg_topic_ = std::move(other.msg_topic_);
+            format_ = other.format_;
+            is_valid_ = other.is_valid_;
+        }
+        return * this;
+    }
+
+    explicit operator bool()const{return is_valid_;}
 
     std::string const & get_raw(){
         if(! is_serialized_){
@@ -79,7 +135,7 @@ public:
         return decoded_json_;
     }
 
-    std::string const & get_topic_level(int level)const{
+    std::string const & get_topic_level(int level){
         using namespace std;
         if(topic_levels_.size() == 0){
             regex r("/");
@@ -93,20 +149,6 @@ public:
     std::string const & get_topic()const{
         return msg_topic_;
     }
-
-    operator bool()const{
-        return is_valid_;
-    }
-
-private:
-    bool is_valid_ {false};
-    std::string msg_raw_;
-    std::string msg_topic_;
-    mutable json decoded_json_;
-    mutable bool is_serialized_ {false};
-    mutable std::vector<std::string> topic_levels_;
-    string empty_level_ {""};
-    MessageFormat format_ {MessageFormat::UNKN};
 };
 
 

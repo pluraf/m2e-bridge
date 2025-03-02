@@ -254,7 +254,7 @@ public:
         send_email(subject, body);
     }
 
-    Message do_receive()override{
+    Message const do_receive()override{
         std::string email_data;
         std::string url;
 

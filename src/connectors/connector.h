@@ -64,12 +64,13 @@ public:
     virtual void connect(){}
     virtual void disconnect(){}
     virtual void stop(){is_active_=false;}
-    Message receive(){
+
+    std::shared_ptr<Message> receive(){
         Message msg = do_receive();
         ++stat_.count_in;
         auto now = chrono::system_clock::now().time_since_epoch();
         stat_.last_in = chrono::duration_cast<chrono::seconds>(now).count();
-        return msg;
+        return std::make_shared<Message>(std::move(msg));
     }
     void send(MessageWrapper & msg_w){
         do_send(msg_w);
@@ -105,7 +106,7 @@ public:
     }
 */
 protected:
-    virtual Message do_receive(){
+    virtual Message const do_receive(){
         throw std::runtime_error("do_receive not implemented");
     }
     virtual void do_send(MessageWrapper & msg_w){

@@ -49,7 +49,6 @@ public:
         : Connector(pipeid, mode_, json_descr){
         try {
             authbundle_id_ = json_descr.at("authbundle_id").get<std::string>();
-            parse_authbundle();
         }catch(json::exception){
             throw configuration_error("authbundle_id cannot be null for Slack connector");
         }
@@ -85,6 +84,7 @@ public:
     }
 
     void connect() override{
+        parse_authbundle();
         curl_ = curl_easy_init();
         if(!curl_){
             throw std::runtime_error("Failed to initialize CURL");

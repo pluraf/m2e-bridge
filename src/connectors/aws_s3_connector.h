@@ -177,7 +177,7 @@ public:
         while(regex_search(pos, file_name.cend(), match, pattern)){
             std::string ve = match[1].str();
             if(ve == "topic"){
-                std::string vvalue = msg_w.msg().get_topic();
+                std::string vvalue = msg_w.orig().get_topic();
 
                 vvalue.erase(remove(vvalue.begin(), vvalue.end(), '/'), vvalue.end());
 
@@ -223,7 +223,7 @@ public:
         }
     }
 
-    Message do_receive()override {
+    Message const do_receive()override {
         Aws::S3::Model::GetObjectRequest request;
         request.SetBucket(bucket_name_);
         request.SetKey(object_name_template_);

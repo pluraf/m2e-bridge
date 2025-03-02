@@ -35,19 +35,27 @@ IN THE SOFTWARE.
 
 
 class MessageWrapper{
+    std::shared_ptr<Message> orig_;
+    std::shared_ptr<Message> alt_;
+    bool is_initialized_ {false};
+    bool is_passed_ {false};
+    set<string> destinations_;
+    json metadata_;
 public:
     MessageWrapper() = default;
-    MessageWrapper(Message const & msg){
-        orig_ = msg;
-        alt_ = msg;
+    MessageWrapper(std::shared_ptr<Message> msg_ptr){
+        orig_ = msg_ptr;
+        alt_ = std::make_shared<Message>(* msg_ptr.get());
         is_initialized_ = true;
         is_passed_ = true;
         metadata_ = json();
     }
-    Message const & orig(){return orig_;}
-    Message & msg(){return alt_;}
+    Message const & orig()const{return * orig_.get();}
+    Message & msg(){return * alt_.get();}
 
-    operator bool()const{return is_initialized_;}
+    std::shared_ptr<Message> msg_ptr(){return alt_;}
+
+    explicit operator bool()const{return is_initialized_;}
 
     bool is_passed(){return is_passed_;}
     void pass(){is_passed_ = true;}
@@ -65,14 +73,6 @@ public:
     json const & get_metadata(){
         return metadata_;
     }
-
-private:
-    Message orig_;
-    Message alt_;
-    bool is_initialized_ {false};
-    bool is_passed_ {false};
-    set<string> destinations_;
-    json metadata_;
 };
 
 

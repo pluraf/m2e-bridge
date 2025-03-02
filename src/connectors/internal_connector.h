@@ -28,42 +28,38 @@ IN THE SOFTWARE.
 
 
 #include "connector.h"
-#include "internal_queues.h"
+#include "internal_queue.h"
 
 
 class InternalConnector: public Connector{
+    string queuid_;
+    InternalQueue & queue_;
+    RQueue incoming_;
 public:
     InternalConnector(std::string pipeid, ConnectorMode mode, json const & config):
-            Connector(pipeid, mode, config){
-        queuid_ = config.at("name");
+            Connector(pipeid, mode, config),
+            queuid_(config.at("name")),
+            queue_(InternalQueue::get_queue(queuid_)){
+        if(mode_ == ConnectorMode::IN){
+            incoming_ = queue_.subscribe(config.value("buffer_size", 100));
+        }
     }
 
-    Message do_receive()override{
-        TSQueue<Message> & q = InternalQueues::get_queue(queuid_);
-        auto el = q.pop();
-        while(is_active_ && ! el){
-            q.wait();
-            el = q.pop();
-        }
-        if(! el){
-            throw std::out_of_range("");
-        }
-        return * el;
+    Message const do_receive()override{
+        return *incoming_.pop();
     }
 
     void do_send(MessageWrapper & msg_w)override{
-        TSQueue<Message> & q = InternalQueues::get_queue(queuid_);
-        q.push(msg_w.msg());
+        queue_.push(msg_w.msg_ptr());
     }
 
     void stop()override{
-        is_active_ = false;
-        TSQueue<Message> & q = InternalQueues::get_queue(queuid_);
-        q.exit_blocking_calls();
-    }
+        Connector::stop();
+        if(mode_ == ConnectorMode::IN){
+            queue_.unsubscribe(incoming_);
+        }
 
-private:
-    string queuid_;
+    }
 };
 
 

@@ -207,7 +207,7 @@ public:
         }
     }
 
-    Message do_receive()override{
+    Message const do_receive()override{
         mqtt::message mqtt_msg;
         msg_queue_->get(&mqtt_msg);  // blocking call
         return Message(mqtt_msg.get_payload(), mqtt_msg.get_topic());

@@ -224,7 +224,7 @@ public:
         std::cout << "Message sent to GCP Bucket as object: " << file_name << std::endl;
     }
 
-    Message do_receive()override{
+    Message const do_receive()override{
         try{
             gcloud::storage::ObjectReadStream stream = client_.ReadObject(bucket_name_, object_name_template_);
             if(!stream){

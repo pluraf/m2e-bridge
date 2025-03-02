@@ -47,7 +47,8 @@ enum class PipelineState{
     MALFORMED,
     FAILED,
     STARTING,
-    STOPPING
+    STOPPING,
+    TERMINATED
 };
 
 enum class PipelineCommand{
@@ -64,6 +65,29 @@ struct PipelineStat{
     time_t last_out;
     unsigned long count_in;
     unsigned long count_out;
+};
+
+
+class Pipeline;
+
+
+class Thread{
+    std::thread * thread_ {nullptr};
+    bool running_ {false};
+public:
+    void start(void (Pipeline::*func)(bool *), Pipeline * pipeline){
+        if(thread_ != nullptr) throw std::runtime_error("Thread already started!");
+        thread_ = new std::thread(func, pipeline, & running_);
+    }
+
+    void terminate(){
+        if(thread_ != nullptr){
+            thread_->join();
+            delete std::exchange(thread_, nullptr);
+        }
+    }
+
+    bool is_running(){return running_;}
 };
 
 
@@ -110,6 +134,7 @@ public:
             case PipelineState::MALFORMED: return "malformed";
             case PipelineState::STARTING: return "starting";
             case PipelineState::STOPPING: return "stopping";
+            case PipelineState::TERMINATED: return "terminated";
             case PipelineState::UNKN: return "unknown";
         }
     }
@@ -124,17 +149,27 @@ public:
 
 private:
     bool construct(json const & pjson);
-    void prepare();
+    bool prepare();
     void execute_stop();
     void execute_start();
-    void process(Message const & msg, int filtra_ix = 0);
+    void process(std::shared_ptr<Message> const & msg_ptr, int filtra_ix = 0);
     void process();
-    void run_receiving();
-    void run_processing();
-    void run_sending();
+    void handle_events();
+    void handle_messages();
+    void run_receiving(bool * running);
+    void run_processing(bool * running);
+    void run_sending(bool * running);
     void run_control();
     void free_resources();
     int find_filtra_index(string const & filtra_name);
+
+    bool is_alive(){
+        return state_ != PipelineState::MALFORMED && state_ != PipelineState::TERMINATED;
+    }
+
+    bool is_active(){
+        return state_ == PipelineState::RUNNING;
+    }
 
     Connector * connector_in_ {nullptr};
     Connector * connector_out_ {nullptr};
@@ -142,9 +177,9 @@ private:
     std::string pipeid_;
     json config_;
 
-    std::thread * processing_thread_ {nullptr};
-    std::thread * receiving_thread_ {nullptr};
-    std::thread * sending_thread_ {nullptr};
+    Thread processing_thread_;
+    Thread receiving_thread_;
+    Thread sending_thread_;
     std::thread * control_thread_ {nullptr};
     PipelineState state_ {PipelineState::STOPPED};
     std::string last_error_;
@@ -152,13 +187,10 @@ private:
     std::mutex pipeline_event_mtx_;
     std::condition_variable pipeline_event_;
 
-    TSQueue<Message> r_queue_;
+    TSQueue<std::shared_ptr<Message>> r_queue_ {0, false};
+    TSQueue<bool> e_queue_ {0, false};
     TSQueue<MessageWrapper> s_queue_;
     TSQueue<PipelineCommand> c_queue_;
-    TSQueue<bool> e_queue_;
-
-    bool is_alive_ {false};
-    bool is_active_ {false};
 
 };
 

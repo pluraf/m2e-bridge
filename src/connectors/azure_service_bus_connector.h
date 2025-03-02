@@ -257,7 +257,7 @@ public:
         }
     }
 
-    Message do_receive()override{
+    Message const do_receive()override{
         std::string receive_url = resource_uri_;
         if(is_topic_){
             receive_url += "/subscriptions/" + subscription_name_ + "/messages/head?api-version=2013-08";

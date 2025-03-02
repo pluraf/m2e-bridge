@@ -201,7 +201,7 @@ public:
         }
     }
 
-    Message do_receive()override{
+    Message const do_receive()override{
         try{
             auto opts = google::cloud::Options{}
                 .set<pubsub::RetryPolicyOption>(pubsub::LimitedTimeRetryPolicy(
@@ -213,7 +213,7 @@ public:
                 if(response) break;
             }
             if(! response){
-                throw std::out_of_range("No messages");
+                throw std::underflow_error("No messages");
             }
 
             string msg_text = response->message.data();

@@ -27,95 +27,68 @@ IN THE SOFTWARE.
 #define __M2E_BRIDGE_TSQUEUE_H__
 
 
-#include <memory>
-#include <utility>
-#include <tuple>
-#include <unordered_map>
 #include <queue>
 #include <mutex>
 #include <optional>
-#include <limits>
 #include <condition_variable>
 
 
 template <typename T>
-class TSQueue {
-    std::unordered_map<size_t, std::tuple<std::queue<std::shared_ptr<T>>, size_t> buffers_;
-    size_t max_taken_key_ {0};
-
+class TSQueue{
+    size_t max_size_ {0};
     std::queue<T> queue_;
     std::mutex mtx_;
-    std::mutex bmtx_;
     std::condition_variable cv_;
-    size_t size_limit_;
+    bool blocking_ {true};
+
+    void check_size(){
+        if(max_size_ > 0 && queue_.size() >= max_size_){
+             throw std::overflow_error("Queue is full!");
+        }
+    }
 public:
-    TSQueue():size_limit_(100){};
-
-    void exit_blocking_calls(){
-        cv_.notify_one();
+    TSQueue(size_t max_size=0, bool blocking=true){
+        max_size_ = max_size;
+        blocking_ = blocking;
     }
 
-    size_t subscribe(size_t buffer_size=100){
-        std::lock_guard<std::mutex> lock(bmtx_);
-        if(max_taken_key_ == std::numeric_limits<size_t>::max()){
-            throw std::overflow_error("Too many subscribers!");
-        }
-        buffers_.emplace(++max_taken_key_, std::make_pair({}, buffer_size));
-        return max_taken_key_;
+    ~TSQueue(){
+        set_non_blocking();
     }
 
-    void unsubscribe(size_t subscriber_id){
-        std::lock_guard<std::mutex> lock(bmtx_);
-        buffers_.erase(subscriber_id);
-    }
-
-    void wait(){
-        std::unique_lock<std::mutex> lock(mtx_);
-
-        
-
-        cv_.wait(lock);
-    }
-
-    void push(T const * el){
-        std::lock_guard<std::mutex> lock(mtx_);
-
-        auto ptr = std::shared_ptr<T>{el};
-
-        for (const auto & [subscriber_id, qs] : buffers_){
-            auto & [queue, queue_size_max] = qs;
-            if(queue.size() < queue_size_max){
-                queue.push(ptr);
-            }
-        }
+    void set_non_blocking(){
+        blocking_ = false;
         cv_.notify_all();
     }
 
-    std::optional<T&> peek(size_t subscriber_id){
-        auto & [queue, size] = buffers_.at(subscriber_id);
+    void set_blocking(){
+        blocking_ = true;
+    }
 
+    void push(T const & value){
+        std::lock_guard<std::mutex> lock(mtx_);
+        check_size();
+        queue_.push(value);
+        cv_.notify_one();
+    }
+
+    void push(T && value){
+        std::lock_guard<std::mutex> lock(mtx_);
+        check_size();
+        queue_.push(value);
+        cv_.notify_one();
+    }
+
+    T pop(){
         std::unique_lock<std::mutex> lock(mtx_);
-        cv_.wait(lock, [queue]{ return ! queue.empty() || exit_; });
-
-
-        return queue_.front();
-    }
-
-    void remove(size_t subscriber_id){
-        auto & [queue, size] = buffers_.at(subscriber_id);
-        if (! queue_.empty()){
-            queue_.pop();
-        }
-    }
-
-    bool empty()const{
-        return queue_.empty();
-    }
-
-    size_t size() const {
-        return queue_.size();
+        cv_.wait(lock, [this]{ return ! queue_.empty() || ! blocking_; });
+        if(queue_.empty()) throw std::underflow_error("No messages in queue!");
+        auto el = queue_.front();
+        queue_.pop();
+        return el;
     }
 };
+
 
 
 #endif  // __M2E_BRIDGE_TSQUEUE_H__

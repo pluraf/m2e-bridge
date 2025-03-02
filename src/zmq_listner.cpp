@@ -76,6 +76,7 @@ void ZmqListner::start(){
 
 void ZmqListner::stop(){
     stop_ = true;
+    context_.shutdown();
     socket_.close();
     context_.close();
     if(listner_th_ != nullptr){
@@ -99,7 +100,7 @@ std::string ZmqListner::get_response(ZmqRequest req){
             else{
                 return "fail";
             }
-            
+
         case ZmqRequest::SET_API_AUTH_ON:
             if(gc.set_api_authentication(true)){
                 return "ok";

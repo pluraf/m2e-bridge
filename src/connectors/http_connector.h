@@ -285,7 +285,7 @@ public:
         }
     }
 
-    Message do_receive()override{
+    Message const do_receive()override{
         if(request_freq_limit_ != 0){
             std::this_thread::sleep_for(std::chrono::seconds(request_freq_limit_));
         }

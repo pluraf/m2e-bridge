@@ -29,8 +29,7 @@ IN THE SOFTWARE.
 
 #include "global_state.h"
 #include "pipeline.h"
-#include "tsqueue.h"
-#include "internal_queues.h"
+#include "internal_queue.h"
 #include "factories/filtra_factory.h"
 #include "factories/connector_factory.h"
 
@@ -90,17 +89,16 @@ bool Pipeline::construct(json const & pjson){
  }
 
 
- void Pipeline::prepare(){
+ bool Pipeline::prepare(){
     bool success = construct(config_);
     if(success){
-        is_alive_ = true;
         state_ = PipelineState::STOPPED;
         control_thread_ = new std::thread(& Pipeline::run_control, this);
     }else{
         state_ = PipelineState::MALFORMED;
-        // perform cleaning
-        free_resources();
+        free_resources();  // perform cleaning
     }
+    return success;
  }
 
 
@@ -135,18 +133,19 @@ int Pipeline::find_filtra_index(string const & filtra_name){
 
 void Pipeline::process(){
     bool is_passed = true;
-    MessageWrapper msg_w;
     int filtra_ix = 0;
+    Message msg;
     while(filtra_ix < filtras_.size()){
-        msg_w = filtras_[filtra_ix]->process();
-        if(msg_w) break;
+        auto msg = filtras_[filtra_ix]->process();
+        if(msg) break;
         ++filtra_ix;
     }
-
-    if(msg_w){
+    if(msg){
+        std::shared_ptr<Message> msg_ptr = std::make_shared<Message>(std::move(msg));
+        MessageWrapper msg_w(msg_ptr);
         if(msg_w.is_passed()){
             for(auto const & queuid : filtras_[filtra_ix]->get_destinations()){
-                InternalQueues::redirect(msg_w, queuid);
+                InternalQueue::redirect(msg_w.msg(), queuid);
             }
         }
         ++filtra_ix;
@@ -159,7 +158,7 @@ void Pipeline::process(){
             }
             if(msg_w.is_passed()){
                 for(auto const & queuid : filtras_[filtra_ix]->get_destinations()){
-                    InternalQueues::redirect(msg_w, queuid);
+                    InternalQueue::redirect(msg_w.msg(), queuid);
                 }
             }
         }
@@ -168,10 +167,9 @@ void Pipeline::process(){
 }
 
 
-void Pipeline::process(Message const & msg, int filtra_ix){
-    MessageWrapper msg_w(msg);
-    while(filtra_ix < filtras_.size() && is_active_){
-
+void Pipeline::process(std::shared_ptr<Message> const & msg_ptr, int filtra_ix){
+    MessageWrapper msg_w(msg_ptr);
+    while(filtra_ix < filtras_.size() && is_active()){
         Filtra * filtra = nullptr;
         try{
             filtra = filtras_.at(filtra_ix);
@@ -200,7 +198,7 @@ void Pipeline::process(Message const & msg, int filtra_ix){
             }
             Message new_msg = filtra->process();
             while(new_msg){
-                process(new_msg, filtra_ix);
+                process(std::make_shared<Message>(new_msg), filtra_ix);
                 new_msg = filtra->process();
             }
             return;
@@ -214,7 +212,7 @@ void Pipeline::process(Message const & msg, int filtra_ix){
                 filtra_ix++;
             }
             for(auto const & queuid : filtra->get_destinations()){
-                InternalQueues::redirect(msg_w, queuid);
+                InternalQueue::redirect(msg_w.msg(), queuid);
             }
         }else{
             if(! hops.second.empty()){
@@ -229,39 +227,59 @@ void Pipeline::process(Message const & msg, int filtra_ix){
 }
 
 
-void Pipeline::run_receiving(){
+void Pipeline::handle_events(){
+    while(is_active()){
+        try{
+            e_queue_.pop();
+            process();
+        }catch(std::underflow_error){
+            break;
+        }
+    }
+}
+
+
+void Pipeline::handle_messages(){
+    while(is_active()){
+        try{
+            auto msg_ptr = r_queue_.pop();
+            process(std::move(msg_ptr));
+        }catch(std::underflow_error){
+            break;
+        }
+    }
+}
+
+
+void Pipeline::run_receiving(bool * running){
+    * running = true;
     try{
         Message msg;
         connector_in_->connect();
-        while(is_active_){
+        while(is_active()){
             try{
-                msg = connector_in_->receive();
-            }catch(std::out_of_range){
-                continue;
+                auto msg_ptr = connector_in_->receive();
+                r_queue_.push(std::move(msg_ptr));
+                pipeline_event_.notify_one();
+            }catch(std::underflow_error){
+                break;
             }
-            r_queue_.push(std::move(msg));
-            pipeline_event_.notify_one();
         }
         connector_in_->disconnect();
     }catch(std::exception const & e){
         last_error_ = e.what();
         state_ = PipelineState::FAILED;
     }
+    * running = false;
 }
 
 
-void Pipeline::run_processing(){
+void Pipeline::run_processing(bool * running){
+    * running = true;
     try{
-        while(is_active_){
-            while(e_queue_.pop()){
-                process();
-            }
-            std::optional<Message> el;
-            while((el = r_queue_.pop())){
-                if(el){
-                    process(* el);
-                }
-            }
+        while(is_active()){
+            handle_events();
+            handle_messages();
             std::unique_lock<std::mutex> lock(pipeline_event_mtx_);
             pipeline_event_.wait(lock);
         }
@@ -269,54 +287,57 @@ void Pipeline::run_processing(){
         last_error_ = e.what();
         state_ = PipelineState::FAILED;
     }
+    * running = false;
 }
 
 
-void Pipeline::run_sending(){
+void Pipeline::run_sending(bool * running){
+    * running = true;
     try{
         connector_out_->connect();
-        while(is_active_){
-            std::optional<MessageWrapper> el;
-            while((el = s_queue_.pop())){
-                connector_out_->send(* el);
-            }
-            s_queue_.wait();
+        while(is_active()){
+            auto msg_w = s_queue_.pop();
+            connector_out_->send(msg_w);
         }
         connector_out_->disconnect();
+    }catch(std::underflow_error){
     }catch(std::exception const & e){
         last_error_ = e.what();
         state_ = PipelineState::FAILED;
     }
+    * running = false;
 }
 
 
 void Pipeline::run_control(){
-    while(is_alive_){
+    while(is_alive()){
         std::optional<PipelineCommand> command;
-        while((command = c_queue_.pop())){
-            switch(* command){
-                case PipelineCommand::START:
-                    execute_start();
-                    break;
-                case PipelineCommand::STOP:
-                    execute_stop();
-                    break;
-                case PipelineCommand::RESTART:
-                    execute_stop();
-                    execute_start();
-                    break;
-                case PipelineCommand::TERMINATE:
-                    is_alive_ = false;
-                    execute_stop();
-                    break;
-                default:
-                    break;
+        try{
+            while((command = c_queue_.pop())){
+                switch(* command){
+                    case PipelineCommand::START:
+                        execute_start();
+                        break;
+                    case PipelineCommand::STOP:
+                        execute_stop();
+                        break;
+                    case PipelineCommand::RESTART:
+                        execute_stop();
+                        execute_start();
+                        break;
+                    case PipelineCommand::TERMINATE:
+                        execute_stop();
+                        state_ = PipelineState::TERMINATED;
+                        break;
+                    default:
+                        break;
+                }
             }
-        }
-        if(is_alive_){
-            c_queue_.wait();
-        }else{
-            break;
+        }catch(std::underflow_error){
+            execute_stop();
+            state_ = PipelineState::TERMINATED;
+        }catch(std::exception const & e){
+            last_error_ = e.what();
         }
     }
     std::cout<<pipeid_<<": control thread terminated"<<std::endl;
@@ -329,13 +350,13 @@ void Pipeline::execute_start(){
         return;
     }
     last_error_ = "";
-    is_active_ = true;
-
-    sending_thread_ = new std::thread(& Pipeline::run_sending, this);
-    processing_thread_ = new std::thread(& Pipeline::run_processing, this);
-    receiving_thread_ = new std::thread(& Pipeline::run_receiving, this);
-
     state_ = PipelineState::RUNNING;
+
+    s_queue_.set_blocking();
+
+    sending_thread_.start(& Pipeline::run_sending, this);
+    processing_thread_.start(& Pipeline::run_processing, this);
+    receiving_thread_.start(& Pipeline::run_receiving, this);
 }
 
 
@@ -346,38 +367,27 @@ void Pipeline::execute_stop(){
         return;
     }
 
-    is_active_ = false;
     state_ = PipelineState::STOPPING;
 
     // It helps to exit from blocking receiving call
-    try{
-        if(connector_in_ != nullptr) connector_in_->stop();
-    }catch(std::exception const & e){
-        last_error_ = e.what();
+    if(connector_in_ != nullptr) connector_in_->stop();
+
+    s_queue_.set_non_blocking();
+
+    receiving_thread_.terminate();
+    while(processing_thread_.is_running()){
+        pipeline_event_.notify_all();
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
-    s_queue_.exit_blocking_calls();
-
-    std::cout<<pipeid_<<": waiting for receiving_thread to finish..."<<std::endl;
-    receiving_thread_->join();
-    pipeline_event_.notify_all();
-    std::cout<<pipeid_<<": waiting for processing_thread to finish..."<<std::endl;
-    processing_thread_->join();
-    std::cout<<pipeid_<<": waiting for sending_thread to finish..."<<std::endl;
-    sending_thread_->join();
-    std::cout<<pipeid_<<": stopped"<<std::endl;
-
-    delete receiving_thread_;
-    delete processing_thread_;
-    delete sending_thread_;
+    processing_thread_.terminate();
+    sending_thread_.terminate();
 
     state_= PipelineState::STOPPED;
 }
 
 
 void Pipeline::execute(PipelineCommand cmd){
-    if(! is_alive_) prepare();
-    if(! is_alive_) return;
-
+    if(! is_alive() && ! prepare()) return;
     c_queue_.push(cmd);
 }
 
