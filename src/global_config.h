@@ -52,6 +52,10 @@ public:
         return pipelines_;
     }
 
+    ordered_json const & get_http_gate_config(){
+        return http_gate_;
+    }
+
     bool get_api_authentication(){
         return config_.value("api_authentication", true);
     }
@@ -130,8 +134,19 @@ public:
         buffer = std::stringstream();
         buffer << file.rdbuf();
         file.close();
-
         pipelines_ = ordered_json::parse(buffer.str());
+
+        // Load HTTP Gate
+        std::string http_gate_path = config_.at("http_gate_path").get<std::string>();
+        file = std::ifstream(http_gate_path);
+        if(! file){
+            std::cerr << "Failed to open file: " << http_gate_path << std::endl;
+            throw std::runtime_error("");
+        }
+        buffer = std::stringstream();
+        buffer << file.rdbuf();
+        file.close();
+        http_gate_ = ordered_json::parse(buffer.str());
 
         // Load authbundles_db_path
         authbundles_db_path_ = config_.at("authbundles_db_path").get<std::string>();
@@ -141,6 +156,7 @@ public:
 private:
     json config_;
     ordered_json pipelines_;
+    ordered_json http_gate_;
     std::string authbundles_db_path_;
     std::string config_path_;
 };

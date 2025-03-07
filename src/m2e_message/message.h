@@ -27,6 +27,7 @@ IN THE SOFTWARE.
 #define __M2E_BRIDGE_MESSAGE_H__
 
 
+#include <cstddef>
 #include <iostream>
 #include <regex>
 
@@ -60,6 +61,12 @@ public:
         decoded_json_ = j_data;
         msg_topic_ = topic;
         format_ = format;
+        is_valid_ = true;
+    }
+
+    Message(char const * data, size_t n){
+        is_serialized_ = true;
+        msg_raw_ = string(data, data + n);
         is_valid_ = true;
     }
 

@@ -44,12 +44,13 @@ IN THE SOFTWARE.
 
 
 class AuthHandler:public CivetAuthHandler{
+
 public:
     AuthHandler(std::string* public_key){
         public_key_ = public_key;
     }
 
-    bool authorize(CivetServer *server, struct mg_connection *conn) override {
+    bool authorize(CivetServer *server, struct mg_connection *conn)override{
         allow_anonymous_ = ! gc.get_api_authentication();
         if(allow_anonymous_) return 1;
 

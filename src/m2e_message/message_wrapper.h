@@ -33,7 +33,6 @@ IN THE SOFTWARE.
 #include "message.h"
 
 
-
 class MessageWrapper{
     std::shared_ptr<Message> orig_;
     std::shared_ptr<Message> alt_;

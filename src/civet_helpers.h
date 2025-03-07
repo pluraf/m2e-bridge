@@ -23,39 +23,29 @@ IN THE SOFTWARE.
 */
 
 
-#ifndef __M2E_BRIDGE_ALIASES_H__
-#define __M2E_BRIDGE_ALIASES_H__
+#ifndef __M2E_BRIDGE_CIVET_HELPERS_H__
+#define __M2E_BRIDGE_CIVET_HELPERS_H__
 
 
-#include <vector>
-#include <string>
-#include <map>
-#include <unordered_map>
-#include <set>
-#include <sstream>
-#include <iostream>
-#include <chrono>
-#include <ctime>
+#include <cstring>
 
-#include <nlohmann/json.hpp>
+#include "CivetServer.h"
 
 
-namespace chrono = std::chrono;
-
-using json = nlohmann::json;
-using ordered_json = nlohmann::ordered_json;
-
-using std::string;
-using std::vector;
-using std::map;
-using std::unordered_map;
-using std::set;
-using std::stringstream;
-using std::pair;
-using std::time_t;
+inline char const * cv_get_last_segment(mg_request_info const * req_info)
+{
+    char const * last_segment = strrchr(req_info->request_uri, '/');
+    if(last_segment && strlen(last_segment) > 1) return last_segment + 1;
+    return NULL;
+}
 
 
-typedef pair<string,string> hops_t;
+inline char const * cv_get_bearer_token(mg_connection * const conn)
+{
+    char const * auth_token = mg_get_header(conn, "Authorization");
+    if (auth_token != NULL && strlen(auth_token) > 7) return auth_token + 7;  // Skip "Bearer "
+    return NULL;
+}
 
 
-#endif  // __M2E_BRIDGE_ALIASES_H__
+#endif  // __M2E_BRIDGE_CIVET_HELPERS_H__

@@ -38,6 +38,7 @@ IN THE SOFTWARE.
 #include "global_config.h"
 #include "pipeline_supervisor.h"
 #include "zmq_listner.h"
+#include "gates/http_gate.h"
 
 using namespace std;
 
@@ -77,6 +78,9 @@ int main(int argc, char* argv[]){
 
     ZmqListner *zmq = ZmqListner::get_instance();
     zmq->start();
+
+    HTTPGate http_gate {};
+    http_gate.start();
 
     CivetServer * server = start_server();
     if(! server) g_running = false;

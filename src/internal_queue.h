@@ -84,6 +84,10 @@ public:
         return queues_[queuid];
     }
 
+    static InternalQueue * get_queue_ptr(std::string const & queuid){
+        return & queues_[queuid];
+    }
+
     static void redirect(Message const & msg, std::string const & queuid){
         get_queue(queuid).push(std::make_shared<Message>(msg));
     }
@@ -104,6 +108,14 @@ public:
     }
 
     void push(std::shared_ptr<Message> const & msg_ptr){
+        std::shared_lock<std::shared_mutex> lock(buffers_mtx_);
+        for (auto & [subscriber_id, buffer] : buffers_){
+            buffer.push(msg_ptr);
+        }
+    }
+
+    void push(Message && msg){
+        auto msg_ptr = std::make_shared<Message>(msg);
         std::shared_lock<std::shared_mutex> lock(buffers_mtx_);
         for (auto & [subscriber_id, buffer] : buffers_){
             buffer.push(msg_ptr);

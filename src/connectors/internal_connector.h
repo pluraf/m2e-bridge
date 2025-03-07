@@ -34,14 +34,27 @@ IN THE SOFTWARE.
 class InternalConnector: public Connector{
     string queuid_;
     InternalQueue & queue_;
+    size_t buffer_size_ {0};
     RQueue incoming_;
 public:
     InternalConnector(std::string pipeid, ConnectorMode mode, json const & config):
-            Connector(pipeid, mode, config),
-            queuid_(config.at("name")),
-            queue_(InternalQueue::get_queue(queuid_)){
+        Connector(pipeid, mode, config),
+        queuid_(config.at("name")),
+        queue_(InternalQueue::get_queue(queuid_))
+    {
+        buffer_size_ = config.value("buffer_size", 100);
+    }
+
+    void connect()override
+    {
         if(mode_ == ConnectorMode::IN){
-            incoming_ = queue_.subscribe(config.value("buffer_size", 100));
+            incoming_ = queue_.subscribe(buffer_size_);
+        }
+    }
+
+    void disconnect()override{
+        if(mode_ == ConnectorMode::IN){
+            queue_.unsubscribe(incoming_);
         }
     }
 
@@ -55,10 +68,6 @@ public:
 
     void stop()override{
         Connector::stop();
-        if(mode_ == ConnectorMode::IN){
-            queue_.unsubscribe(incoming_);
-        }
-
     }
 };
 

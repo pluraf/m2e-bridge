@@ -26,6 +26,7 @@ IN THE SOFTWARE.
 #ifndef __M2E_BRIDGE_CONNECTOR_H__
 #define __M2E_BRIDGE_CONNECTOR_H__
 
+
 #include "nlohmann/json.hpp"
 #include <iostream>
 #include <string>

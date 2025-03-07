@@ -23,39 +23,51 @@ IN THE SOFTWARE.
 */
 
 
-#ifndef __M2E_BRIDGE_ALIASES_H__
-#define __M2E_BRIDGE_ALIASES_H__
+#ifndef __M2E_BRIDGE_HTTP_CHANNEL_H__
+#define __M2E_BRIDGE_HTTP_CHANNEL_H__
 
 
-#include <vector>
-#include <string>
-#include <map>
-#include <unordered_map>
-#include <set>
-#include <sstream>
-#include <iostream>
-#include <chrono>
-#include <ctime>
+#include <memory>
 
-#include <nlohmann/json.hpp>
+#include "CivetServer.h"
+#include "m2e_aliases.h"
+#include "internal_queue.h"
 
 
-namespace chrono = std::chrono;
-
-using json = nlohmann::json;
-using ordered_json = nlohmann::ordered_json;
-
-using std::string;
-using std::vector;
-using std::map;
-using std::unordered_map;
-using std::set;
-using std::stringstream;
-using std::pair;
-using std::time_t;
+enum class ChannelState{
+    UNKN,
+    MALFORMED
+};
 
 
-typedef pair<string,string> hops_t;
+class HTTPChannel
+{
+    string id_;
+    string token_;
+    string queue_name_;
+    InternalQueue * queue_ {nullptr};
+    ChannelState state_;
+
+public:
+    HTTPChannel() = default;
+    HTTPChannel(string const & id, json const & config);
+    void consume(char const * data, size_t n)const;
+    bool verify_token(char const * token)const;
+    bool is_anonymous()const { return token_.empty(); }
+    bool is_malformed()const { return state_ == ChannelState::MALFORMED; };
+};
 
 
-#endif  // __M2E_BRIDGE_ALIASES_H__
+class HTTPGate
+{
+    std::unique_ptr<CivetServer> server_;
+    unordered_map<string, HTTPChannel> channels_;
+public:
+    HTTPGate();
+    void start();
+    void stop() {};
+    HTTPChannel const & get_channel(string const & id) { return channels_.at(id); }
+};
+
+
+#endif  // __M2E_BRIDGE_HTTP_CHANNEL_H__

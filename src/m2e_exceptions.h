@@ -31,9 +31,6 @@ IN THE SOFTWARE.
 #include <string>
 
 
-
-
-
 class duplicate_error : public std::runtime_error{
     using std::runtime_error::runtime_error;
 };
