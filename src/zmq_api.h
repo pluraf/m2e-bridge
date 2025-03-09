@@ -23,18 +23,25 @@ IN THE SOFTWARE.
 */
 
 
-#ifndef __M2E_BRIDGE_REST_API_HELPERS_H__
-#define __M2E_BRIDGE_REST_API_HELPERS_H__
+#ifndef __M2E_BRIDGE_ZMQ_API_H__
+#define __M2E_BRIDGE_ZMQ_API_H__
 
 
-#include <string>
-#include "CivetServer.h"
-#include "pipeline.h"
+#include <zmq.hpp>
 
 #include "m2e_aliases.h"
 
 
-std::vector<std::string> get_last_segments(char const * uri, int count);
-int parse_request_body(mg_connection * conn, json & pipelineData);
+class ZMQAPI{
+    string api_handler(unsigned char const * buffer, size_t len);
+    string execute_request(char const * method, char const * path, unsigned char const * payload, size_t payload_len);
+    string zmq_channel_get(char const * path, unsigned char const * payload, size_t payload_len);
+    string zmq_channel_put(char const * path, unsigned char const * payload, size_t payload_len);
+    string zmq_channel_post(char const * path, unsigned char const * payload, size_t payload_len);
+    string zmq_channel_delete(char const * path, unsigned char const * payload, size_t payload_len);
+public:
+    string handle_message(zmq::message_t const & request);
+};
 
-#endif  // __M2E_BRIDGE_REST_API_HELPERS_H__
+
+#endif  // __M2E_BRIDGE_ZMQ_API_H__

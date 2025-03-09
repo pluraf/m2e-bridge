@@ -52,6 +52,8 @@ target_link_libraries(m2e-bridge PRIVATE ${ZeroMQ_LIBRARIES})
 target_link_libraries(m2e-bridge PRIVATE CURL::libcurl)
 target_link_libraries(m2e-bridge PRIVATE aws-cpp-sdk-core)
 target_link_libraries(m2e-bridge PRIVATE aws-cpp-sdk-s3)
+target_link_libraries(m2e-bridge PRIVATE cbor)
+target_link_libraries(m2e-bridge PRIVATE Poco::Foundation)
 target_link_libraries(m2e-bridge PRIVATE Poco::Foundation)
 
 target_include_directories(m2e-bridge PRIVATE ${JWT_CPP_INCLUDE_DIRS})

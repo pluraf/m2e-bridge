@@ -27,32 +27,19 @@ IN THE SOFTWARE.
 #include <fstream>
 
 
-#include "rest_api_helpers.h"
+#include "api_helpers.h"
 
 
-std::vector<std::string> get_last_segments(char const * uri, int count){
+std::vector<std::string> get_last_segments(char const * uri, size_t count){
     vector<string> segments;
     string segment;
     std::stringstream ss(uri);
     while(std::getline(ss, segment, '/')){
         segments.push_back(segment);
     }
-    if(segments.size() < count){
+    if(count != 0 && segments.size() < count){
         throw std::out_of_range("");
     }
+    if(count == 0) return segments;
     return vector<string>(segments.end() - count, segments.end());
-}
-
-int parse_request_body(struct mg_connection * conn, json & pipeline_data){
-    char buf[1024];
-    int length = mg_read(conn, buf, sizeof(buf));
-    buf[length] = '\0';
-    try {
-        pipeline_data = ordered_json::parse(buf);
-        return 0;
-    }
-    catch(json::parse_error &e){
-        std::cerr << e.what() << std::endl;
-        return 1;
-    }
 }

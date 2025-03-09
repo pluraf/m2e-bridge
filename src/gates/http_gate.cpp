@@ -33,7 +33,7 @@ IN THE SOFTWARE.
 #include "global_config.h"
 
 
-class HTTPGate;
+HTTPGate * HTTPGate::instance_ = nullptr;
 
 
 class AuthHandler: public CivetAuthHandler{
@@ -124,7 +124,7 @@ bool HTTPChannel::verify_token(char const * token)const
 }
 
 
-HTTPGate::HTTPGate()
+HTTPGate::HTTPGate():channel_iterator_(channels_)
 {
     json const & config = gc.get_http_gate_config();
     if(config.contains("channels")){
@@ -145,8 +145,8 @@ void HTTPGate::start()
         NULL
     };
 
-    server_ = std::make_unique<CivetServer>(options);
-
-    server_->addAuthHandler("/channel/http/", new AuthHandler(*this));
-    server_->addHandler("/channel/http/", new ApiHandler(*this));
+    auto & instance = get_instance();
+    instance.server_ = std::make_unique<CivetServer>(options);
+    instance.server_->addAuthHandler("/channel/http/", new AuthHandler(*instance_));
+    instance.server_->addHandler("/channel/http/", new ApiHandler(*instance_));
 }

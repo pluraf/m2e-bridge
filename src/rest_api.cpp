@@ -30,17 +30,33 @@ IN THE SOFTWARE.
 #include <stdexcept>
 #include <future>
 
+#include "rest_api.h"
 #include "jwt-cpp/jwt.h"
 #include "global_config.h"
 #include "m2e_exceptions.h"
-#include "rest_api.h"
+#include "api_helpers.h"
 #include "jwt_helpers.h"
 #include "pipeline.h"
 #include "pipeline_supervisor.h"
-#include "rest_api_helpers.h"
+#include "api_helpers.h"
 #include "global_config.h"
 #include "validator.h"
 #include "schema.h"
+
+
+int parse_request_body(struct mg_connection * conn, json & pipeline_data){
+    char buf[1024];
+    int length = mg_read(conn, buf, sizeof(buf));
+    buf[length] = '\0';
+    try {
+        pipeline_data = ordered_json::parse(buf);
+        return 0;
+    }
+    catch(json::parse_error &e){
+        std::cerr << e.what() << std::endl;
+        return 1;
+    }
+}
 
 
 class AuthHandler:public CivetAuthHandler{
@@ -78,7 +94,7 @@ public:
     bool handlePost(CivetServer * server, struct mg_connection * conn)override{
         json pipeline_data;
         const struct mg_request_info * req_info = mg_get_request_info(conn);
-        PipelineSupervisor *ps = PipelineSupervisor::get_instance();
+        PipelineSupervisor * ps = PipelineSupervisor::get_instance();
         const char * last_segment = strrchr(req_info->request_uri, '/');
         if(last_segment && strlen(last_segment) > 1){
             if(parse_request_body(conn, pipeline_data) != 0){
@@ -234,6 +250,7 @@ private:
         j_status["count_out"] = stat.count_out;
         return j_status;
     }
+
     json create_response(map<string, Pipeline *> const & pipelines){
         json json_object;
         for( auto const& [key, val]: pipelines){

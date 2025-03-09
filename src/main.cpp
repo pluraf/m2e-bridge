@@ -79,8 +79,7 @@ int main(int argc, char* argv[]){
     ZmqListner *zmq = ZmqListner::get_instance();
     zmq->start();
 
-    HTTPGate http_gate {};
-    http_gate.start();
+    HTTPGate::start();
 
     CivetServer * server = start_server();
     if(! server) g_running = false;

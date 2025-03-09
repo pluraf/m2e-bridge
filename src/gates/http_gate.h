@@ -36,7 +36,33 @@ IN THE SOFTWARE.
 
 enum class ChannelState{
     UNKN,
-    MALFORMED
+    MALFORMED,
+    ENABLED,
+    DISABLED
+};
+
+
+template <typename Key, typename Value>
+class ConstIterator {
+private:
+    using MapIterator = typename std::unordered_map<Key, Value>::const_iterator;
+    MapIterator it;
+public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = Value;
+    using difference_type = std::ptrdiff_t;
+    using pointer = const Value *;
+    using reference = const Value &;
+
+    explicit ConstIterator(MapIterator i) : it(i) {}
+
+    reference operator*() const { return it->second; }
+    pointer operator->() const { return &(it->second); }
+
+    ConstIterator& operator++() { ++it; return *this; }
+    ConstIterator operator++(int) { ConstIterator temp = *this; ++it; return temp; }
+
+    bool operator!=(const ConstIterator& other) const { return it != other.it; }
 };
 
 
@@ -47,7 +73,6 @@ class HTTPChannel
     string queue_name_;
     InternalQueue * queue_ {nullptr};
     ChannelState state_;
-
 public:
     HTTPChannel() = default;
     HTTPChannel(string const & id, json const & config);
@@ -55,18 +80,64 @@ public:
     bool verify_token(char const * token)const;
     bool is_anonymous()const { return token_.empty(); }
     bool is_malformed()const { return state_ == ChannelState::MALFORMED; };
+    string const & get_id()const {return id_;}
+    string const get_state_str()const
+    {
+        switch(state_){
+            case ChannelState::MALFORMED: return "MALFORMED";
+            case ChannelState::ENABLED: return "ENABLED";
+            case ChannelState::DISABLED: return "DISABLED";
+            case ChannelState::UNKN:
+            default: return "UNKN";
+        }
+    }
+    string const & get_queue_name()const {return queue_name_;}
+};
+
+
+class HTTPChannelIterator
+{
+    unordered_map<string, HTTPChannel> const & map_container_;
+public:
+    HTTPChannelIterator(unordered_map<string, HTTPChannel> const & map_container): map_container_(map_container) {}
+    using Iterator = ConstIterator<string, HTTPChannel>;
+    Iterator begin(){return Iterator(map_container_.cbegin());}
+    Iterator end(){return Iterator(map_container_.cend());}
 };
 
 
 class HTTPGate
 {
+    static HTTPGate * instance_;
     std::unique_ptr<CivetServer> server_;
     unordered_map<string, HTTPChannel> channels_;
+    HTTPGate();  // private constructor to make class singleton
+    HTTPChannelIterator channel_iterator_;
 public:
-    HTTPGate();
-    void start();
+    static void start();
     void stop() {};
-    HTTPChannel const & get_channel(string const & id) { return channels_.at(id); }
+    //void add_channel(HTTPChannel && channel);
+    //void delete_channel(string id);
+
+    static HTTPChannel const & get_channel(string const & id)
+    {
+        return get_instance().channels_.at(id);
+    }
+
+    static HTTPChannelIterator & get_channels()
+    {
+        return get_instance().channel_iterator_;
+    }
+
+    static HTTPGate & get_instance()
+    {
+        if (instance_ == nullptr){
+            instance_ = new HTTPGate();
+        }
+        return *instance_;
+    }
+
+
 };
 
 

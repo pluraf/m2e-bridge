@@ -24,11 +24,12 @@ IN THE SOFTWARE.
 
 
 #include "zmq_listner.h"
+#include "zmq_api.h"
 #include "global_config.h"
 
 
 //Initialize static member to null
-ZmqListner* ZmqListner::instance_ = nullptr;
+ZmqListner * ZmqListner::instance_ = nullptr;
 
 
 void ZmqListner::run(){
@@ -37,34 +38,30 @@ void ZmqListner::run(){
         socket_ = zmq::socket_t(context_, zmq::socket_type::rep);
         socket_.bind("ipc:///tmp/m2eb-zmq.sock");
 
-        while(!stop_){
+        ZMQAPI api_handler {};
+        while(! stop_){
             zmq::message_t request;
             auto res = socket_.recv(request);  // Wait for next request from client
             if(res){
-                std::string received_msg = request.to_string();
-                std::cout << "Received Zeromq request: " << received_msg << std::endl;
-
-                std::string reply_str = get_response(zmq_request_from_string(received_msg));
-                //  Send reply back to client
-                zmq::message_t reply (reply_str.size());
-                memcpy(reply.data(), reply_str.c_str(), reply_str.size());
-                socket_.send(reply, zmq::send_flags::none);
+                std::string reply_str = api_handler.handle_message(request);
+                socket_.send(zmq::buffer(reply_str), zmq::send_flags::none);
             }
         }
-        std::cout << "Zeromq Shutting down..." << std::endl;
+        std::cout << "Zeromq shutting down..." << std::endl;
         socket_.close();
         context_.close();
     }catch(const zmq::error_t &e){
         if(e.num() == EINTR){
-            std::cout << "Zeromq Interrupted" << std::endl;
+            std::cout << "Zeromq interrupted" << std::endl;
         }else{
-            std::cerr << "Zeromq Error: " << e.what() << std::endl;
+            std::cerr << "Zeromq error: " << e.what() << std::endl;
         }
     }catch(const std::exception &e){
-        std::cerr << "Zeromq Exception: " << e.what() << std::endl;
+        std::cerr << "Zeromq exception: " << e.what() << std::endl;
     }
-    std::cout << "Zeromq Shutting down..." << std::endl;
+    std::cout << "Zeromq shut down..." << std::endl;
 }
+
 
 void ZmqListner::start(){
     if(listner_th_ == nullptr){
@@ -100,7 +97,6 @@ std::string ZmqListner::get_response(ZmqRequest req){
             else{
                 return "fail";
             }
-
         case ZmqRequest::SET_API_AUTH_ON:
             if(gc.set_api_authentication(true)){
                 return "ok";
