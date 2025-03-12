@@ -29,6 +29,7 @@ IN THE SOFTWARE.
 
 #include <vector>
 #include <string>
+#include <string_view>
 #include <map>
 #include <unordered_map>
 #include <set>
@@ -46,6 +47,7 @@ using json = nlohmann::json;
 using ordered_json = nlohmann::ordered_json;
 
 using std::string;
+using std::string_view;
 using std::vector;
 using std::map;
 using std::unordered_map;

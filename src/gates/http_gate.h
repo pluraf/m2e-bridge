@@ -75,7 +75,7 @@ class HTTPChannel
     ChannelState state_;
 public:
     HTTPChannel() = default;
-    HTTPChannel(string const & id, json const & config);
+    HTTPChannel(string_view id, json const & config);
     void consume(char const * data, size_t n)const;
     bool verify_token(char const * token)const;
     bool is_anonymous()const { return token_.empty(); }
@@ -116,8 +116,9 @@ class HTTPGate
 public:
     static void start();
     void stop() {};
-    //void add_channel(HTTPChannel && channel);
-    //void delete_channel(string id);
+    static bool create_channel(string const & id, string_view config);
+    static bool update_channel(string const & id, string_view config);
+    static bool delete_channel(string const & id);
 
     static HTTPChannel const & get_channel(string const & id)
     {

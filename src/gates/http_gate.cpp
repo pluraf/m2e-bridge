@@ -27,6 +27,7 @@ IN THE SOFTWARE.
 #include <iostream>
 #include <tuple>
 #include <utility>
+#include <string_view>
 
 #include "http_gate.h"
 #include "civet_helpers.h"
@@ -98,12 +99,16 @@ public:
 };
 
 
-HTTPChannel::HTTPChannel(string const & id, json const & config)
+HTTPChannel::HTTPChannel(string_view id, json const & config)
 {
     id_ = id;
-    token_ = config.value("token", "");
+    if(config.contains("token")){
+        token_ = config.at("token").get<string>();
+    }else{
+        token_ = config.value("secret", "");
+    }
     try{
-        queue_name_ = config.at("queue").get<string>();
+        queue_name_ = config.at("queue_name").get<string>();
         queue_ = InternalQueue::get_queue_ptr(queue_name_);
     }catch(json::exception){
         state_ = ChannelState::MALFORMED;
@@ -149,4 +154,39 @@ void HTTPGate::start()
     instance.server_ = std::make_unique<CivetServer>(options);
     instance.server_->addAuthHandler("/channel/http/", new AuthHandler(*instance_));
     instance.server_->addHandler("/channel/http/", new ApiHandler(*instance_));
+}
+
+
+bool HTTPGate::create_channel(string const & id, string_view config)
+{
+    auto j_channel = json::parse(config);
+    HTTPChannel ch {id, j_channel};
+    if(! ch.is_malformed()){
+        auto & instance = get_instance();
+        instance.channels_[string(id)] = std::move(ch);
+        return true;
+    }
+    return false;
+}
+
+
+bool HTTPGate::update_channel(string const & id, string_view config)
+{
+    auto j_channel = json::parse(config);
+    HTTPChannel ch {id, j_channel};
+    if(! ch.is_malformed()){
+        auto & instance = get_instance();
+        instance.channels_.erase(id);
+        instance.channels_[id] = std::move(ch);
+        return true;
+    }
+    return false;
+}
+
+
+bool HTTPGate::delete_channel(string const & id)
+{
+    auto & instance = get_instance();
+    instance.channels_.erase(id);
+    return true;
 }

@@ -30,23 +30,32 @@ extern "C"{
 #include "zmq_api.h"
 #include "api_helpers.h"
 #include "gates/http_gate.h"
+#include "global_config.h"
+#include "API_VERSION.h"
 
 
 string ZMQAPI::handle_message(zmq::message_t const & message)
 {
-    return api_handler((unsigned char const *)message.data(), message.size());
+    return api_handler((char const *)message.data(), message.size());
 }
 
 
-string ZMQAPI::execute_request(char const * method, char const * path, unsigned char const * payload, size_t payload_len){
-    std::cout << method << " - " << path << std::endl;
-    if(strcmp(method, "GET") == 0 || strcmp(method, "get") == 0){
-        return zmq_channel_get(path, payload, payload_len);
-    }else if(strcmp(method, "PUT") == 0 || strcmp(method, "put") == 0){
-        return zmq_channel_put(path, payload, payload_len);
-    }else if(strcmp(method, "POST") == 0 || strcmp(method, "post") == 0){
+string ZMQAPI::execute_request(string_view method, string_view path, char const * payload, size_t payload_len){
+    if(method == "GET" || method == "get"){
+        if(path.starts_with("channel")){
+            return zmq_channel_get(path, payload, payload_len);
+        }else{
+            return zmq_legacy_get(path);
+        }
+    }else if(method == "PUT" || method == "put"){
+        if(path.starts_with("channel")){
+            return zmq_channel_put(path, payload, payload_len);
+        }else{
+            return zmq_legacy_put(path);
+        }
+    }else if(method == "POST" || method == "post"){
         return zmq_channel_post(path, payload, payload_len);
-    }else if(strcmp(method, "DELETE") == 0 || strcmp(method, "delete") == 0){
+    }else if(method == "DELETE" || method == "delete"){
         return zmq_channel_delete(path, payload, payload_len);
     }else{
         return "Unknown method";
@@ -54,10 +63,10 @@ string ZMQAPI::execute_request(char const * method, char const * path, unsigned 
 }
 
 
-string ZMQAPI::api_handler(unsigned char const * buffer, size_t len)
+string ZMQAPI::api_handler(char const * buffer, size_t len)
 {
     struct cbor_load_result result;
-    cbor_item_t * request = cbor_load(buffer, len, &result);
+    cbor_item_t * request = cbor_load((unsigned char const *)buffer, len, &result);
 
     if(request == NULL) return "{\"error\": \"error\"}";
     if(! cbor_isa_array(request)){
@@ -77,24 +86,14 @@ string ZMQAPI::api_handler(unsigned char const * buffer, size_t len)
         cbor_decref(&request);
         return "{\"error\": \"error\"}";
     }
-    char method[20] = {0};
-    if(cbor_string_length(item) >= 20){
-        cbor_decref(& request);
-        return "{\"error\": \"error\"}";
-    }
-    strncpy(method, (char *)cbor_string_handle(item), cbor_string_length(item));
+    string_view method {(char *)cbor_string_handle(item), cbor_string_length(item)};
     // Retrieve path
     item = items[1];
     if(! cbor_isa_string(item)){
         cbor_decref(& request);
         return "{\"error\": \"error\"}";
     }
-    char path[200] = {0};
-    if(cbor_string_length(item) >= 200){
-        cbor_decref(& request);
-        return "{\"error\": \"error\"}";
-    }
-    strncpy(path, (char *)cbor_string_handle(item), cbor_string_length(item));
+    string_view path {(char *)cbor_string_handle(item), cbor_string_length(item)};
     // Retrieve payload
     unsigned char * payload = NULL;
     size_t payload_len = 0;
@@ -113,13 +112,35 @@ string ZMQAPI::api_handler(unsigned char const * buffer, size_t len)
         }
     }
 
-    string response = execute_request(method, path, payload, payload_len);
+    string response = execute_request(method, path, (char *)payload, payload_len);
     cbor_decref(& request);
     return response;
 }
 
 
-string ZMQAPI::zmq_channel_get(char const * path, unsigned char const * payload, size_t payload_len)
+string ZMQAPI::zmq_legacy_get(string_view path)
+{
+    if(path == "api_version"){
+        return M2E_BRIDGE_VERSION;
+    }else if(path == "status"){
+        return "running";
+    }
+    return "unknown path";
+}
+
+
+string ZMQAPI::zmq_legacy_put(string_view path)
+{
+    if(path == "set_api_auth_off"){
+        return gc.set_api_authentication(false) ? "ok" : "fail";
+    }else if(path == "set_api_auth_on"){
+        return gc.set_api_authentication(true) ? "ok" : "fail";
+    }
+    return "unknown path";
+}
+
+
+string ZMQAPI::zmq_channel_get(string_view path, char const * payload, size_t payload_len)
 {
     vector<string> segments;
     segments = get_last_segments(path);
@@ -128,6 +149,7 @@ string ZMQAPI::zmq_channel_get(char const * path, unsigned char const * payload,
         for(auto const & channel : HTTPGate::get_channels()){
             json j_channel = json::object();
             j_channel["id"] = channel.get_id();
+            j_channel["type"] = "http";
             j_channel["state"] = channel.get_state_str();
             j_channel["msg_received"] = 0;
             j_channel["msg_timestamp"] = 0;
@@ -135,11 +157,19 @@ string ZMQAPI::zmq_channel_get(char const * path, unsigned char const * payload,
         }
         return j_channels.dump();
     }else if(segments.size() == 2){
-        auto & channel = HTTPGate::get_channel(segments[1]);
+        HTTPChannel const * channel {nullptr};
+        try{
+            channel = & HTTPGate::get_channel(segments[1]);
+        }catch(std::out_of_range){
+            return "{\"error\": \"error\"}";
+        }
         json j_channel = json::object();
-        j_channel["id"] = channel.get_id();
-        j_channel["queue_name"] = channel.get_queue_name();
-        j_channel["state"] = channel.get_state_str();
+        j_channel["id"] = channel->get_id();
+        j_channel["type"] = "http";
+        j_channel["queue_name"] = channel->get_queue_name();
+        j_channel["state"] = channel->get_state_str();
+        j_channel["path"] = "/channel/http/" + channel->get_queue_name();
+        j_channel["authtype"] = "token";
         j_channel["msg_received"] = 0;
         j_channel["msg_timestamp"] = 0;
         return j_channel.dump();
@@ -149,16 +179,40 @@ string ZMQAPI::zmq_channel_get(char const * path, unsigned char const * payload,
 }
 
 
-string ZMQAPI::zmq_channel_put(char const * path, unsigned char const * payload, size_t payload_len)
+string ZMQAPI::zmq_channel_put(string_view path, char const * payload, size_t payload_len)
 {
+    auto segments = get_last_segments(path);
+    if(segments.size() == 2){
+        auto & channel_id = segments.back();
+        if(HTTPGate::update_channel(channel_id, string_view(payload, payload_len))){
+            return "";
+        }
+    }
+    return "{\"error\": \"error\"}";
 }
 
 
-string ZMQAPI::zmq_channel_post(char const * path, unsigned char const * payload, size_t payload_len)
+string ZMQAPI::zmq_channel_post(string_view path, char const * payload, size_t payload_len)
 {
+    auto segments = get_last_segments(path);
+    if(segments.size() == 2){
+        auto & channel_id = segments.back();
+        if(HTTPGate::create_channel(channel_id, string_view(payload, payload_len))){
+            return "";
+        }
+    }
+    return "{\"error\": \"error\"}";
 }
 
 
-string ZMQAPI::zmq_channel_delete(char const * path, unsigned char const * payload, size_t payload_len)
+string ZMQAPI::zmq_channel_delete(string_view path, char const * payload, size_t payload_len)
 {
+    auto segments = get_last_segments(path);
+    if(segments.size() == 2){
+        auto & channel_id = segments.back();
+        if(HTTPGate::delete_channel(channel_id)){
+            return "";
+        }
+    }
+    return "{\"error\": \"error\"}";
 }

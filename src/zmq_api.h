@@ -33,12 +33,15 @@ IN THE SOFTWARE.
 
 
 class ZMQAPI{
-    string api_handler(unsigned char const * buffer, size_t len);
-    string execute_request(char const * method, char const * path, unsigned char const * payload, size_t payload_len);
-    string zmq_channel_get(char const * path, unsigned char const * payload, size_t payload_len);
-    string zmq_channel_put(char const * path, unsigned char const * payload, size_t payload_len);
-    string zmq_channel_post(char const * path, unsigned char const * payload, size_t payload_len);
-    string zmq_channel_delete(char const * path, unsigned char const * payload, size_t payload_len);
+    string api_handler(char const * buffer, size_t len);
+    string execute_request(string_view method, string_view path, char const * payload, size_t payload_len);
+    string zmq_channel_get(string_view path, char const * payload, size_t payload_len);
+    string zmq_channel_put(string_view path, char const * payload, size_t payload_len);
+    string zmq_channel_post(string_view path, char const * payload, size_t payload_len);
+    string zmq_channel_delete(string_view path, char const * payload, size_t payload_len);
+
+    string zmq_legacy_get(string_view path);
+    string zmq_legacy_put(string_view path);
 public:
     string handle_message(zmq::message_t const & request);
 };

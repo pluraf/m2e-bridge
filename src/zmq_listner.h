@@ -35,8 +35,6 @@ IN THE SOFTWARE.
 #include <atomic>
 #include <fstream>
 
-#include "API_VERSION.h"
-
 
 enum class ZmqRequest{
     API_VERSION,
@@ -79,7 +77,6 @@ private:
     static ZmqListner* instance_;
     ZmqListner(){} // private constructor to make class singleton
     void run();
-    std::string get_response(ZmqRequest req);
     zmq::socket_t socket_;
     zmq::context_t context_;
 };

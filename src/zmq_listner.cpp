@@ -25,7 +25,6 @@ IN THE SOFTWARE.
 
 #include "zmq_listner.h"
 #include "zmq_api.h"
-#include "global_config.h"
 
 
 //Initialize static member to null
@@ -80,31 +79,5 @@ void ZmqListner::stop(){
         listner_th_->join();
         delete listner_th_;
         listner_th_ = nullptr;
-    }
-}
-
-
-std::string ZmqListner::get_response(ZmqRequest req){
-    switch(req){
-        case ZmqRequest::API_VERSION:
-            return M2E_BRIDGE_VERSION;
-        case ZmqRequest::STATUS:
-            return "running";
-        case ZmqRequest::SET_API_AUTH_OFF:
-            if(gc.set_api_authentication(false)){
-                return "ok";
-            }
-            else{
-                return "fail";
-            }
-        case ZmqRequest::SET_API_AUTH_ON:
-            if(gc.set_api_authentication(true)){
-                return "ok";
-            }
-            else{
-                return "fail";
-            }
-        default:
-            return "Hello from m2e-bridge";
     }
 }

@@ -30,6 +30,11 @@ IN THE SOFTWARE.
 #include "api_helpers.h"
 
 
+std::vector<std::string> get_last_segments(string_view uri, size_t count){
+    return get_last_segments(uri.data(), count);
+}
+
+
 std::vector<std::string> get_last_segments(char const * uri, size_t count){
     vector<string> segments;
     string segment;
