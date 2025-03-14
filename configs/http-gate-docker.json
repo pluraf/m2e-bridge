@@ -1,0 +1,10 @@
+{
+    "enabled": true,
+    "channels": {
+        "channel1": {
+            "authtype": "none",
+            "enabled": true,
+            "queue_name": "queue1"
+        }
+    }
+}
