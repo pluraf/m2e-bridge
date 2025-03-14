@@ -37,9 +37,24 @@ IN THE SOFTWARE.
 enum class ChannelState{
     UNKN,
     MALFORMED,
-    ENABLED,
-    DISABLED
+    CONFIGURED
 };
+
+
+enum class AuthType{
+    UNKN,
+    NONE,
+    TOKEN
+};
+
+
+struct ChannelStat{
+    size_t msg_received;
+    size_t msg_timestamp;
+};
+
+
+class HTTPGate;
 
 
 template <typename Key, typename Value>
@@ -71,27 +86,56 @@ class HTTPChannel
     string id_;
     string token_;
     string queue_name_;
+    AuthType authtype_ {AuthType::UNKN};
     InternalQueue * queue_ {nullptr};
-    ChannelState state_;
+    ChannelState state_ {ChannelState::UNKN};
+    bool enabled_ {false};
+    size_t msg_received_ {0};
+    size_t msg_timestamp_ {0};
+
+    AuthType str2authtype(string const & str){
+        if(str == "token"){
+            return AuthType::TOKEN;
+        }else if(str == "none"){
+            return AuthType::NONE;
+        }
+        return AuthType::UNKN;
+    }
+    void reconfigure(json const & config);
 public:
     HTTPChannel() = default;
-    HTTPChannel(string_view id, json const & config);
-    void consume(char const * data, size_t n)const;
+    HTTPChannel(string_view id, json const & config, bool strict=true);
+    void consume(char const * data, size_t n);
     bool verify_token(char const * token)const;
-    bool is_anonymous()const { return token_.empty(); }
-    bool is_malformed()const { return state_ == ChannelState::MALFORMED; };
+    bool is_anonymous()const {return authtype_ == AuthType::NONE;}
+    bool is_malformed()const {return state_ == ChannelState::MALFORMED;};
+    bool is_enabled()const {return enabled_;}
     string const & get_id()const {return id_;}
     string const get_state_str()const
     {
         switch(state_){
             case ChannelState::MALFORMED: return "MALFORMED";
-            case ChannelState::ENABLED: return "ENABLED";
-            case ChannelState::DISABLED: return "DISABLED";
+            case ChannelState::CONFIGURED: return "CONFIGURED";
             case ChannelState::UNKN:
             default: return "UNKN";
         }
     }
     string const & get_queue_name()const {return queue_name_;}
+    string const & get_token()const {return token_;}
+    AuthType get_authtype()const {return authtype_;}
+    ChannelStat get_stat()const{
+        return {.msg_received=msg_received_, .msg_timestamp=msg_timestamp_};
+    }
+    string get_authtype_str()const {
+        switch (authtype_){
+            case AuthType::NONE: return "none";
+            case AuthType::TOKEN: return "token";
+            case AuthType::UNKN:
+            default: return "unkn";
+        }
+    }
+
+    friend class HTTPGate;
 };
 
 
@@ -111,16 +155,19 @@ class HTTPGate
     static HTTPGate * instance_;
     std::unique_ptr<CivetServer> server_;
     unordered_map<string, HTTPChannel> channels_;
-    HTTPGate();  // private constructor to make class singleton
     HTTPChannelIterator channel_iterator_;
+    bool enabled_ {false};
+
+    HTTPGate();  // private constructor to make class singleton
+    void save();
 public:
     static void start();
-    void stop() {};
+    static void stop() {};
     static bool create_channel(string const & id, string_view config);
     static bool update_channel(string const & id, string_view config);
     static bool delete_channel(string const & id);
 
-    static HTTPChannel const & get_channel(string const & id)
+    static HTTPChannel & get_channel(string const & id)
     {
         return get_instance().channels_.at(id);
     }

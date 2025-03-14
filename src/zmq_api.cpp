@@ -27,11 +27,13 @@ extern "C"{
     #include <cbor.h>
 }
 
+
+#include "API_VERSION.h"
 #include "zmq_api.h"
 #include "api_helpers.h"
 #include "gates/http_gate.h"
 #include "global_config.h"
-#include "API_VERSION.h"
+#include "m2e_exceptions.h"
 
 
 string ZMQAPI::handle_message(zmq::message_t const & message)
@@ -151,8 +153,10 @@ string ZMQAPI::zmq_channel_get(string_view path, char const * payload, size_t pa
             j_channel["id"] = channel.get_id();
             j_channel["type"] = "http";
             j_channel["state"] = channel.get_state_str();
-            j_channel["msg_received"] = 0;
-            j_channel["msg_timestamp"] = 0;
+            j_channel["enabled"] = channel.is_enabled();
+            auto stat = channel.get_stat();
+            j_channel["msg_received"] = stat.msg_received;
+            j_channel["msg_timestamp"] = stat.msg_timestamp;
             j_channels.push_back(std::move(j_channel));
         }
         return j_channels.dump();
@@ -166,12 +170,17 @@ string ZMQAPI::zmq_channel_get(string_view path, char const * payload, size_t pa
         json j_channel = json::object();
         j_channel["id"] = channel->get_id();
         j_channel["type"] = "http";
+        if(channel->get_authtype() == AuthType::TOKEN){
+            j_channel["token"] = channel->get_token();
+        }
         j_channel["queue_name"] = channel->get_queue_name();
         j_channel["state"] = channel->get_state_str();
-        j_channel["path"] = "/channel/http/" + channel->get_queue_name();
-        j_channel["authtype"] = "token";
-        j_channel["msg_received"] = 0;
-        j_channel["msg_timestamp"] = 0;
+        j_channel["enabled"] = channel->is_enabled();
+        j_channel["path"] = "/channel/http/" + channel->get_id();
+        j_channel["authtype"] = channel->get_authtype_str();
+        auto stat = channel->get_stat();
+        j_channel["msg_received"] = stat.msg_received;
+        j_channel["msg_timestamp"] = stat.msg_timestamp;
         return j_channel.dump();
     }else{
         return "{\"error\": \"error\"}";
@@ -184,8 +193,12 @@ string ZMQAPI::zmq_channel_put(string_view path, char const * payload, size_t pa
     auto segments = get_last_segments(path);
     if(segments.size() == 2){
         auto & channel_id = segments.back();
-        if(HTTPGate::update_channel(channel_id, string_view(payload, payload_len))){
-            return "";
+        try{
+            if(HTTPGate::update_channel(channel_id, string_view(payload, payload_len))){
+                return "";
+            }
+        }catch(configuration_error const & e){
+            return fmt::format("{{\"error\": {}}}", e.what());
         }
     }
     return "{\"error\": \"error\"}";
@@ -197,8 +210,10 @@ string ZMQAPI::zmq_channel_post(string_view path, char const * payload, size_t p
     auto segments = get_last_segments(path);
     if(segments.size() == 2){
         auto & channel_id = segments.back();
-        if(HTTPGate::create_channel(channel_id, string_view(payload, payload_len))){
-            return "";
+        try{
+            if(HTTPGate::create_channel(channel_id, string_view(payload, payload_len))) return "";
+        }catch(configuration_error const & e){
+            return fmt::format("{{\"error\": {}}}", e.what());
         }
     }
     return "{\"error\": \"error\"}";

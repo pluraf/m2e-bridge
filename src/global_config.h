@@ -67,9 +67,7 @@ public:
 
     bool save_config(){
         std::ofstream ofs(config_path_);
-        if(! ofs.is_open()) {
-            return false;
-        }
+        if(! ofs.is_open()) return false;
         ofs << config_.dump(4);
         ofs.close();
         return true;
@@ -102,12 +100,19 @@ public:
     bool save_pipelines() {
         std::string pipelines_path = config_.at("pipelines_path").get<std::string>();
         std::ofstream ofs(pipelines_path);
-        if(! ofs.is_open()) {
-            return 1;
-        }
+        if(! ofs.is_open()) return false;
         ofs << pipelines_.dump(4);
         ofs.close();
-        return 0;
+        return true;
+    }
+
+    bool save_http_gate(json const & config) {
+        string const & http_gate_path = config_.at("http_gate_path").get<std::string>();
+        std::ofstream ofs(http_gate_path);
+        if(! ofs.is_open()) return false;
+        ofs << config.dump(4);
+        ofs.close();
+        return true;
     }
 
     void load(std::string const & config_path){

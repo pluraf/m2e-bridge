@@ -33,9 +33,9 @@ IN THE SOFTWARE.
 #include "m2e_aliases.h"
 
 
-std::vector<std::string> get_last_segments(string_view uri, size_t count=0);
+vector<string> get_last_segments(string_view uri, size_t count=0);
 
-std::vector<std::string> get_last_segments(char const * uri, size_t count=0);
+vector<string> get_last_segments(char const * uri, size_t count=0);
 
 
 #endif  // __M2E_BRIDGE_API_HELPERS_H__

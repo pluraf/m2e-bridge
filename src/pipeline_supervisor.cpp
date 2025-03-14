@@ -60,9 +60,7 @@ bool PipelineSupervisor::add_pipeline(string const & pipeid, json const & pipeli
     if(pos != pipelines_.end()){
         throw duplicate_error("Pipeline already exist!");
     }
-    if(gc.add_pipeline(pipeid, pipeline_data) != 0){
-        return false;
-    }
+    if(! gc.add_pipeline(pipeid, pipeline_data)) return false;
     pipelines_.emplace(pipeid, new Pipeline(pipeid, pipeline_data));
     return true;
 }
@@ -70,9 +68,7 @@ bool PipelineSupervisor::add_pipeline(string const & pipeid, json const & pipeli
 
 bool PipelineSupervisor::delete_pipeline(string const & pipeid){
     get_pipeline(pipeid)->terminate();
-    if(gc.delete_pipeline(pipeid) != 0){
-        return false;
-    }
+    if(! gc.delete_pipeline(pipeid)) return false;
     pipelines_.erase(pipeid);
     return true;
 }

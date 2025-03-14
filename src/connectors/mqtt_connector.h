@@ -313,7 +313,7 @@ private:
 
         // Re-connection failure
         void on_failure(const mqtt::token& tok) override {
-            std::cerr<<"Connection attempt failed "<<std::endl;
+            // std::cerr<<"Connection attempt failed "<<std::endl;
             if(++nretry_ > connector_ptr_->n_retry_attempts_) return;
             reconnect();
         }
