@@ -38,10 +38,10 @@ IN THE SOFTWARE.
 HTTPGate * HTTPGate::instance_ = nullptr;
 
 
-class AuthHandler: public CivetAuthHandler{
+class HTTPChannelAuthHandler: public CivetAuthHandler{
     HTTPGate & gate_;
 public:
-    AuthHandler(HTTPGate & gate): gate_(gate) {}
+    HTTPChannelAuthHandler(HTTPGate & gate): gate_(gate) {}
 
     bool authorize(CivetServer *server, struct mg_connection *conn)override{
         mg_request_info const * req_info = mg_get_request_info(conn);
@@ -72,10 +72,10 @@ private:
 };
 
 
-class ApiHandler: public CivetHandler{
+class HTTPChannelApiHandler: public CivetHandler{
     HTTPGate & gate_;
 public:
-    ApiHandler(HTTPGate & gate): gate_(gate) {}
+    HTTPChannelApiHandler(HTTPGate & gate): gate_(gate) {}
 
     bool handlePost(CivetServer * server, struct mg_connection * conn)override{
         json pipeline_data;
@@ -238,8 +238,8 @@ void HTTPGate::start()
 
     auto & instance = get_instance();
     instance.server_ = std::make_unique<CivetServer>(options);
-    instance.server_->addAuthHandler("/channel/http/", new AuthHandler(*instance_));
-    instance.server_->addHandler("/channel/http/", new ApiHandler(*instance_));
+    instance.server_->addAuthHandler("/channel/http/", new HTTPChannelAuthHandler(*instance_));
+    instance.server_->addHandler("/channel/http/", new HTTPChannelApiHandler(*instance_));
 }
 
 

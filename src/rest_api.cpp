@@ -59,10 +59,10 @@ int parse_request_body(struct mg_connection * conn, json & pipeline_data){
 }
 
 
-class AuthHandler:public CivetAuthHandler{
+class RESTAuthHandler:public CivetAuthHandler{
 
 public:
-    AuthHandler(std::string* public_key){
+    RESTAuthHandler(std::string* public_key){
         public_key_ = public_key;
     }
 
@@ -325,7 +325,7 @@ CivetServer* start_server(){
 
     CivetServer* server = new CivetServer(options);
 
-    server->addAuthHandler("/**", new AuthHandler(&public_key));
+    server->addAuthHandler("/**", new RESTAuthHandler(&public_key));
     server->addHandler("/pipeline/config/", new PipelineConfigApiHandler());
     server->addHandler("/pipeline/status/", new PipelineStatusApiHandler());
     server->addHandler("/pipeline/control/", new PipelineControlApiHandler());
