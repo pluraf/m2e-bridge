@@ -102,7 +102,23 @@ public:
     }
 
     bool handleGet(CivetServer * server, struct mg_connection * conn)override{
-        mg_send_http_error(conn, 405, "%s", "Method Not Allowed");
+        const struct mg_request_info *req_info = mg_get_request_info(conn);
+        char const *  channel_id = cv_get_last_segment(req_info);
+        if(channel_id){
+            try{
+                HTTPChannel & channel = gate_.get_channel(channel_id);
+                if(req_info->query_string){
+                    channel.consume(req_info->query_string, strlen(req_info->query_string));
+                }else{
+                    channel.consume("", 0);
+                }
+                mg_send_http_ok(conn, "text/plain", 0);
+            }catch(std::out_of_range){
+                mg_send_http_error(conn, 404, "%s", "Pipeline not found!");
+            }
+        }else{
+            mg_send_http_error(conn, 400, "Channel ID is missing in URI");
+        }
         return true;
     }
 };
