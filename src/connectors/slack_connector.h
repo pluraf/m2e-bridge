@@ -102,24 +102,10 @@ public:
         }
         std::cout << "SlackConnector disconnected" << std::endl;
     }
-};
 
-
-static const json slack_connector_schema_ = {
-    "slack", {
-        {"type", {
-            {"type", "string"},
-            {"enum", {"slack"}},
-            {"required", true}
-        }},
-        {"authbundle_id", {
-            {"type", "string"},
-            {"required", true}
-        }},
-        {"channel_id", {
-            {"type", "string"},
-            {"required", {{"in", false}, {"out", true}}}
-        }},
+    static pair<string, json> get_schema(){
+        json schema = Connector::get_schema();
+        return {"slack", schema};
     }
 };
 

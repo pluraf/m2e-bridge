@@ -304,49 +304,40 @@ public:
             curl_easy_cleanup(curl);
         }
     }
-};
 
-
-static const json email_connector_schema_ = {
-    "email", {
-        {"type", {
-            {"type", "string"},
-            {"enum", {"email"}},
-            {"required", true}
-        }},
-        {"authbundle_id", {
-            {"type", "string"},
-            {"required", true}
-        }},
-        {"address", {
-            {"type", "string"},
-            {"required", true}
-        }},
-        {"smtp_server", {
-            {"type", "string"},
-            {"required", {{"in", false}, {"out", true}}}
-        }},
-        {"smtp_port", {
-            {"type", "integer"},
-            {"default", 587},
-            {"required", false}
-        }},
-        {"imap_server", {
-            {"type", "string"},
-            {"required", {{"in", true}, {"out", false}}}
-        }},
-        {"imap_port", {
-            {"type", "integer"},
-            {"default", 993},
-            {"required", false}
-        }},
-        {"subject", {
-            {"type", "string"},
-            {"required", false}
-        }},
+    static pair<string, json> get_schema(){
+        json schema = Connector::get_schema();
+        schema.merge_patch({
+            {"address", {
+                {"type", "string"},
+                {"required", true}
+            }},
+            {"smtp_server", {
+                {"type", "string"},
+                {"required", {{"in", false}, {"out", true}}}
+            }},
+            {"smtp_port", {
+                {"type", "integer"},
+                {"default", 587},
+                {"required", false}
+            }},
+            {"imap_server", {
+                {"type", "string"},
+                {"required", {{"in", true}, {"out", false}}}
+            }},
+            {"imap_port", {
+                {"type", "integer"},
+                {"default", 993},
+                {"required", false}
+            }},
+            {"subject", {
+                {"type", "string"},
+                {"required", false}
+            }}
+        });
+        return {"email", schema};
     }
 };
-
 
 
 #endif  // __M2E_BRIDGE_EMAIL_CONNECTOR_H__

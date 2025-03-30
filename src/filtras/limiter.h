@@ -46,63 +46,19 @@ public:
         return "";
     }
 
+    static pair<string, json> get_schema(){
+        json schema = Filtra::get_schema();
+        schema.merge_patch({
+            {"size", {
+                {"type", "integer"},
+                {"required", true}
+            }}
+        });
+        return {"limiter", schema};
+    }
+
 private:
     unsigned long size_ {0};
-};
-
-
-static const json limiter_filtra_schema_ = {
-    "limiter", {
-        {"type", {
-            {"type", "string"},
-            {"enum", {"limiter"}},
-            {"required", true}
-        }},
-        {"name", {
-            {"type", "string"},
-            {"default", ""},
-            {"required", false}
-        }},
-        {"msg_format", {
-            {"type", "string"},
-            {"enum", {"json", "raw"}},
-            {"default", "raw"},
-            {"required", false}
-        }},
-        {"logical_negation", {
-            {"type", "boolean"},
-            {"default", false},
-            {"required", false}
-        }},
-        {"queues", {
-            {"type", "array"},
-            {"items", {{"type", "string"}}},
-            {"required", false}
-        }},
-        {"metadata", {
-            {"type", "object"},
-            {"required", false}
-        }},
-        {"goto", {
-            {"type", "string"},
-            {"default", ""},
-            {"required", false}
-        }},
-        {"goto_passed", {
-            {"type", "string"},
-            {"default", ""},
-            {"required", false}
-        }},
-        {"goto_rejected", {
-            {"type", "string"},
-            {"default", ""},
-            {"required", false}
-        }},
-        {"size", {
-            {"type", "integer"},
-            {"required", true}
-        }}
-    }
 };
 
 

@@ -69,24 +69,20 @@ public:
     void stop()override{
         Connector::stop();
     }
-};
 
-
-static const json internal_connector_schema_ = {
-    "queue", {
-        {"type", {
-            {"type", "string"},
-            {"enum", {"queue"}},
-            {"required", true}
-        }},
-        {"authbundle_id", {
-            {"type", "string"},
-            {"required", true}
-        }},
-        {"name", {
-            {"type", "string"},
-            {"required", true}
-        }}
+    static pair<string, json> get_schema(){
+        json schema = Connector::get_schema();
+        schema.merge_patch({
+            {"name", {
+                {"type", "string"},
+                {"required", true}
+            }},
+            {"buffer_size", {
+                {"type", "integer"},
+                {"required", false}
+            }}
+        });
+        return {"queue", schema};
     }
 };
 

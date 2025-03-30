@@ -311,45 +311,35 @@ public:
             curl_easy_cleanup(curl_);
         }
     }
-};
 
-
-static const json service_bus_connector_schema_ = {
-    "azure_sbc", {
-        {"type", {
-            {"type", "string"},
-            {"enum", {"azure_sbc"}},
-            {"required", true}
-        }},
-        {"authbundle_id", {
-            {"type", "string"},
-            {"required", true}
-        }},
-        {"entity_path", {
-            {"type", "string"},
-            {"required", true}
-        }},
-        {"expire_in", {
-            {"type", "integer"},
-            {"default", 3600},
-            {"required", false}
-        }},
-        {"is_topic", {
-            {"type", "boolean"},
-            {"required", true}
-        }},
-        {"subscription_name", {
-            {"type", "boolean"},
-            {"default", false},
-            {"required", {{"in", true}, {"out", false}}}
-        }},
-        {"delete_after_processing", {
-            {"type", "boolean"},
-            {"required", false}
-        }}
+    static pair<string, json> get_schema(){
+        json schema = Connector::get_schema();
+        schema.merge_patch({
+            {"entity_path", {
+                {"type", "string"},
+                {"required", true}
+            }},
+            {"expire_in", {
+                {"type", "integer"},
+                {"default", 3600},
+                {"required", false}
+            }},
+            {"is_topic", {
+                {"type", "boolean"},
+                {"required", true}
+            }},
+            {"subscription_name", {
+                {"type", "string"},
+                {"required", {{"key", "mode"}, {"value", "in"}}}
+            }},
+            {"delete_after_processing", {
+                {"type", "boolean"},
+                {"required", false}
+            }}
+        });
+        return {"azure_service_bus", schema};
     }
 };
-
 
 
 #endif  // __M2E_BRIDGE_AZURE_SERVICE_BUS_CONNECTOR_H__

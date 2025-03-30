@@ -43,26 +43,26 @@ IN THE SOFTWARE.
 
 static json get_schemas(){
     return {
-        {"connectors", {
-            mqtt_connector_schema_,
-            gcp_pubsub_connector_schema_,
-            email_connector_schema_,
-            internal_connector_schema_,
-            gcp_bucket_connector_schema_,
-            aws_s3_connector_schema_,
-            http_connector_schema_,
-            service_bus_connector_schema_,
-            slack_connector_schema_
+        {"connector", {
+            MqttConnector::get_schema(),
+            PubSubConnector::get_schema(),
+            EmailConnector::get_schema(),
+            InternalConnector::get_schema(),
+            CloudStorageConnector::get_schema(),
+            S3Connector::get_schema(),
+            HttpConnector::get_schema(),
+            ServiceBusConnector::get_schema(),
+            SlackConnector::get_schema()
         }},
-        {"filtras", {
-            comparator_filtra_schema_,
-            finder_filtra_schema_,
-            eraser_filtra_schema_,
-            builder_filtra_schema_,
-            splitter_filtra_schema_,
-            limiter_filtra_schema_,
-            nop_filtra_schema_,
-            throttle_filtra_schema_
+        {"filtra", {
+            ComparatorFT::get_schema(),
+            FinderFT::get_schema(),
+            EraserFT::get_schema(),
+            BuilderFT::get_schema(),
+            SplitterFT::get_schema(),
+            LimiterFT::get_schema(),
+            NopFT::get_schema(),
+            ThrottleFT::get_schema()
         }}
     };
 }

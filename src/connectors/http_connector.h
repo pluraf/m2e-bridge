@@ -295,47 +295,39 @@ public:
         }
         return Message(response.resp_str, "http");
     }
-};
 
-
-static const json http_connector_schema_ = {
-    "http", {
-        {"type", {
-            {"type", "string"},
-            {"enum", {"http"}},
-            {"required", true}
-        }},
-        {"authbundle_id", {
-            {"type", "string"},
-            {"required", true}
-        }},
-        {"url", {
-            {"type", "string"},
-            {"required", true}
-        }},
-        {"https_verify_cert", {
-            {"type", "boolean"},
-            {"default", true},
-            {"required", false}
-        }},
-        {"method", {
-            {"type", "string"},
-            {"required", true}
-        }},
-        {"header", {
-            {"type", "string"},
-            {"required", false}
-        }},
-        {"payload", {
-            {"type", "string"},
-            {"default", ""},
-            {"required", false}
-        }},
-        {"request_freq_limit", {
-            {"type", "integer"},
-            {"default", 0},
-            {"required", false}
-        }}
+    static pair<string, json> get_schema(){
+        json schema = Connector::get_schema();
+        schema.merge_patch({
+            {"url", {
+                {"type", "string"},
+                {"required", true}
+            }},
+            {"https_verify_cert", {
+                {"type", "boolean"},
+                {"default", true},
+                {"required", false}
+            }},
+            {"method", {
+                {"type", "string"},
+                {"required", true}
+            }},
+            {"header", {
+                {"type", "string"},
+                {"required", false}
+            }},
+            {"payload", {
+                {"type", "string"},
+                {"default", ""},
+                {"required", false}
+            }},
+            {"request_freq_limit", {
+                {"type", "integer"},
+                {"default", 0},
+                {"required", false}
+            }}
+        });
+        return {"http", schema};
     }
 };
 

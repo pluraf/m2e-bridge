@@ -253,33 +253,25 @@ public:
 
         return Message(file_content, object_name_template_);
     }
-};
 
-
-static const json aws_s3_connector_schema_ = {
-    "aws_s3", {
-        {"type", {
-            {"type", "string"},
-            {"enum", {"aws_s3"}},
-            {"required", true}
-        }},
-        {"authbundle_id", {
-            {"type", "string"},
-            {"required", true}
-        }},
-        {"bucket_name", {
-            {"type", "string"},
-            {"required", true}
-        }},
-        {"object_name", {
-            {"type", "string"},
-            {"required", true}
-        }},
-        {"delete_received", {
-            {"type", "boolean"},
-            {"default", false},
-            {"required", false}
-        }}
+    static pair<string, json> get_schema(){
+        json schema = Connector::get_schema();
+        schema.merge_patch({
+            {"bucket_name", {
+                {"type", "string"},
+                {"required", true}
+            }},
+            {"object_name", {
+                {"type", "string"},
+                {"required", true}
+            }},
+            {"delete_received", {
+                {"type", "boolean"},
+                {"default", false},
+                {"required", false}
+            }}
+        });
+        return {"aws_s3", schema};
     }
 };
 

@@ -35,7 +35,7 @@ pair<bool, string> validate_connector(ConnectorMode mode, json const & config){
         if(conn_type == "mqtt"){
             MqttConnector("pipeid", mode, config);
         }else if(conn_type == "gcp_pubsub"){
-            gcp::PubSubConnector("pipeid", mode, config);
+            PubSubConnector("pipeid", mode, config);
         }else if(conn_type == "email"){
             EmailConnector("pipeid", mode, config);
         }else if(conn_type == "queue"){

@@ -50,7 +50,7 @@ public:
         if(conn_type == "mqtt"){
             return new MqttConnector(pipeid, mode, config);
         }else if(conn_type == "gcp_pubsub"){
-            return new gcp::PubSubConnector(pipeid, mode, config);
+            return new PubSubConnector(pipeid, mode, config);
         }else if(conn_type == "email"){
             return new EmailConnector(pipeid, mode, config);
         }else if(conn_type == "queue"){

@@ -72,6 +72,58 @@ public:
     string const & get_name(){return name_;}
     hops_t const & get_hops(){return hops_;}
 
+    static json get_schema(){
+        return json {
+            {"name", {
+                {"type", "string"},
+                {"default", ""},
+                {"required", false}
+            }},
+            {"msg_format", {
+                {"type", "string"},
+                {"options", {"json", "raw"}},
+                {"default", "raw"},
+                {"required", false}
+            }},
+            {"logical_negation", {
+                {"type", "boolean"},
+                {"default", false},
+                {"required", false}
+            }},
+            {"queues", {
+                {"type", "array"},
+                {"items", {{"type", "string"}}},
+                {"required", false}
+            }},
+            {"metadata", {
+                {"type", "object"},
+                {"required", false}
+            }},
+            {"goto", {
+                {"type", "string"},
+                {"default", ""},
+                {"required", false}
+            }},
+            {"goto_passed", {
+                {"type", "string"},
+                {"default", ""},
+                {"required", false}
+            }},
+            {"goto_rejected", {
+                {"type", "string"},
+                {"default", ""},
+                {"required", false}
+            }},
+            {"queues", {
+                {"type", "array"},
+                {"items", {
+                    {"type", "string"}
+                }},
+                {"required", false}
+            }}
+        };
+    }
+
 protected:
     virtual string process_message(MessageWrapper &msg_w) = 0;
     virtual Message generate_message(){return Message();}

@@ -92,6 +92,27 @@ public:
         }
         return "";
     }
+
+    static pair<string, json> get_schema(){
+        json schema = Filtra::get_schema();
+        schema.merge_patch({
+            {"operator", {
+                {"type", "string"},
+                {"options", {"eq", "gt", "gte", "lt", "lte"}},
+                {"required", true}
+            }},
+            {"value_key", {
+                {"type", "string"},
+                {"required", true}
+            }},
+            {"comparand", {
+                {"type", "integer"},
+                {"required", true}
+            }}
+        });
+        return {"comparator", schema};
+    }
+
 private:
     ComparatorOperator operator_ {ComparatorOperator::UNKN};
     std::string value_key_;
@@ -107,70 +128,6 @@ private:
             case ComparatorOperator::LTE: return a <= b;
             default: return false;
         }
-    }
-};
-
-
-static const json comparator_filtra_schema_ = {
-    "comparator", {
-        {"type", {
-            {"type", "string"},
-            {"enum", {"comparator"}},
-            {"required", true}
-        }},
-        {"name", {
-            {"type", "string"},
-            {"default", ""},
-            {"required", false}
-        }},
-        {"msg_format", {
-            {"type", "string"},
-            {"enum", {"json", "raw"}},
-            {"default", "raw"},
-            {"required", false}
-        }},
-        {"logical_negation", {
-            {"type", "boolean"},
-            {"default", false},
-            {"required", false}
-        }},
-        {"queues", {
-            {"type", "array"},
-            {"items", {{"type", "string"}}},
-            {"required", false}
-        }},
-        {"metadata", {
-            {"type", "object"},
-            {"required", false}
-        }},
-        {"goto", {
-            {"type", "string"},
-            {"default", ""},
-            {"required", false}
-        }},
-        {"goto_passed", {
-            {"type", "string"},
-            {"default", ""},
-            {"required", false}
-        }},
-        {"goto_rejected", {
-            {"type", "string"},
-            {"default", ""},
-            {"required", false}
-        }},
-        {"operator", {
-            {"type", "string"},
-            {"enum", {"eq", "gt", "gte", "lt", "lte"}},
-            {"required", true}
-        }},
-        {"value_key", {
-            {"type", "string"},
-            {"required", true}
-        }},
-        {"comparand", {
-            {"type", "integer"},
-            {"required", true}
-        }}
     }
 };
 

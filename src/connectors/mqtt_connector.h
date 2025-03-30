@@ -245,6 +245,42 @@ public:
         return topic;
     }
 
+    static pair<string, json> get_schema(){
+        json schema = Connector::get_schema();
+        schema.merge_patch({
+            {"server", {
+                {"type", "string"},
+                {"default", "mqtt://127.0.0.1:1884"},
+                {"required", false}
+            }},
+            {"version", {
+                {"type", "string"},
+                {"options", {"5", "3.11"}},
+                {"default", "5"},
+                {"required", false}
+            }},
+            {"topic", {
+                {"type", "string"},
+                {"required", true}
+            }},
+            {"client_id", {
+                {"type", "string"},
+                {"required", false}
+            }},
+            {"retry_attempts", {
+                {"type", "integer"},
+                {"default", 10},
+                {"required", false}
+            }},
+            {"qos", {
+                {"type", "integer"},
+                {"default", 1},
+                {"required", false}
+            }}
+        });
+        return {"mqtt", schema};
+    }
+
 private:
     void parse_authbundle(){
         Database db;
@@ -360,50 +396,6 @@ private:
 
         void delivery_complete(mqtt::delivery_token_ptr token) override {}
     };
-};
-
-
-static const json mqtt_connector_schema_ = {
-    "mqtt", {
-        {"type", {
-            {"type", "string"},
-            {"enum", {"mqtt"}},
-            {"required", true}
-        }},
-        {"authbundle_id", {
-            {"type", "string"},
-            {"required", true}
-        }},
-        {"server", {
-            {"type", "string"},
-            {"default", "mqtt://127.0.0.1:1884"},
-            {"required", false}
-        }},
-        {"version", {
-            {"type", "string"},
-            {"enum", {"5", "3.11"}},
-            {"default", "5"},
-            {"required", false}
-        }},
-        {"topic", {
-            {"type", "string"},
-            {"required", true}
-        }},
-        {"client_id", {
-            {"type", "string"},
-            {"required", false}
-        }},
-        {"retry_attempts", {
-            {"type", "integer"},
-            {"default", 10},
-            {"required", false}
-        }},
-        {"qos", {
-            {"type", "integer"},
-            {"default", 1},
-            {"required", false}
-        }}
-    }
 };
 
 

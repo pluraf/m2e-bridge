@@ -73,67 +73,23 @@ public:
         return Message(j_chunk, msg_w_->msg().get_topic(), MessageFormat::CBOR);
     }
 
+    static pair<string, json> get_schema(){
+        json schema = Filtra::get_schema();
+        schema.merge_patch({
+            {"chunk_size", {
+                {"type", "integer"},
+                {"required", true}
+            }}
+        });
+        return {"splitter", schema};
+    }
+
 private:
     unsigned long chunk_size_ {0};
     unsigned long message_id_ {0};
     long chunk_counter_ {-1};
     vector<uint8_t> buffer_;
     MessageWrapper * msg_w_ {nullptr};
-};
-
-
-static const json splitter_filtra_schema_ = {
-    "splitter", {
-        {"type", {
-            {"type", "string"},
-            {"enum", {"splitter"}},
-            {"required", true}
-        }},
-        {"name", {
-            {"type", "string"},
-            {"default", ""},
-            {"required", false}
-        }},
-        {"msg_format", {
-            {"type", "string"},
-            {"enum", {"json", "raw"}},
-            {"default", "raw"},
-            {"required", false}
-        }},
-        {"logical_negation", {
-            {"type", "boolean"},
-            {"default", false},
-            {"required", false}
-        }},
-        {"queues", {
-            {"type", "array"},
-            {"items", {{"type", "string"}}},
-            {"required", false}
-        }},
-        {"metadata", {
-            {"type", "object"},
-            {"required", false}
-        }},
-        {"goto", {
-            {"type", "string"},
-            {"default", ""},
-            {"required", false}
-        }},
-        {"goto_passed", {
-            {"type", "string"},
-            {"default", ""},
-            {"required", false}
-        }},
-        {"goto_rejected", {
-            {"type", "string"},
-            {"default", ""},
-            {"required", false}
-        }},
-        {"chunk_size", {
-            {"type", "integer"},
-            {"required", true}
-        }}
-    }
 };
 
 

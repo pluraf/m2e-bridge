@@ -252,36 +252,28 @@ public:
             throw std::runtime_error("Error pulling messages from gcp storage");
         }
     }
-};
 
-
-static const json gcp_bucket_connector_schema_ = {
-    "gcp_bucket", {
-        {"type", {
-            {"type", "string"},
-            {"enum", {"gcp_bucket"}},
-            {"required", true}
-        }},
-        {"authbundle_id", {
-            {"type", "string"},
-            {"required", true}
-        }},
-        {"project_id", {
-            {"type", "string"},
-            {"required", true}
-        }},
-        {"bucket_name", {
-            {"type", "string"},
-            {"required", true}
-        }},
-        {"object_name", {
-            {"type", "string"},
-            {"required", true}
-        }},
-        {"delete_after_processing", {
-            {"type", "boolean"},
-            {"required", false}
-        }}
+    static pair<string, json> get_schema(){
+        json schema = Connector::get_schema();
+        schema.merge_patch({
+            {"project_id", {
+                {"type", "string"},
+                {"required", true}
+            }},
+            {"bucket_name", {
+                {"type", "string"},
+                {"required", true}
+            }},
+            {"object_name", {
+                {"type", "string"},
+                {"required", true}
+            }},
+            {"delete_after_processing", {
+                {"type", "boolean"},
+                {"required", false}
+            }}
+        });
+        return {"gcp_bucket", schema};
     }
 };
 

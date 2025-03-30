@@ -82,16 +82,13 @@ public:
     ConnectorStat get_statistics(){
         return stat_;
     }
-    static json const & get_schema(){
-        static json schema = {
-            "type", {
+
+    static json get_schema(){
+        json schema = {
+            {"authbundle_id", {
                 {"type", "string"},
-                {"required", true}
-            },
-            "authbundle_id", {
-                {"type", "string"},
-                {"required", true}
-            }
+                {"required", false}
+            }}
         };
         return schema;
     }

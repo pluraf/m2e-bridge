@@ -47,63 +47,25 @@ public:
         return "";
     }
 
+    static pair<string, json> get_schema(){
+        json schema = Filtra::get_schema();
+        schema.merge_patch({
+            {"encoder", {
+                {"type", "string"},
+                {"options", {"json"}},
+                {"default", "json"},
+                {"required", true}
+            }},
+            {"payload", {
+                {"type", "object"},
+                {"required", true}
+            }}
+        });
+        return {"builder", schema};
+    }
+
 private:
     json payload_;
-};
-
-
-static const json builder_filtra_schema_ = {
-    "builder", {
-        {"type", {
-            {"type", "string"},
-            {"enum", {"builder"}},
-            {"required", true}
-        }},
-        {"name", {
-            {"type", "string"},
-            {"default", ""},
-            {"required", false}
-        }},
-        {"msg_format", {
-            {"type", "string"},
-            {"enum", {"json", "raw"}},
-            {"default", "raw"},
-            {"required", false}
-        }},
-        {"logical_negation", {
-            {"type", "boolean"},
-            {"default", false},
-            {"required", false}
-        }},
-        {"queues", {
-            {"type", "array"},
-            {"items", {{"type", "string"}}},
-            {"required", false}
-        }},
-        {"metadata", {
-            {"type", "object"},
-            {"required", false}
-        }},
-        {"goto", {
-            {"type", "string"},
-            {"default", ""},
-            {"required", false}
-        }},
-        {"goto_passed", {
-            {"type", "string"},
-            {"default", ""},
-            {"required", false}
-        }},
-        {"goto_rejected", {
-            {"type", "string"},
-            {"default", ""},
-            {"required", false}
-        }},
-        {"payload", {
-            {"type", "object"},
-            {"required", true}
-        }}
-    }
 };
 
 

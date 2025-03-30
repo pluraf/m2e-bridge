@@ -47,8 +47,8 @@ public:
             operator_ = SearchOperator::MATCH;
         }
 
-        if(config.contains("string")){
-            string_ = config["string"];
+        if(config.contains("text")){
+            text_ = config["text"];
         }
 
         if(config.contains("keys")){
@@ -62,8 +62,10 @@ public:
     }
 
     string process_message(MessageWrapper & msg_w)override{
-        bool res = true;
-        if(string_.size() > 0){
+        bool res {true};
+        bool checked {false};
+        if(res && text_.size() > 0){
+            checked = true;
             if(value_key_.size() > 0){
                 res &= find_in_value(msg_w);
             }else{
@@ -71,8 +73,10 @@ public:
             }
         }
         if(res && keys_.size() > 0){
+            checked = true;
             res &= find_in_keys(msg_w);
         }
+        res = checked && res;
         res = logical_negation_ ? ! res : res;
         if(res){
             msg_w.pass();
@@ -84,11 +88,11 @@ public:
 
     bool find_in_string(string const & msg_string){
         if(operator_ == SearchOperator::CONTAIN){
-            return msg_string.find(string_) != std::string::npos;
+            return msg_string.find(text_) != std::string::npos;
         }else if(operator_ == SearchOperator::CONTAINED){
-            return string_.find(msg_string) != std::string::npos;
+            return text_.find(msg_string) != std::string::npos;
         }else if(operator_ == SearchOperator::MATCH){
-            return string_ == msg_string;
+            return text_ == msg_string;
         }else{
             return false;
         }
@@ -119,81 +123,43 @@ public:
         return false;
     }
 
+    static pair<string, json> get_schema(){
+        json schema = Filtra::get_schema();
+        schema.merge_patch({
+            {"operator", {
+                {"type", "string"},
+                {"options", {"contain", "contained", "match"}},
+                {"default", "match"},
+                {"required", true}
+            }},
+            {"text", {
+                {"type", "string"},
+                {"required", false}
+            }},
+            {"keys", {
+                {"type", "array"},
+                {"items", {{"type", "string"}}},
+                {"required", false}
+            }},
+            {"value_key", {
+                {"type", "string"},
+                {"required", false}
+            }},
+            {"decoder", {
+                {"type", "string"},
+                {"options", {"json", "raw"}},
+                {"default", "raw"},
+                {"required", false}
+            }}
+        });
+        return {"finder", schema};
+    }
+
 private:
     SearchOperator operator_ {SearchOperator::UNKN};
-    std::string string_;
+    std::string text_;
     vector<string> keys_;
     std::string value_key_;
-};
-
-
-static const json finder_filtra_schema_ = {
-    "finder", {
-        {"type", {
-            {"type", "string"},
-            {"enum", {"finder"}},
-            {"required", true}
-        }},
-        {"name", {
-            {"type", "string"},
-            {"default", ""},
-            {"required", false}
-        }},
-        {"msg_format", {
-            {"type", "string"},
-            {"enum", {"json", "raw"}},
-            {"default", "raw"},
-            {"required", false}
-        }},
-        {"logical_negation", {
-            {"type", "boolean"},
-            {"default", false},
-            {"required", false}
-        }},
-        {"queues", {
-            {"type", "array"},
-            {"items", {{"type", "string"}}},
-            {"required", false}
-        }},
-        {"metadata", {
-            {"type", "object"},
-            {"required", false}
-        }},
-        {"goto", {
-            {"type", "string"},
-            {"default", ""},
-            {"required", false}
-        }},
-        {"goto_passed", {
-            {"type", "string"},
-            {"default", ""},
-            {"required", false}
-        }},
-        {"goto_rejected", {
-            {"type", "string"},
-            {"default", ""},
-            {"required", false}
-        }},
-        {"operator", {
-            {"type", "string"},
-            {"enum", {"contain", "contained", "match"}},
-            {"default", "match"},
-            {"required", true}
-        }},
-        {"string", {
-            {"type", "string"},
-            {"required", false}
-        }},
-        {"keys", {
-            {"type", "array"},
-            {"items", {{"type", "string"}}},
-            {"required", false}
-        }},
-        {"value_key", {
-            {"type", "string"},
-            {"required", false}
-        }}
-    }
 };
 
 

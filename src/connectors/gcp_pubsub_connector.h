@@ -52,8 +52,6 @@ IN THE SOFTWARE.
 #include "database.h"
 
 
-namespace gcp {
-
 namespace pubsub = ::google::cloud::pubsub;
 namespace gcloud = ::google::cloud;
 
@@ -272,6 +270,29 @@ public:
         return attribute;
     }
 
+    static pair<string, json> get_schema(){
+        json schema = Connector::get_schema();
+        schema.merge_patch({
+            {"project_id", {
+                {"type", "string"},
+                {"required", true}
+            }},
+            {"subscription_id", {
+                {"type", "string"},
+                {"required", false}
+            }},
+            {"topic_id", {
+                {"type", "string"},
+                {"required", {{"in", false}, {"out", true}}}
+            }},
+            {"attributes", {
+                {"type", "string"},
+                {"required", false}
+            }}
+        });
+        return {"gcp_pubsub", schema};
+    }
+
 private:
     void create_topic(){
         std::string topic_url = "projects/" + project_id_ + "/topics/" + topic_id_;
@@ -301,39 +322,6 @@ private:
         }
     }
 };
-
-};
-
-
-static const json gcp_pubsub_connector_schema_ = {
-    "gcp_pubsub", {
-        {"type", {
-            {"type", "string"},
-            {"enum", {"gcp_pubsub"}},
-            {"required", true}
-        }},
-        {"authbundle_id", {
-            {"type", "string"},
-            {"required", true}
-        }},
-        {"project_id", {
-            {"type", "string"},
-            {"required", true}
-        }},
-        {"subscription_id", {
-            {"type", "string"},
-            {"required", false}
-        }},
-        {"topic_id", {
-            {"type", "string"},
-            {"required", {{"in", false}, {"out", true}}}
-        }},
-        {"attributes", {
-            {"type", "string"},
-            {"required", false}
-        }}
-    }
-};  // Either subscription_id or topic_is should be present for in mode
 
 
 #endif  // __M2E_BRIDGE_GCP_PUBSUB_CONNECTOR_H__

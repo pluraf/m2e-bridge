@@ -111,7 +111,7 @@ TEST_CASE("ConnectorF", "[connector_factory]"){
             }
         }else if(type == "gcp_pubsub"){
             SECTION("gcp_pubsub"){
-                auto *pubsub_connector = dynamic_cast<gcp::PubSubConnector *>(connector);
+                auto *pubsub_connector = dynamic_cast<PubSubConnector *>(connector);
                 REQUIRE(pubsub_connector != nullptr);
             }
         }else if(type == "queue"){
