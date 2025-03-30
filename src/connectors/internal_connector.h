@@ -68,6 +68,7 @@ public:
 
     void stop()override{
         Connector::stop();
+        incoming_.exit_blocking_calls();
     }
 
     static pair<string, json> get_schema(){

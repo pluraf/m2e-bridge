@@ -346,8 +346,9 @@ void Pipeline::run_control(){
 
 
 void Pipeline::execute_start(){
+    if(state_ == PipelineState::RUNNING || state_ == PipelineState::STARTING) return;
     if(state_ != PipelineState::STOPPED){
-        return;
+        execute_stop();
     }
     last_error_ = "";
     state_ = PipelineState::RUNNING;

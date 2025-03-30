@@ -61,6 +61,10 @@ public:
         return queue_->pop();
     }
 
+    void exit_blocking_calls(){
+        queue_->set_non_blocking();
+    }
+
     friend class InternalQueue;
 };
 
