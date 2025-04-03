@@ -87,7 +87,11 @@ public:
         json schema = {
             {"authbundle_id", {
                 {"type", "string"},
-                {"required", false}
+                {"options", {
+                    {"url", "api/authbundle/"},
+                    {"key", "authbundle_id"},
+                }},
+                {"required", false},
             }}
         };
         return schema;

@@ -273,6 +273,14 @@ public:
     static pair<string, json> get_schema(){
         json schema = Connector::get_schema();
         schema.merge_patch({
+            {"authbundle_id", {
+                {"options", {
+                    {"filter", {
+                        {"key", "service_type"},
+                        {"value", "gcp"}
+                    }}
+                }}
+            }},
             {"project_id", {
                 {"type", "string"},
                 {"required", true}
