@@ -107,7 +107,7 @@ public:
         try{
             server_ = json_descr.at("server").get<string>();
         }catch(json::exception){
-            server_ = "mqtt://127.0.0.1:1884";
+            server_ = "tcp://127.0.0.1:1884";
         }
         // version
         try{
@@ -150,6 +150,26 @@ public:
         }catch(json::exception){
             authbundle_id_ = "";
         }
+        // verify_server_hostname
+        try{
+            verify_server_hostname_ =
+                json_descr.at("verify_server_hostname").get<string>() == "yes";
+        }catch(json::exception){
+            // default value is true
+        }
+        // verify_server_certificate
+        try{
+            verify_server_certificate_ =
+                json_descr.at("verify_server_certificate").get<string>() == "yes";
+        }catch(json::exception){
+            // default value is true
+        }
+        // ca_certificate
+        try{
+            ca_certificate_file_ = json_descr.at("ca_certificate").get<string>();
+        }catch(json::exception){
+            // default value is ""
+        }
 
         std::smatch match;
         std::regex pattern("\\{\\{(.*?)\\}\\}");
@@ -168,6 +188,15 @@ public:
         client_ptr_ = std::make_shared<mqtt::async_client>(
             server_, client_id_, mqtt::create_options(mqtt_version_), nullptr
         );
+
+        mqtt::ssl_options sslopts;
+        sslopts.set_verify(verify_server_hostname_);
+        sslopts.set_enable_server_cert_auth(verify_server_certificate_);
+        if (! ca_certificate_file_.empty()) {
+            sslopts.set_trust_store(gc.get_ca_storage() + ca_certificate_file_);
+        }
+        conn_opts_.set_ssl(sslopts);
+
         // Install the callback(s) before connecting.
         callback_ptr_ = std::make_unique<Callback>(this);
         client_ptr_->set_callback(* callback_ptr_);
@@ -248,9 +277,17 @@ public:
     static pair<string, json> get_schema(){
         json schema = Connector::get_schema();
         schema.merge_patch({
+            {"authbundle_id", {
+                {"options", {
+                    {"filter", {
+                        {"key", "service_type"},
+                        {"value", "mqtt"}
+                    }}
+                }}
+            }},
             {"server", {
                 {"type", "string"},
-                {"default", "mqtt://127.0.0.1:1884"},
+                {"default", "tcp://mqtt.iotplan.io:1883"},
                 {"required", false}
             }},
             {"version", {
@@ -275,6 +312,26 @@ public:
             {"qos", {
                 {"type", "integer"},
                 {"default", 1},
+                {"required", false}
+            }},
+            {"ca_certificate", {
+                {"type", "string"},
+                {"options", {
+                    {"url", "api/ca/"},
+                    {"key", "id"}
+                }},
+                {"required", false}
+            }},
+            {"verify_server_hostname", {
+                {"type", "string"},
+                {"options", {"yes", "no"}},
+                {"default", "yes"},
+                {"required", false}
+            }},
+            {"verify_server_certificate", {
+                {"type", "string"},
+                {"options", {"yes", "no"}},
+                {"default", "yes"},
                 {"required", false}
             }}
         });
@@ -327,6 +384,9 @@ private:
     std::unique_ptr<Callback> callback_ptr_;
     string authbundle_id_;
     int mqtt_version_ = MQTTVERSION_5;
+    bool verify_server_hostname_ {true};
+    bool verify_server_certificate_ {true};
+    string ca_certificate_file_;
 
 private:
     class Callback : public virtual mqtt::callback, public virtual mqtt::iaction_listener{

@@ -40,11 +40,11 @@ IN THE SOFTWARE.
 
 class GlobalConfig {
 public:
-    std::string get_jwt_public_key_path(){
+    string get_jwt_public_key_path(){
         return config_.at("jwt_public_key_path").get<std::string>();
     }
 
-    std::string const & get_authbundles_db_path(){
+    string const & get_authbundles_db_path(){
         return authbundles_db_path_;
     }
 
@@ -58,6 +58,11 @@ public:
 
     bool get_api_authentication(){
         return config_.value("api_authentication", true);
+    }
+
+    string const & get_ca_storage(){
+        static string ca_storage {"/gnode/storage/ca/"};
+        return ca_storage;
     }
 
     bool set_api_authentication(bool value){
