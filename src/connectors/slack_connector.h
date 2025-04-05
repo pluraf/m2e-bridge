@@ -1,3 +1,28 @@
+/* SPDX-License-Identifier: MIT */
+
+/*
+Copyright (c) 2024 Pluraf Embedded AB <code@pluraf.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the “Software”), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to
+do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
+*/
+
+
 #ifndef __M2E_BRIDGE_SLACK_CONNECTOR_H__
 #define __M2E_BRIDGE_SLACK_CONNECTOR_H__
 
@@ -12,7 +37,7 @@
 #include "database.h"
 
 
-class SlackConnector : public Connector {
+class SlackConnector: public Connector {
 private:
     std::string webhook_url_;
     std::string oauth_token_;
@@ -83,7 +108,7 @@ public:
         curl_slist_free_all(headers);
     }
 
-    void connect() override{
+    void connect()override{
         parse_authbundle();
         curl_ = curl_easy_init();
         if(!curl_){
@@ -92,11 +117,11 @@ public:
         std::cout << "SlackConnector connected successfully" << std::endl;
     }
 
-    void do_send(MessageWrapper& msg_w) override{
+    void do_send(MessageWrapper& msg_w)override{
         send_message(msg_w.msg().get_raw());
     }
 
-    void disconnect() override{
+    void disconnect()override{
         if(curl_){
             curl_easy_cleanup(curl_);
         }

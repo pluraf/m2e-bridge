@@ -52,7 +52,9 @@ static json get_schemas(){
             S3Connector::get_schema(),
             HttpConnector::get_schema(),
             ServiceBusConnector::get_schema(),
-            SlackConnector::get_schema()
+            SlackConnector::get_schema(),
+            GeneratorConnector::get_schema()
+
         }},
         {"filtra", {
             ComparatorFT::get_schema(),

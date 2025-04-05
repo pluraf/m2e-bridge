@@ -49,7 +49,7 @@ class Message{
 public:
     Message() = default;
 
-    Message(string const & data, string const & topic){
+    Message(string const & data, string const & topic = ""){
         is_serialized_ = true;
         msg_raw_ = data;
         msg_topic_ = topic;

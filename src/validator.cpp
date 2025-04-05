@@ -50,6 +50,8 @@ pair<bool, string> validate_connector(ConnectorMode mode, json const & config){
             ServiceBusConnector("pipeid", mode, config);
         }else if(conn_type == "slack"){
             SlackConnector("pipeid", mode, config);
+        }else if(conn_type == "generator"){
+            GeneratorConnector("pipeid", mode, config);
         }else{
             return {false, "Unknown connector type: " + conn_type + "!"};
         }

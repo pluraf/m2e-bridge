@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 
 /*
-Copyright (c) 2024 Pluraf Embedded AB <code@pluraf.com>
+Copyright (c) 2025 Pluraf Embedded AB <code@pluraf.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the “Software”), to deal in
@@ -23,68 +23,57 @@ IN THE SOFTWARE.
 */
 
 
-#ifndef __M2E_BRIDGE_INTERNAL_CONNECTOR_H__
-#define __M2E_BRIDGE_INTERNAL_CONNECTOR_H__
+#ifndef __M2E_BRIDGE_GENERATOR_CONNECTOR_H__
+#define __M2E_BRIDGE_GENERATOR_CONNECTOR_H__
 
+
+#include <thread>
 
 #include "connector.h"
-#include "internal_queue.h"
 
 
-class InternalConnector: public Connector{
-    string queuid_;
-    InternalQueue & queue_;
-    size_t buffer_size_ {0};
-    RQueue incoming_;
+class GeneratorConnector: public Connector{
+    unsigned long period_;  // milliseconds
+    string payload_;
+    bool first_call_ {true};
 public:
-    InternalConnector(std::string pipeid, ConnectorMode mode, json const & config):
-        Connector(pipeid, mode, config),
-        queuid_(config.at("name")),
-        queue_(InternalQueue::get_queue(queuid_))
+    GeneratorConnector(std::string pipeid, ConnectorMode mode_, json const& json_descr)
+        :Connector(pipeid, mode_, json_descr)
     {
-        buffer_size_ = config.value("buffer_size", 100);
-    }
-
-    void connect()override
-    {
-        if(mode_ == ConnectorMode::IN){
-            incoming_ = queue_.subscribe(buffer_size_);
+        if(mode_ == ConnectorMode::OUT){
+            throw configuration_error("GeneratorConnector does not support OUT mode!");
         }
-    }
-
-    void disconnect()override{
-        if(mode_ == ConnectorMode::IN){
-            queue_.unsubscribe(incoming_);
-        }
+        payload_ = json_descr["payload"];
+        period_ = json_descr["period"];
     }
 
     Message const do_receive()override{
-        return *incoming_.pop();
-    }
-
-    void do_send(MessageWrapper & msg_w)override{
-        queue_.push(msg_w.msg_ptr());
-    }
-
-    void stop()override{
-        Connector::stop();
-        incoming_.exit_blocking_calls();
+        if(first_call_){
+            first_call_ = false;
+            return Message(payload_);
+        }
+        unsigned long cnt = period_;
+        while(is_active_){
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            if (--cnt == 0) return Message(payload_);
+        }
+        throw std::underflow_error("No messages");
     }
 
     static pair<string, json> get_schema(){
         json schema = {
-            {"name", {
-                {"type", "string"},
+            {"period", {
+                {"type", "integer"},
                 {"required", true}
             }},
-            {"buffer_size", {
-                {"type", "integer"},
-                {"required", false}
+            {"payload", {
+                {"type", "string"},
+                {"required", true}
             }}
         };
-        return {"queue", schema};
+        return {"generator", schema};
     }
 };
 
 
-#endif  // __M2E_BRIDGE_INTERNAL_CONNECTOR_H__
+#endif  // __M2E_BRIDGE_GENERATOR_CONNECTOR_H__

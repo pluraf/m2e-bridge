@@ -36,6 +36,7 @@ IN THE SOFTWARE.
 #include "connectors/internal_connector.h"
 #include "connectors/mqtt_connector.h"
 #include "connectors/slack_connector.h"
+#include "connectors/generator_connector.h"
 
 
 #endif  // __M2E_BRIDGE_ALL_CONNECTORS_H__
