@@ -176,6 +176,7 @@ string ZMQAPI::zmq_channel_get(string_view path, char const * payload, size_t pa
         j_channel["queue_name"] = channel->get_queue_name();
         j_channel["state"] = channel->get_state_str();
         j_channel["enabled"] = channel->is_enabled();
+        j_channel["ports"] = {{{"port", 443},{"descr", "HTTPS"}},{{"port", 80},{"descr", "HTTP"}}};
         j_channel["path"] = "/channel/http/" + channel->get_id();
         j_channel["authtype"] = channel->get_authtype_str();
         auto stat = channel->get_stat();
