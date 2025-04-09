@@ -42,33 +42,44 @@ class MessageWrapper{
     json metadata_;
 public:
     MessageWrapper() = default;
+
     MessageWrapper(std::shared_ptr<Message> msg_ptr){
         orig_ = msg_ptr;
-        alt_ = std::make_shared<Message>(* msg_ptr.get());
+        alt_ = std::make_shared<Message>();
         is_initialized_ = true;
         is_passed_ = true;
         metadata_ = json();
     }
+
     Message const & orig()const{return * orig_.get();}
-    Message & msg(){return * alt_.get();}
+
+    Message & msg(){
+        if(! * alt_){
+            alt_ = std::make_shared<Message>(* orig_.get());
+        }
+        return * alt_.get();
+    }
+
+    void set_message(Message && msg){
+        alt_ = std::make_shared<Message>(msg);
+    }
 
     std::shared_ptr<Message> msg_ptr(){return alt_;}
-
     explicit operator bool()const{return is_initialized_;}
-
     bool is_passed(){return is_passed_;}
     void pass(){is_passed_ = true;}
     void reject(){is_passed_ = false;}
     void pass_if(bool cond){is_passed_ = cond;}
-
     void add_destination(string queuid){destinations_.insert(queuid);}
     template<class Cont>
     void add_destinations(Cont const & cont){destinations_.insert(cont.begin(), cont.end());}
     set<string> const & get_destinations(){return destinations_;}
     void clear_destinations(){destinations_.clear();}
+
     void add_metadata(json const & metadata){
         metadata_.merge_patch(metadata);
     }
+
     json const & get_metadata(){
         return metadata_;
     }

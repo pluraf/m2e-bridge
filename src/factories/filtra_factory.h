@@ -30,14 +30,7 @@ IN THE SOFTWARE.
 #include <iostream>
 
 #include "m2e_aliases.h"
-#include "filtras/comparator.h"
-#include "filtras/finder.h"
-#include "filtras/eraser.h"
-#include "filtras/builder.h"
-#include "filtras/splitter.h"
-#include "filtras/limiter.h"
-#include "filtras/nop.h"
-#include "filtras/throttle.h"
+#include "filtras/all.h"
 
 
 class FiltraFactory {
@@ -59,6 +52,8 @@ public:
             return new NopFT(pi, json_descr);
         }else if(json_descr["type"] == "throttle"){
             return new ThrottleFT(pi, json_descr);
+        }else if(json_descr["type"] == "extractor"){
+            return new ExtractorFT(pi, json_descr);
         }else{
             throw std::invalid_argument("Unknown filtra");
         }

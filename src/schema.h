@@ -29,15 +29,7 @@ IN THE SOFTWARE.
 
 #include "m2e_aliases.h"
 
-#include "filtras/builder.h"
-#include "filtras/comparator.h"
-#include "filtras/eraser.h"
-#include "filtras/finder.h"
-#include "filtras/limiter.h"
-#include "filtras/nop.h"
-#include "filtras/splitter.h"
-#include "filtras/throttle.h"
-
+#include "filtras/all.h"
 #include "connectors/all.h"
 
 
@@ -64,7 +56,8 @@ static json get_schemas(){
             SplitterFT::get_schema(),
             LimiterFT::get_schema(),
             NopFT::get_schema(),
-            ThrottleFT::get_schema()
+            ThrottleFT::get_schema(),
+            ExtractorFT::get_schema()
         }}
     };
 }

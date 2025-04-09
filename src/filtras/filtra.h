@@ -113,13 +113,6 @@ public:
                 {"type", "string"},
                 {"default", ""},
                 {"required", false}
-            }},
-            {"queues", {
-                {"type", "array"},
-                {"items", {
-                    {"type", "string"}
-                }},
-                {"required", false}
             }}
         };
     }

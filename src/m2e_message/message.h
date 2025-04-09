@@ -56,7 +56,7 @@ public:
         is_valid_ = true;
     }
 
-    Message(json const & j_data, string const & topic, MessageFormat format){
+    Message(json const & j_data, MessageFormat format, string const & topic = ""){
         is_serialized_ = false;
         decoded_json_ = j_data;
         msg_topic_ = topic;
