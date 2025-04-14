@@ -41,7 +41,6 @@ class SlackConnector: public Connector {
 private:
     std::string webhook_url_;
     std::string oauth_token_;
-    std::string authbundle_id_;
     std::string channel_id_;
     CURL* curl_;
 
@@ -71,10 +70,9 @@ private:
 
 public:
     SlackConnector(std::string pipeid, ConnectorMode mode_, json const& json_descr)
-        : Connector(pipeid, mode_, json_descr){
-        try {
-            authbundle_id_ = json_descr.at("authbundle_id").get<std::string>();
-        }catch(json::exception){
+        : Connector(pipeid, mode_, json_descr)
+    {
+        if(authbundle_id_.empty()){
             throw configuration_error("authbundle_id cannot be null for Slack connector");
         }
 

@@ -60,4 +60,12 @@ using std::time_t;
 typedef pair<string,string> hops_t;
 
 
+template<typename T>
+T lexical_cast(std::string const &);
+
+
+template<typename T>
+std::string lexical_cast(T const &);
+
+
 #endif  // __M2E_BRIDGE_ALIASES_H__

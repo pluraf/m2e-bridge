@@ -31,16 +31,7 @@ IN THE SOFTWARE.
 
 #include "aws_sdk_manager.h"
 
-#include "connectors/mqtt_connector.h"
-#include "connectors/gcp_pubsub_connector.h"
-#include "connectors/email_connector.h"
-#include "connectors/internal_connector.h"
-#include "connectors/gcp_bucket_connector.h"
-#include "connectors/aws_s3_connector.h"
-#include "connectors/http_connector.h"
-#include "connectors/azure_service_bus_connector.h"
-#include "connectors/slack_connector.h"
-#include "connectors/generator_connector.h"
+#include "connectors/all.h"
 
 
 class ConnectorFactory{
@@ -69,6 +60,8 @@ public:
             return new SlackConnector(pipeid, mode, config);
         }else if(conn_type == "generator"){
             return new GeneratorConnector(pipeid, mode, config);
+        }else if(conn_type == "modbus"){
+            return new ModbusConnector(pipeid, mode, config);
         }else{
             throw std::invalid_argument(fmt::format("Unknown Connector type [ {} ]", conn_type));
         }

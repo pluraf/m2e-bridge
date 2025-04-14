@@ -90,9 +90,6 @@ private:
     HttpMethod method_;
     json header_;
     std::string payload_;
-    std::string authbundle_id_;
-    int request_freq_limit_;
-
     CURL * curl;
 
     struct HttpResponse{
@@ -100,8 +97,6 @@ private:
         std::string resp_str;
         std::string content_type;
     };
-
-
 
     void parse_authbundle(){
 
@@ -248,18 +243,6 @@ public:
         }else {
             payload_ = "";
         }
-
-        try{
-            authbundle_id_ = json_descr.at("authbundle_id").get<std::string>();
-        }catch(json::exception){
-            authbundle_id_ = "";
-        }
-
-        try{
-            request_freq_limit_ = json_descr.at("request_freq_limit").get<int>();
-        }catch(json::exception){
-            request_freq_limit_ = 0;
-        }
     }
 
     void connect()override{
@@ -286,9 +269,6 @@ public:
     }
 
     Message const do_receive()override{
-        if(request_freq_limit_ != 0){
-            std::this_thread::sleep_for(std::chrono::seconds(request_freq_limit_));
-        }
         HttpResponse response = send_request();
         if (response.curl_code != CURLE_OK){
             throw std::runtime_error("Error while sending Http request");
@@ -329,10 +309,9 @@ public:
                 {"default", ""},
                 {"required", false}
             }},
-            {"request_freq_limit", {
+            {"polling_period", {
                 {"type", "integer"},
-                {"default", 0},
-                {"required", false}
+                {"required", true}
             }}
         });
         return {"http", schema};

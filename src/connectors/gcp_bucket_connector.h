@@ -53,7 +53,6 @@ private:
     std::string bucket_name_;
     gcloud::storage::Client client_;
     std::string service_key_data_;
-    std::string authbundle_id_;
     std::string object_name_template_;
     bool is_object_template_ {false};
     bool delete_after_processing_ {false};
@@ -79,13 +78,12 @@ private:
 
 public:
     CloudStorageConnector(std::string pipeid, ConnectorMode mode, json const & json_descr):
-            Connector(pipeid, mode, json_descr){
-        ConnectorMode mode_ = mode;
-        try{
-            authbundle_id_ = json_descr.at("authbundle_id").get<std::string>();
-            parse_authbundle();
-        }catch(json::exception){
+            Connector(pipeid, mode, json_descr)
+    {
+        if(authbundle_id_.empty()){
             throw std::runtime_error("authbundle_id cannot be null for bucket connector");
+        }else{
+            parse_authbundle();
         }
 
         try{

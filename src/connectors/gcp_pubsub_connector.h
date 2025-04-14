@@ -64,7 +64,6 @@ private:
     string project_id_;
     string topic_id_;
     string subscription_id_;
-    string authbundle_id_;
     string service_key_data_;
 
     pubsub::Publisher* publisher_ptr_;
@@ -77,12 +76,12 @@ private:
 
 public:
     PubSubConnector(std::string pipeid, ConnectorMode mode, json const & json_descr):
-            Connector(pipeid, mode, json_descr){
-        try{
-            authbundle_id_ = json_descr.at("authbundle_id").get<string>();
-        }catch(json::exception){
+        Connector(pipeid, mode, json_descr)
+    {
+        if(authbundle_id_.empty()){
             throw std::runtime_error("authbundle_id cannot be null for pubsub connector");
         }
+
         try{
             project_id_ = json_descr.at("project_id").get<string>();
         }catch(json::exception){

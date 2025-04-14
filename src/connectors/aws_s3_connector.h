@@ -53,7 +53,6 @@ IN THE SOFTWARE.
 class S3Connector: public Connector {
 private:
     Aws::String bucket_name_;
-    std::string authbundle_id_;
     std::string access_key_;
     std::string secret_key_;
     std::string object_name_template_;
@@ -83,15 +82,8 @@ private:
 
 public:
     S3Connector(std::string pipeid, ConnectorMode mode, json const & json_descr):
-            Connector(pipeid, mode, json_descr){
-        ConnectorMode mode_ = mode;
-        try{
-            authbundle_id_ = json_descr.at("authbundle_id").get<std::string>();
-            parse_authbundle();
-        }catch(json::exception){
-            throw std::runtime_error("authbundle_id cannot be null for s3 connector");
-        }
-
+            Connector(pipeid, mode, json_descr)
+    {
         try{
             bucket_name_ = json_descr.at("bucket_name").get<std::string>();
         }catch(json::exception){
@@ -106,6 +98,12 @@ public:
 
         if(json_descr.contains("delete_received")){
             delete_after_processing_ = json_descr.at("delete_received").get<bool>();
+        }
+
+        if(authbundle_id_.empty()){
+            throw std::runtime_error("authbundle_id cannot be null for s3 connector");
+        }else{
+            parse_authbundle();
         }
 
         auto provider = Aws::MakeShared<Aws::Auth::SimpleAWSCredentialsProvider>

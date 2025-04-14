@@ -29,7 +29,8 @@
     },
     "jwt-cpp",
     "nlohmann-json",
+    "poco",
     "sqlite3",
-    "poco"
+    "grpc"
   ]
 }

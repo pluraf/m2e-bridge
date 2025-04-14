@@ -30,6 +30,7 @@ IN THE SOFTWARE.
 #include "nlohmann/json.hpp"
 #include <iostream>
 #include <string>
+#include <thread>
 
 #include "m2e_exceptions.h"
 #include "m2e_message/message_wrapper.h"
@@ -55,30 +56,51 @@ protected:
     ConnectorMode mode_ {ConnectorMode::UNKN};
     std::string pipeid_;
     bool is_active_ {false};
+    time_t polling_period_ {0};
+    string authbundle_id_;
 
 public:
     Connector(std::string pipeid, ConnectorMode mode, json const & config){
         mode_ = mode;
         pipeid_ = pipeid;
         is_active_ = true;
+        // polling period
+        try{
+            polling_period_ = config.at("polling_period").get<unsigned>();
+        }catch(json::exception){
+            polling_period_ = 0;
+        }
+        // authbundle_id
+        try{
+            authbundle_id_ = config.at("authbundle_id").get<std::string>();
+        }catch(json::exception){
+            authbundle_id_ = "";
+        }
     }
     virtual void connect(){}
     virtual void disconnect(){}
     virtual void stop(){is_active_=false;}
 
     std::shared_ptr<Message> receive(){
+        using namespace std::chrono;
+        time_t now = duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
+        if(stat_.last_in + polling_period_ > now){
+            std::this_thread::sleep_for(seconds(stat_.last_in + polling_period_ - now));
+        }
         Message msg = do_receive();
         ++stat_.count_in;
-        auto now = chrono::system_clock::now().time_since_epoch();
-        stat_.last_in = chrono::duration_cast<chrono::seconds>(now).count();
+        stat_.last_in = duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
         return std::make_shared<Message>(std::move(msg));
     }
+
     void send(MessageWrapper & msg_w){
+        using namespace std::chrono;
         do_send(msg_w);
         ++stat_.count_out;
-        auto now = chrono::system_clock::now().time_since_epoch();
-        stat_.last_out = chrono::duration_cast<chrono::seconds>(now).count();
+        auto now = system_clock::now().time_since_epoch();
+        stat_.last_out = duration_cast<seconds>(now).count();
     }
+
     ConnectorStat get_statistics(){
         return stat_;
     }
@@ -111,6 +133,7 @@ protected:
     virtual Message const do_receive(){
         throw std::runtime_error("do_receive not implemented");
     }
+
     virtual void do_send(MessageWrapper & msg_w){
         throw std::runtime_error("do_receive not implemented");
     }

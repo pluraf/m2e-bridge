@@ -53,7 +53,6 @@ private:
     int imap_port_;
     std::string username_;  // Email address to send mail from
     std::string password_;  // Password for pluraf mail address
-    std::string authbundle_id_;
 
     std::string subject_;
     bool search_ = false;
@@ -130,12 +129,12 @@ private:
 
 public:
     EmailConnector(std::string pipeid, ConnectorMode mode_, json const & json_descr):
-            Connector(pipeid, mode_, json_descr){
-        try{
-            authbundle_id_ = json_descr.at("authbundle_id").get<std::string>();
-            parse_authbundle();
-        }catch(json::exception){
+            Connector(pipeid, mode_, json_descr)
+    {
+        if(authbundle_id_.empty()){
             throw std::runtime_error("authbundle_id cannot be null for email connector");
+        }else{
+            parse_authbundle();
         }
 
         try{
