@@ -29,7 +29,7 @@ IN THE SOFTWARE.
 
 #include "../connector.h"
 
-#include "channel_modbus_api.grpc.pb.h"
+#include "agent_api_modbus.grpc.pb.h"
 
 
 enum class ModbusTable{
@@ -42,13 +42,18 @@ enum class ModbusTable{
 
 
 class ModbusConnector: public Connector{
-    string server_;
+    string agent_;
+    string gateway_;
     ModbusTable table_;
-    size_t address_;
-    unsigned quantity_;
-    std::unique_ptr<channel_modbus_api::ModbusChannel::Stub> stub_;
+    uint8_t device_address_ {};
+    uint16_t data_address_ {};
+    uint16_t quantity_ {};
+    std::unique_ptr<agent_api_modbus::ModbusAgent::Stub> stub_;
+    size_t connection_id_ {};
 public:
     ModbusConnector(std::string pipeid, ConnectorMode mode, json const & config);
+    void connect()override;
+    void disconnect()override;
 
     static pair<string, json> get_schema(){
         json schema = Connector::get_schema();

@@ -29,10 +29,17 @@ IN THE SOFTWARE.
 #include "modbus_connector.h"
 
 
-using channel_modbus_api::ModbusChannel;
-using channel_modbus_api::ReadRegistersResponse;
-using channel_modbus_api::ReadBitsResponse;
-using channel_modbus_api::ReadRequest;
+using agent_api_modbus::ModbusAgent;
+using agent_api_modbus::ReadRequest;
+using agent_api_modbus::ReadBitsResponse;
+using agent_api_modbus::ReadRegistersResponse;
+using agent_api_modbus::WriteBitsRequest;
+using agent_api_modbus::WriteRegistersRequest;
+using agent_api_modbus::WriteResponse;
+using agent_api_modbus::ConnectRequest;
+using agent_api_modbus::ConnectResponse;
+using agent_api_modbus::DisconnectRequest;
+using agent_api_modbus::DisconnectResponse;
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
@@ -62,26 +69,68 @@ string lexical_cast<ModbusTable>(ModbusTable const & mt)
 ModbusConnector::ModbusConnector(std::string pipeid, ConnectorMode mode, json const & config):
     Connector(pipeid, mode, config)
 {
-    // server
+    // modbus agent
     try{
-        server_ = config.at("server").get<string>();
+        agent_ = config.at("agent").get<string>();
     }catch(json::exception){
-        server_ = "127.0.0.1:1502";
+        agent_ = "127.0.0.1:1502";
+    }
+    // modbus gateway
+    gateway_ = config.at("gateway").get<string>();
+    // polling period
+    if(polling_period_ == 0){
+        throw std::runtime_error("polling_period_ must be larger than 0!");
     }
     // table
     table_ = lexical_cast<ModbusTable>(config.at("table").get<string>());
-    // address
-    address_ = config.at("address").get<unsigned>();
+    // device address
+    device_address_ = config.at("device_address").get<uint8_t>();
+    // data address
+    data_address_ = config.at("data_address").get<uint16_t>();
     // quantity
     try{
-        quantity_ = config.at("quantity").get<unsigned>();
+        quantity_ = config.at("quantity").get<uint16_t>();
     }catch(json::exception){
         quantity_ = 1;
     }
 
-    stub_ = ModbusChannel::NewStub(
-        grpc::CreateChannel(server_, grpc::InsecureChannelCredentials())
+    stub_ = ModbusAgent::NewStub(
+        grpc::CreateChannel(agent_, grpc::InsecureChannelCredentials())
     );
+}
+
+
+void ModbusConnector::connect()
+{
+    ConnectRequest request;
+    ConnectResponse response;
+    ClientContext context;
+    Status status;
+
+    request.set_server(gateway_);
+    status = stub_->Connect(& context, request, & response);
+    if(status.ok()){
+        connection_id_ = response.status();
+    }else{
+        throw std::runtime_error("Unknown MODBUS Connector Connection Error");
+    }
+}
+
+
+void ModbusConnector::disconnect()
+{
+    DisconnectRequest request;
+    DisconnectResponse response;
+    ClientContext context;
+    Status status;
+
+    request.set_connection_id(connection_id_);
+    status = stub_->Disconnect(& context, request, & response);
+    if(status.ok()){
+        connection_id_ = 0;
+    }else{
+        throw std::runtime_error("Unknown MODBUS Connector Disconnection Error");
+    }
 }
 
 
@@ -93,7 +142,9 @@ Message const ModbusConnector::do_receive()
     ClientContext context;
     Status status;
 
-    request.set_address(address_);
+    request.set_connection_id(connection_id_);
+    request.set_device_address(device_address_);
+    request.set_data_address(data_address_);
     request.set_quantity(quantity_);
 
     if(table_ == ModbusTable::COILS){
@@ -108,7 +159,7 @@ Message const ModbusConnector::do_receive()
         throw std::runtime_error("Unknown MODBUS Table!");
     }
 
-    if (status.ok()){
+    if(status.ok()){
         if(table_ == ModbusTable::COILS || table_ == ModbusTable::DISCRETE_INPUTS){
             if(response_bits.status() == -1){
                 throw std::runtime_error(

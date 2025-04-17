@@ -54,6 +54,8 @@ public:
             return new ThrottleFT(pi, json_descr);
         }else if(json_descr["type"] == "extractor"){
             return new ExtractorFT(pi, json_descr);
+        }else if(json_descr["type"] == "converter"){
+            return new ConverterFT(pi, json_descr);
         }else{
             throw std::invalid_argument("Unknown filtra");
         }

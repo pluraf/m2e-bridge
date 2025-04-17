@@ -127,7 +127,7 @@ public:
 
     explicit operator bool()const{return is_valid_;}
 
-    std::string const & get_raw(){
+    std::string & get_raw(){
         if(! is_serialized_){
             if(format_ == MessageFormat::JSON){
                 msg_raw_ = decoded_json_.dump();

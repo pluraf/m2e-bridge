@@ -25,34 +25,61 @@ IN THE SOFTWARE.
 
 syntax = "proto3";
 
-package channel_modbus_api;
+package agent_api_modbus;
 
-service ModbusChannel {
-  // Read
+service ModbusAgent {
+  // Connection
+  rpc Connect (ConnectRequest) returns (ConnectResponse) {}
+  rpc Disconnect (DisconnectRequest) returns (DisconnectResponse) {}
+  // Reading
   rpc ReadDiscreteInputs (ReadRequest) returns (ReadBitsResponse) {}
   rpc ReadCoils (ReadRequest) returns (ReadBitsResponse) {}
   rpc ReadInputRegisters (ReadRequest) returns (ReadRegistersResponse) {}
   rpc ReadHoldingRegisters (ReadRequest) returns (ReadRegistersResponse) {}
-  // Write
+  // Writing
   rpc WriteCoils (WriteBitsRequest) returns (WriteResponse) {}
   rpc WriteHoldingRegisters (WriteRegistersRequest) returns (WriteResponse) {}
 }
 
+message ConnectRequest {
+  string server = 1;
+}
+
+message ConnectResponse {
+  int32 status = 1;
+  uint32 error = 2;
+}
+
+message DisconnectRequest {
+  uint32 connection_id = 1;
+}
+
+message DisconnectResponse {
+  int32 status = 1;
+  uint32 error = 2;
+}
+
 message ReadRequest {
-  uint32 address = 1;
-  uint32 quantity = 2;
+  uint32 connection_id = 1;
+  uint32 device_address = 2;
+  uint32 data_address = 3;
+  uint32 quantity = 4;
 }
 
 message WriteBitsRequest {
-  uint32 address = 1;
-  uint32 quantity = 2;
-  repeated bool bits = 3;
+  uint32 connection_id = 1;
+  uint32 device_address = 2;
+  uint32 data_address = 3;
+  uint32 quantity = 4;
+  repeated bool bits = 5;
 }
 
 message WriteRegistersRequest {
-  uint32 address = 1;
-  uint32 quantity = 2;
-  repeated uint32 registers = 3;
+  uint32 connection_id = 1;
+  uint32 device_address = 2;
+  uint32 data_address = 3;
+  uint32 quantity = 4;
+  repeated uint32 registers = 5;
 }
 
 message ReadBitsResponse {

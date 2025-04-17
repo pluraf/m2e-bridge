@@ -16,6 +16,7 @@ include_directories(
     ${SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/external/paho.mqtt.cpp/include
     ${CMAKE_SOURCE_DIR}/external/paho.mqtt.cpp/externals/paho-mqtt-c/src
+    "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
 find_package(google_cloud_cpp_storage REQUIRED)
@@ -31,13 +32,55 @@ find_package(CURL REQUIRED)
 find_package(aws-cpp-sdk-core CONFIG REQUIRED)
 find_package(aws-cpp-sdk-s3 CONFIG REQUIRED)
 find_package(Poco REQUIRED Foundation)
+find_package(gRPC CONFIG REQUIRED)
+find_package(Protobuf CONFIG REQUIRED)
+
+message(STATUS "Using protobuf ${Protobuf_VERSION}")
+message(STATUS "Using gRPC ${gRPC_VERSION}")
+
+option(protobuf_MODULE_COMPATIBLE TRUE)
+
+set(_PROTOBUF_LIBPROTOBUF protobuf::libprotobuf)
+set(_REFLECTION gRPC::grpc++_reflection)
+set(_PROTOBUF_PROTOC $<TARGET_FILE:protobuf::protoc>)
+set(_GRPC_GRPCPP gRPC::grpc++)
+set(_GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:gRPC::grpc_cpp_plugin>)
+
+# Proto file
+get_filename_component(api_proto "./protos/agent_api_modbus.proto" ABSOLUTE)
+get_filename_component(api_proto_path "${api_proto}" PATH)
+
+# Generated sources
+set(api_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/agent_api_modbus.pb.cc")
+set(api_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/agent_api_modbus.pb.h")
+set(api_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/agent_api_modbus.grpc.pb.cc")
+set(api_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/agent_api_modbus.grpc.pb.h")
+
+add_custom_command(
+      OUTPUT "${api_proto_srcs}" "${api_proto_hdrs}" "${api_grpc_srcs}" "${api_grpc_hdrs}"
+      COMMAND ${_PROTOBUF_PROTOC}
+      ARGS --grpc_out "${CMAKE_CURRENT_BINARY_DIR}"
+        --cpp_out "${CMAKE_CURRENT_BINARY_DIR}"
+        -I "${api_proto_path}"
+        --plugin=protoc-gen-grpc="${_GRPC_CPP_PLUGIN_EXECUTABLE}"
+        "${api_proto}"
+      DEPENDS "${api_proto}")
 
 find_path(JWT_CPP_INCLUDE_DIRS "jwt-cpp/jwt.h"
             PATH_SUFFIXES include
             PATHS ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET})
 
 
-add_executable(m2e-bridge ${SOURCES} ${MQTT_SOURCES})
+add_executable(m2e-bridge
+    ${SOURCES}
+    ${MQTT_SOURCES}
+    ${api_grpc_srcs}
+    ${api_grpc_hdrs}
+    ${api_proto_srcs}
+    ${api_proto_hdrs}
+)
+
+target_compile_definitions(m2e-bridge PRIVATE OPENSSL)
 
 target_link_libraries(m2e-bridge PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(m2e-bridge PRIVATE google-cloud-cpp::pubsub)
@@ -55,9 +98,17 @@ target_link_libraries(m2e-bridge PRIVATE aws-cpp-sdk-s3)
 target_link_libraries(m2e-bridge PRIVATE cbor)
 target_link_libraries(m2e-bridge PRIVATE Poco::Foundation)
 target_link_libraries(m2e-bridge PRIVATE Poco::Foundation)
+target_link_libraries(m2e-bridge PRIVATE
+    absl::check
+    absl::flags
+    absl::flags_parse
+    absl::log
+    ${_REFLECTION}
+    ${_GRPC_GRPCPP}
+    ${_PROTOBUF_LIBPROTOBUF}
+)
 
 target_include_directories(m2e-bridge PRIVATE ${JWT_CPP_INCLUDE_DIRS})
-
 
 option(ENABLE_TESTS OFF)
 message(STATUS "ENABLE_TESTS is set to ${ENABLE_TESTS}")
@@ -96,7 +147,6 @@ if(ENABLE_TESTS)
         "${CMAKE_SOURCE_DIR}/external/paho.mqtt.cpp/externals/paho-mqtt-c/build/src/libpaho-mqtt3as.a"
         "${CMAKE_SOURCE_DIR}/external/paho.mqtt.cpp/externals/paho-mqtt-c/build/src/libpaho-mqtt3cs.a"
     )
-
     enable_testing()
     add_test(NAME Tests COMMAND tests)
 endif()

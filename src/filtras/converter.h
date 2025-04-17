@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 
 /*
-Copyright (c) 2024 Pluraf Embedded AB <code@pluraf.com>
+Copyright (c) 2025 Pluraf Embedded AB <code@pluraf.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the “Software”), to deal in
@@ -23,20 +23,43 @@ IN THE SOFTWARE.
 */
 
 
-#ifndef __M2E_BRIDGE_ALL_FILTRAS_H__
-#define __M2E_BRIDGE_ALL_FILTRAS_H__
+#ifndef __M2E_BRIDGE_CONVERTER_FT_H__
+#define __M2E_BRIDGE_CONVERTER_FT_H__
 
 
-#include "filtras/comparator.h"
-#include "filtras/finder.h"
-#include "filtras/eraser.h"
-#include "filtras/builder.h"
-#include "filtras/splitter.h"
-#include "filtras/limiter.h"
-#include "filtras/nop.h"
-#include "filtras/throttle.h"
-#include "filtras/extractor.h"
-#include "filtras/converter.h"
+#include "filtra.h"
 
 
-#endif  // __M2E_BRIDGE_ALL_FILTRAS_H__
+class ConverterFT:public Filtra{
+public:
+    ConverterFT(PipelineIface const & pi, json const & json_descr):
+            Filtra(pi, json_descr){
+    }
+
+    string process_message(MessageWrapper &msg_w)override{
+        Message msg = msg_w.orig();
+        string raw = msg.get_raw();
+        uint16_t val = static_cast<uint8_t>(raw[0]) << 8 | static_cast<uint8_t>(raw[1]);
+        msg_w.msg().get_raw() = std::to_string(static_cast<double>(val) / 10);
+        msg_w.pass();
+        return "";
+    }
+
+    static pair<string, json> get_schema(){
+        json schema = Filtra::get_schema();
+        schema.merge_patch({
+            {"keys", {
+                {"type", "array"},
+                {"items", {{"type", "string"}}},
+                {"required", true}
+            }}
+        });
+        return {"eraser", schema};
+    }
+
+private:
+    vector<string> keys_;
+};
+
+
+#endif  // __M2E_BRIDGE_CONVERTER_FT_H__
