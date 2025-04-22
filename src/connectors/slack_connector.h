@@ -69,7 +69,7 @@ private:
     }
 
 public:
-    SlackConnector(std::string pipeid, ConnectorMode mode_, json const& json_descr)
+    SlackConnector(std::string pipeid, ConnectorMode mode_, json const & json_descr)
         : Connector(pipeid, mode_, json_descr)
     {
         if(authbundle_id_.empty()){

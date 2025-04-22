@@ -176,19 +176,23 @@ public:
         msg_queue_ = std::make_unique<mqtt::thread_queue<mqtt::message>>(1000);
         conn_opts_.set_clean_session(false);
         conn_opts_.set_mqtt_version(mqtt_version_);
-        parse_authbundle();
+        if(! authbundle_id_.empty()){
+            parse_authbundle();
+        }
+
+        if(server_.starts_with("ssl") || server_.starts_with("tls")){
+            mqtt::ssl_options sslopts;
+            sslopts.set_verify(verify_server_hostname_);
+            sslopts.set_enable_server_cert_auth(verify_server_certificate_);
+            if (! ca_certificate_file_.empty()) {
+                sslopts.set_trust_store(gc.get_ca_storage() + ca_certificate_file_);
+            }
+            conn_opts_.set_ssl(sslopts);
+        }
+
         client_ptr_ = std::make_shared<mqtt::async_client>(
             server_, client_id_, mqtt::create_options(mqtt_version_), nullptr
         );
-
-        mqtt::ssl_options sslopts;
-        sslopts.set_verify(verify_server_hostname_);
-        sslopts.set_enable_server_cert_auth(verify_server_certificate_);
-        if (! ca_certificate_file_.empty()) {
-            sslopts.set_trust_store(gc.get_ca_storage() + ca_certificate_file_);
-        }
-        conn_opts_.set_ssl(sslopts);
-
         // Install the callback(s) before connecting.
         callback_ptr_ = std::make_unique<Callback>(this);
         client_ptr_->set_callback(* callback_ptr_);
@@ -359,7 +363,7 @@ private:
             }
         }
         else{
-            throw std::runtime_error("Not able to retreive authbundle!");
+            throw std::runtime_error("Not able to retrieve authbundle!");
         }
     }
 

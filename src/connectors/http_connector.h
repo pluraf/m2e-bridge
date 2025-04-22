@@ -99,7 +99,6 @@ private:
     };
 
     void parse_authbundle(){
-
         Database db;
         AuthBundle ab;
         bool res = db.retrieve_authbundle(authbundle_id_, ab);
@@ -246,7 +245,7 @@ public:
     }
 
     void connect()override{
-        if(authbundle_id_ != ""){
+        if(! authbundle_id_.empty()){
             parse_authbundle();
         }
         curl = curl_easy_init();
