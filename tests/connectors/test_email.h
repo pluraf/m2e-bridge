@@ -13,7 +13,7 @@
 
 namespace TestEmailConnector {
     inline void setup_test_environment(){
-        Database db;
+        AuthbundleTable db;
 
         AuthBundle test_bundle_correct;
         test_bundle_correct.authbundle_id = "test_t";
@@ -33,7 +33,7 @@ namespace TestEmailConnector {
     }
 
     inline void cleanup_test_environment(){
-        Database db;
+        AuthbundleTable db;
 
         db.delete_authbundle("test_t");
         db.delete_authbundle("test_f");

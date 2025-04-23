@@ -112,7 +112,7 @@ void ModbusConnector::connect()
     if(status.ok()){
         connection_id_ = response.status();
     }else{
-        throw std::runtime_error("Unknown MODBUS Connector Connection Error");
+        throw std::runtime_error("MODBUS Connector: Connection Error");
     }
 }
 
@@ -129,7 +129,7 @@ void ModbusConnector::disconnect()
     if(status.ok()){
         connection_id_ = 0;
     }else{
-        throw std::runtime_error("Unknown MODBUS Connector Disconnection Error");
+        throw std::runtime_error("MODBUS Connector: Disconnection Error");
     }
 }
 

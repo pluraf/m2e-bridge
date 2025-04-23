@@ -35,7 +35,7 @@ IN THE SOFTWARE.
 #include <curl/curl.h>
 
 #include "connector.h"
-#include "database.h"
+#include "database/authbundle.h"
 
 inline std::string base64_encode(const std::string& input) {
     static const char encode_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -99,9 +99,9 @@ private:
     };
 
     void parse_authbundle(){
-        Database db;
+        AuthbundleTable db;
         AuthBundle ab;
-        bool res = db.retrieve_authbundle(authbundle_id_, ab);
+        bool res = db.get(authbundle_id_, ab);
         if(res){
             if(ab.service_type != ServiceType::HTTP){
                 throw std::runtime_error("Incompatiable authbundle service type");

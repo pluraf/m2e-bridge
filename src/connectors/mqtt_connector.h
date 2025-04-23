@@ -40,7 +40,7 @@ IN THE SOFTWARE.
 #include "Poco/String.h"
 
 #include "connector.h"
-#include "database.h"
+#include "database/authbundle.h"
 
 const int QOS=1;
 const int N_RETRY_ATTEMPTS = 10;
@@ -336,9 +336,9 @@ public:
 
 private:
     void parse_authbundle(){
-        Database db;
+        AuthbundleTable db;
         AuthBundle ab;
-        bool res = db.retrieve_authbundle(authbundle_id_, ab);
+        bool res = db.get(authbundle_id_, ab);
         if(res){
             std::string token;
             switch(ab.auth_type){

@@ -12,7 +12,7 @@
 
 namespace TestConnectorFactory {
     inline void setup_test_environment(){
-        Database db;
+        AuthbundleTable db;
 
         AuthBundle test_bundle_email;
 
@@ -45,7 +45,7 @@ namespace TestConnectorFactory {
     }
 
     inline void cleanup_test_environment(){
-        Database db;
+        AuthbundleTable db;
 
         db.delete_authbundle("test_email");
         db.delete_authbundle("test_s3");

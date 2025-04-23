@@ -2,3 +2,7 @@
 	path = external/paho.mqtt.cpp
 	url = https://github.com/pluraf/paho.mqtt.cpp.git
 	branch = main
+[submodule "external/lua-cjson"]
+	path = external/lua-cjson
+	url = https://github.com/pluraf/lua-cjson.git
+	branch = master

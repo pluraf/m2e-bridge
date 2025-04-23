@@ -48,6 +48,10 @@ public:
         return authbundles_db_path_;
     }
 
+    string const & get_converters_db_path(){
+        return converters_db_path_;
+    }
+
     ordered_json const & get_pipelines_config(){
         return pipelines_;
     }
@@ -161,13 +165,15 @@ public:
         // Load authbundles_db_path
         authbundles_db_path_ = config_.at("authbundles_db_path").get<std::string>();
 
+        // Load converters_db_path
+        converters_db_path_ = config_.at("converters_db_path").get<std::string>();
     }
-
 private:
     json config_;
     ordered_json pipelines_;
     ordered_json http_gate_;
     std::string authbundles_db_path_;
+    std::string converters_db_path_;
     std::string config_path_;
 };
 

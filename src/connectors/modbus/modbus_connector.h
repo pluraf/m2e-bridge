@@ -40,6 +40,9 @@ enum class ModbusTable{
     HOLDING_REGISTERS
 };
 
+template<> ModbusTable lexical_cast<ModbusTable>(string const & s);
+template<> string lexical_cast<ModbusTable>(ModbusTable const & mt);
+
 
 class ModbusConnector: public Connector{
     string agent_;
@@ -59,24 +62,36 @@ public:
         json schema = Connector::get_schema();
         schema.merge_patch({
             {"authbundle_id", {
-                {"options", {
-                    {"filter", {
-                        {"key", "service_type"},
-                        {"value", "modbus"}
-                    }}
-                }}
             }},
             {"polling_period", {
                 {"type", "integer"},
+                {"required", true},
+                {"default", 60}
+            }},
+            {"gateway", {
+                {"type", "string"},
                 {"required", true}
             }},
-            {"server", {
+            {"table", {
                 {"type", "string"},
-                {"server", "127.0.0.1:1502"},
+                {"required", true},
+                {"options", {"coils", "discrete_inputs", "input_registers", "holding_registers"}}
+            }},
+            {"device_address", {
+                {"type", "integer"},
+                {"required", true}
+            }},
+            {"data_address", {
+                {"type", "integer"},
+                {"required", true}
+            }},
+            {"quantity", {
+                {"type", "integer"},
+                {"default", 1},
                 {"required", false}
-            }}
+            }},
         });
-        return {"http", schema};
+        return {"modbus", schema};
     }
 protected:
     void do_send(MessageWrapper & msg_w)override;

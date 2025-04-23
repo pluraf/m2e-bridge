@@ -37,7 +37,7 @@ IN THE SOFTWARE.
 #include <curl/curl.h>
 
 #include "connector.h"
-#include "database.h"
+#include "database/authbundle.h"
 
 const int  SMTP_PORT = 587;  // Default SMTP port
 const int IMAP_PORT = 993;  // Default IMAP port
@@ -61,9 +61,9 @@ private:
     CURLcode res = CURLE_OK;
 
     void parse_authbundle(){
-        Database db;
+        AuthbundleTable db;
         AuthBundle ab;
-        bool res = db.retrieve_authbundle(authbundle_id_, ab);
+        bool res = db.get(authbundle_id_, ab);
         if(res){
             username_ = ab.username;
             password_ = ab.password;

@@ -23,8 +23,8 @@ IN THE SOFTWARE.
 */
 
 
-#ifndef __M2E_BRIDGE_DATABASE_H__
-#define __M2E_BRIDGE_DATABASE_H__
+#ifndef __M2E_BRIDGE_DATABASE_AUTHBUNDLE_H__
+#define __M2E_BRIDGE_DATABASE_AUTHBUNDLE_H__
 
 
 #include <iostream>
@@ -86,14 +86,16 @@ std::string auth_type_to_string(AuthType at);
 void print_authbundle(const AuthBundle& bundle);
 
 
-class Database {
+class AuthbundleTable {
+    sqlite3* db_;
+    std::string db_path_;
 public:
-    Database() {
+    AuthbundleTable() {
         db_path_ = gc.get_authbundles_db_path();
         db_ = nullptr;
     }
 
-    bool insert_authbundle(const AuthBundle& authbundle) {
+    bool insert(const AuthBundle& authbundle) {
         open_db(SQLITE_OPEN_READWRITE);
         const char* sql = R"(INSERT INTO authbundles (authbundle_id, service_type, auth_type, username, password, keyname, description, keydata)
                              VALUES (?, ?, ?, ?, ?, ?, ?, ?);)";
@@ -123,7 +125,7 @@ public:
         return res == SQLITE_DONE;
     }
 
-    bool delete_authbundle(const std::string& authbundle_id) {
+    bool remove(const std::string& authbundle_id) {
         open_db(SQLITE_OPEN_READWRITE);
         const char* sql = "DELETE FROM authbundles WHERE authbundle_id = ?;";
         sqlite3_stmt* stmt;
@@ -141,7 +143,7 @@ public:
         return res == SQLITE_DONE;
     }
 
-    bool retrieve_authbundle(std::string authbundle_id, AuthBundle & authbundle) {
+    bool get(std::string authbundle_id, AuthBundle & authbundle) {
         open_db(SQLITE_OPEN_READONLY);
         sqlite3_stmt* stmt;
         int res;
@@ -194,9 +196,6 @@ public:
     }
 
 private:
-    sqlite3* db_;
-    std::string db_path_;
-
     void close_db(){
         if(db_ == nullptr) return;
         int res = sqlite3_close(db_);
@@ -220,4 +219,4 @@ private:
 };
 
 
-#endif  // __M2E_BRIDGE_DATABASE_H__
+#endif  // __M2E_BRIDGE_DATABASE_AUTHBUNDLE_H__

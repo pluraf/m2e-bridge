@@ -34,7 +34,7 @@ IN THE SOFTWARE.
 #include <curl/curl.h>
 
 #include "connector.h"
-#include "database.h"
+#include "database/authbundle.h"
 
 
 class SlackConnector: public Connector {
@@ -45,9 +45,9 @@ private:
     CURL* curl_;
 
     void parse_authbundle(){
-        Database db;
+        AuthbundleTable db;
         AuthBundle ab;
-        bool res = db.retrieve_authbundle(authbundle_id_, ab);
+        bool res = db.get(authbundle_id_, ab);
         if(res){
             if(ab.service_type != ServiceType::SLACK){
                 throw incompatible_dependency("Incompatiable authbundle service type");

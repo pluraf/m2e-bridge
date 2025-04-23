@@ -16,6 +16,7 @@ include_directories(
     ${SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/external/paho.mqtt.cpp/include
     ${CMAKE_SOURCE_DIR}/external/paho.mqtt.cpp/externals/paho-mqtt-c/src
+    ${CMAKE_SOURCE_DIR}/external/lua-cjson
     "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
@@ -34,6 +35,7 @@ find_package(aws-cpp-sdk-s3 CONFIG REQUIRED)
 find_package(Poco REQUIRED Foundation)
 find_package(gRPC CONFIG REQUIRED)
 find_package(Protobuf CONFIG REQUIRED)
+find_package(Lua REQUIRED)
 
 message(STATUS "Using protobuf ${Protobuf_VERSION}")
 message(STATUS "Using gRPC ${gRPC_VERSION}")
@@ -107,6 +109,8 @@ target_link_libraries(m2e-bridge PRIVATE
     ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF}
 )
+target_link_libraries(m2e-bridge PRIVATE ${LUA_LIBRARIES})
+target_link_libraries(m2e-bridge PRIVATE "${CMAKE_SOURCE_DIR}/external/lua-cjson/build/cjson.a")
 
 target_include_directories(m2e-bridge PRIVATE ${JWT_CPP_INCLUDE_DIRS})
 

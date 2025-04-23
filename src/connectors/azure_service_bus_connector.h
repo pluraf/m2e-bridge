@@ -43,7 +43,7 @@ IN THE SOFTWARE.
 #include <Poco/URI.h>
 
 #include "connector.h"
-#include "database.h"
+#include "database/authbundle.h"
 
 
 class ServiceBusConnector: public Connector{
@@ -66,9 +66,9 @@ private:
     CURLcode res_ = CURLE_OK;
 
     void parse_authbundle(){
-        Database db;
+        AuthbundleTable db;
         AuthBundle ab;
-        bool res = db.retrieve_authbundle(authbundle_id_, ab);
+        bool res = db.get(authbundle_id_, ab);
         if(res){
             if(ab.service_type != ServiceType::AZURE){
                 throw std::runtime_error("Incompatiable authbundle service type");

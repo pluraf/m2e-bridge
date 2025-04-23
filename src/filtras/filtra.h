@@ -72,6 +72,9 @@ public:
     string const & get_name(){return name_;}
     hops_t const & get_hops(){return hops_;}
 
+    virtual void start() {}
+    virtual void stop() {}
+
     static json get_schema(){
         return json {
             {"name", {

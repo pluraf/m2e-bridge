@@ -276,6 +276,7 @@ void Pipeline::run_receiving(bool * running){
 
 void Pipeline::run_processing(bool * running){
     * running = true;
+    for(auto filtra : filtras_) filtra->start();
     try{
         while(is_active()){
             handle_events();

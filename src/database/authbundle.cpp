@@ -33,7 +33,7 @@ IN THE SOFTWARE.
 #include <stdexcept>
 
 #include "global_config.h"
-#include "database.h"
+#include "authbundle.h"
 
 
 ServiceType get_service_type(string const & val){

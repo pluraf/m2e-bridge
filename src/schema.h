@@ -45,7 +45,8 @@ static json get_schemas(){
             HttpConnector::get_schema(),
             ServiceBusConnector::get_schema(),
             SlackConnector::get_schema(),
-            GeneratorConnector::get_schema()
+            GeneratorConnector::get_schema(),
+            ModbusConnector::get_schema()
 
         }},
         {"filtra", {
@@ -57,7 +58,8 @@ static json get_schemas(){
             LimiterFT::get_schema(),
             NopFT::get_schema(),
             ThrottleFT::get_schema(),
-            ExtractorFT::get_schema()
+            ExtractorFT::get_schema(),
+            ConverterFT::get_schema()
         }}
     };
 }

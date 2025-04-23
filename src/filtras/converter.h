@@ -27,20 +27,63 @@ IN THE SOFTWARE.
 #define __M2E_BRIDGE_CONVERTER_FT_H__
 
 
+#include <lua.hpp>
+
 #include "filtra.h"
+#include "database/converter.h"
+
+extern "C" {
+    extern int luaopen_cjson(lua_State *L);
+}
 
 
-class ConverterFT:public Filtra{
+class ConverterFT: public Filtra{
+    string converter_id_;
+    string lua_code_;
+    lua_State * L_ = nullptr;
+
+    void load_lua_code(){
+        ConverterTable ct;
+        Converter c;
+        bool res = ct.get(converter_id_, c);
+        if(res){
+            lua_code_ = c.code;
+            L_ = luaL_newstate();
+            luaL_requiref(L_, "base", luaopen_base, 1);
+            luaL_requiref(L_, "string", luaopen_string, 1);
+            luaL_requiref(L_, "utf8", luaopen_utf8, 1);
+            luaL_requiref(L_, "table", luaopen_table, 1);
+            luaL_requiref(L_, "math", luaopen_math, 1);
+            luaL_requiref(L_, "cjson", luaopen_cjson, 1);
+            lua_pop(L_, 6);  // Must be equal to number of luaL_requiref calls!
+            if(luaL_dostring(L_, lua_code_.c_str())){
+                throw std::runtime_error(lua_tostring(L_, -1));
+            }
+        }else{
+            throw std::runtime_error("Not able to retreive converter code!");
+        }
+    }
 public:
-    ConverterFT(PipelineIface const & pi, json const & json_descr):
-            Filtra(pi, json_descr){
+    ConverterFT(PipelineIface const & pi, json const & config):
+            Filtra(pi, config){
+        converter_id_ = config.at("converter_id").get<string>();
+    }
+
+    void start()override{
+        if(L_) lua_close(L_);
+        load_lua_code();
     }
 
     string process_message(MessageWrapper &msg_w)override{
         Message msg = msg_w.orig();
         string raw = msg.get_raw();
-        uint16_t val = static_cast<uint8_t>(raw[0]) << 8 | static_cast<uint8_t>(raw[1]);
-        msg_w.msg().get_raw() = std::to_string(static_cast<double>(val) / 10);
+
+        lua_getglobal(L_, "convert");
+        lua_pushlstring(L_, raw.c_str(), 2);
+        if(lua_pcall(L_, 1, 1, 0)){
+            throw std::runtime_error(lua_tostring(L_, -1));
+        }
+        msg_w.msg().get_raw() =  lua_tostring(L_, -1);
         msg_w.pass();
         return "";
     }
@@ -48,17 +91,17 @@ public:
     static pair<string, json> get_schema(){
         json schema = Filtra::get_schema();
         schema.merge_patch({
-            {"keys", {
-                {"type", "array"},
-                {"items", {{"type", "string"}}},
+            {"converter_id", {
+                {"type", "string"},
+                {"options", {
+                    {"url", "api/converter/"},
+                    {"key", "converter_id"},
+                }},
                 {"required", true}
             }}
         });
-        return {"eraser", schema};
+        return {"converter", schema};
     }
-
-private:
-    vector<string> keys_;
 };
 
 

@@ -52,6 +52,8 @@ pair<bool, string> validate_connector(ConnectorMode mode, json const & config){
             SlackConnector("pipeid", mode, config);
         }else if(conn_type == "generator"){
             GeneratorConnector("pipeid", mode, config);
+        }else if(conn_type == "modbus"){
+            ModbusConnector("pipeid", mode, config);
         }else{
             return {false, "Unknown connector type: " + conn_type + "!"};
         }

@@ -41,7 +41,7 @@ IN THE SOFTWARE.
 #include "google/cloud/credentials.h"
 
 #include "connector.h"
-#include "database.h"
+#include "database/authbundle.h"
 
 
 namespace gcloud = ::google::cloud;
@@ -60,9 +60,9 @@ private:
     gcloud::Options auth_options_;
 
     void parse_authbundle(){
-        Database db;
+        AuthbundleTable db;
         AuthBundle ab;
-        bool res = db.retrieve_authbundle(authbundle_id_, ab);
+        bool res = db.get(authbundle_id_, ab);
         if(res){
             if(ab.service_type != ServiceType::GCP){
                 throw std::runtime_error("Incompatiable authbundle service type");

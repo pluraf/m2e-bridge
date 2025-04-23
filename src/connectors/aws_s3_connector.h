@@ -47,7 +47,7 @@ IN THE SOFTWARE.
 #include <aws/s3/model/CreateBucketRequest.h>
 
 #include "connector.h"
-#include "database.h"
+#include "database/authbundle.h"
 
 
 class S3Connector: public Connector {
@@ -63,9 +63,9 @@ private:
     Aws::S3::S3Client client_;
 
     void parse_authbundle(){
-        Database db;
+        AuthbundleTable db;
         AuthBundle ab;
-        bool res = db.retrieve_authbundle(authbundle_id_, ab);
+        bool res = db.get(authbundle_id_, ab);
         if(res){
             if(ab.service_type != ServiceType::AWS){
                 throw std::runtime_error("Incompatiable authbundle service type");

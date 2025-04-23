@@ -27,10 +27,11 @@
         "storage"
       ]
     },
+    "grpc",
     "jwt-cpp",
     "nlohmann-json",
     "poco",
     "sqlite3",
-    "grpc"
+    "lua"
   ]
 }
