@@ -43,7 +43,7 @@ void PipelineSupervisor::init(){
 
 void PipelineSupervisor::start_all(){
     for(auto & el: pipelines_){
-         el.second->start();
+         if(el.second->is_enabled()) el.second->start();
     }
 }
 

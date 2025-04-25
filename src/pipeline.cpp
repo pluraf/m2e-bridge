@@ -54,6 +54,8 @@ Pipeline::~Pipeline(){
 bool Pipeline::construct(json const & pjson){
     last_error_ = "";
     bool success = true;
+    // Enabled
+    is_enabled_ = pjson.value("enabled", false);
     // Create connector IN
     try{
         connector_in_ = ConnectorFactory::create(
@@ -395,16 +397,19 @@ void Pipeline::execute(PipelineCommand cmd){
 
 
 void Pipeline::start() {
+    is_enabled_ = true;
     execute(PipelineCommand::START);
 }
 
 
 void Pipeline::restart() {
+    is_enabled_ = true;
     execute(PipelineCommand::RESTART);
 }
 
 
 void Pipeline::stop(){
+    is_enabled_ = false;
     execute(PipelineCommand::STOP);
 }
 

@@ -92,6 +92,7 @@ public:
 
 
 class Pipeline:public PipelineIface{
+    bool is_enabled_ {};
 public:
     Pipeline(std::string const & pipeid, json const & pjson);
     ~Pipeline();
@@ -108,6 +109,12 @@ public:
     void stop();
     void restart();
     void terminate();
+
+    bool is_enabled(){return is_enabled_;}
+    bool is_alive(){
+        return state_ != PipelineState::MALFORMED && state_ != PipelineState::TERMINATED;
+    }
+    bool is_active(){return state_ == PipelineState::RUNNING;}
 
     PipelineState get_state() const;
     std::string get_id() const;
@@ -162,14 +169,6 @@ private:
     void run_control();
     void free_resources();
     int find_filtra_index(string const & filtra_name);
-
-    bool is_alive(){
-        return state_ != PipelineState::MALFORMED && state_ != PipelineState::TERMINATED;
-    }
-
-    bool is_active(){
-        return state_ == PipelineState::RUNNING;
-    }
 
     Connector * connector_in_ {nullptr};
     Connector * connector_out_ {nullptr};

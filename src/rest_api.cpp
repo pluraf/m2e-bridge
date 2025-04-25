@@ -286,6 +286,7 @@ class PipelineControlApiHandler:public CivetHandler{
             PipelineSupervisor * ps = PipelineSupervisor::get_instance();
             try{
                 ps->get_pipeline(pipeid)->execute(command);
+                gc.update_pipeline(pipeid, {{"enabled", command != PipelineCommand::STOP}});
                 mg_send_http_ok(conn, "text/plain", 0);
             }catch(std::out_of_range){
                 mg_send_http_error(conn, 404, "%s", "Pipeline not found!");

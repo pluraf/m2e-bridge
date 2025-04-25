@@ -82,7 +82,7 @@ public:
         return true;
     }
 
-    bool add_pipeline(const std::string &pipeid, const json &pipelineData) {
+    bool add_pipeline(string const & pipeid, json const & pipelineData) {
         if(pipelines_.contains(pipeid)) {
             throw std::invalid_argument(fmt::format("Pipeline [ {} ] already exist!", pipeid));
         }
@@ -90,15 +90,15 @@ public:
         return save_pipelines();
     }
 
-    bool update_pipeline(const std::string &pipeid, const json &pipelineData){
+    bool update_pipeline(string const & pipeid, json const & pipelineData){
         if(! pipelines_.contains(pipeid)) {
             throw std::invalid_argument(fmt::format("Pipeline [ {} ] doesn't exist!", pipeid));
         }
-        pipelines_[pipeid] = pipelineData;
+        pipelines_[pipeid].merge_patch(pipelineData);
         return save_pipelines();
     }
 
-    bool delete_pipeline(const std::string &pipeid){
+    bool delete_pipeline(string const& pipeid){
         if(! pipelines_.contains(pipeid)) {
             throw std::invalid_argument(fmt::format("Pipeline [ {} ] doesn't exist!", pipeid));
         }
