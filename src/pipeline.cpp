@@ -253,11 +253,12 @@ void Pipeline::handle_messages(){
 }
 
 
-void Pipeline::run_receiving(bool * running){
-    * running = true;
+void Pipeline::run_receiving(ThreadState * state){
+    * state = ThreadState::STARTING;
     try{
         Message msg;
         connector_in_->connect();
+        * state = ThreadState::RUNNING;
         while(is_active()){
             try{
                 auto msg_ptr = connector_in_->receive();
@@ -267,18 +268,26 @@ void Pipeline::run_receiving(bool * running){
                 break;
             }
         }
+    }catch(std::underflow_error){
+        // This is normal
+    }catch(std::exception const & e){
+        last_error_ = e.what();
+        state_ = PipelineState::FAILED;
+    }
+    try{
         connector_in_->disconnect();
     }catch(std::exception const & e){
         last_error_ = e.what();
         state_ = PipelineState::FAILED;
     }
-    * running = false;
+    * state = ThreadState::FINISHED;
 }
 
 
-void Pipeline::run_processing(bool * running){
-    * running = true;
+void Pipeline::run_processing(ThreadState * state){
+    * state = ThreadState::STARTING;
     for(auto filtra : filtras_) filtra->start();
+    * state = ThreadState::RUNNING;
     try{
         while(is_active()){
             handle_events();
@@ -290,25 +299,32 @@ void Pipeline::run_processing(bool * running){
         last_error_ = e.what();
         state_ = PipelineState::FAILED;
     }
-    * running = false;
+    * state = ThreadState::FINISHED;
 }
 
 
-void Pipeline::run_sending(bool * running){
-    * running = true;
+void Pipeline::run_sending(ThreadState * state){
+    * state = ThreadState::STARTING;
     try{
         connector_out_->connect();
+        * state = ThreadState::RUNNING;
         while(is_active()){
             auto msg_w = s_queue_.pop();
             connector_out_->send(msg_w);
         }
-        connector_out_->disconnect();
     }catch(std::underflow_error){
+        // This is normal
     }catch(std::exception const & e){
         last_error_ = e.what();
         state_ = PipelineState::FAILED;
     }
-    * running = false;
+    try{
+        connector_out_->disconnect();
+    }catch(std::exception const & e){
+        last_error_ = e.what();
+        state_ = PipelineState::FAILED;
+    }
+    * state = ThreadState::FINISHED;
 }
 
 
@@ -375,9 +391,7 @@ void Pipeline::execute_stop(){
 
     // It helps to exit from blocking receiving call
     if(connector_in_ != nullptr) connector_in_->stop();
-
     s_queue_.set_non_blocking();
-
     receiving_thread_.terminate();
     while(processing_thread_.is_running()){
         pipeline_event_.notify_all();

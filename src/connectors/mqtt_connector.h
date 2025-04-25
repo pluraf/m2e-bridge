@@ -170,6 +170,14 @@ public:
         is_topic_template_ = std::regex_search(
             topic_template_.cbegin(), topic_template_.cend(), match, pattern
         );
+
+        // Create MQTT Client
+        client_ptr_ = std::make_shared<mqtt::async_client>(
+            server_, client_id_, mqtt::create_options(mqtt_version_), nullptr
+        );
+        // Install the callback(s) before connecting.
+        callback_ptr_ = std::make_unique<Callback>(this);
+        client_ptr_->set_callback(* callback_ptr_);
     }
 
     void connect()override{
@@ -189,19 +197,17 @@ public:
             }
             conn_opts_.set_ssl(sslopts);
         }
-
-        client_ptr_ = std::make_shared<mqtt::async_client>(
-            server_, client_id_, mqtt::create_options(mqtt_version_), nullptr
-        );
-        // Install the callback(s) before connecting.
-        callback_ptr_ = std::make_unique<Callback>(this);
-        client_ptr_->set_callback(* callback_ptr_);
-        client_ptr_->connect(conn_opts_, nullptr, * callback_ptr_)->wait();
+        auto token = client_ptr_->connect(conn_opts_, nullptr, * callback_ptr_);
+        if(! token->wait_for(5000)) throw std::runtime_error("MQTT Connection Timeout!");
     }
 
     void disconnect()override{
         stop();
-        client_ptr_->disconnect()->wait();
+        if(client_ptr_->is_connected()){
+            auto token = client_ptr_->disconnect();
+            token->wait();
+            if(! token->wait_for(5000)) throw std::runtime_error("MQTT Disconnection Timeout!");
+        }
     }
 
     void do_send(MessageWrapper & msg_w)override{

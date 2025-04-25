@@ -71,13 +71,26 @@ struct PipelineStat{
 class Pipeline;
 
 
+enum class ThreadState {
+    UNKN,
+    STARTING,
+    RUNNING,
+    FINISHED
+};
+
+
 class Thread{
     std::thread * thread_ {nullptr};
-    bool running_ {false};
+    ThreadState state_ {ThreadState::UNKN};
 public:
-    void start(void (Pipeline::*func)(bool *), Pipeline * pipeline){
+    void start(void (Pipeline::*func)(ThreadState *), Pipeline * pipeline){
         if(thread_ != nullptr) throw std::runtime_error("Thread already started!");
-        thread_ = new std::thread(func, pipeline, & running_);
+        thread_ = new std::thread(func, pipeline, & state_);
+        unsigned cnt {};
+        while(state_ != ThreadState::RUNNING && state_ != ThreadState::FINISHED){
+            std::this_thread::sleep_for(chrono::milliseconds(10));
+            if(++cnt > 1000) throw std::runtime_error("Timeout error while starting pipeline!");
+        }
     }
 
     void terminate(){
@@ -87,7 +100,7 @@ public:
         }
     }
 
-    bool is_running(){return running_;}
+    bool is_running(){return state_ == ThreadState::RUNNING || state_ == ThreadState::STARTING;}
 };
 
 
@@ -163,9 +176,9 @@ private:
     void process();
     void handle_events();
     void handle_messages();
-    void run_receiving(bool * running);
-    void run_processing(bool * running);
-    void run_sending(bool * running);
+    void run_receiving(ThreadState * running);
+    void run_processing(ThreadState * running);
+    void run_sending(ThreadState * running);
     void run_control();
     void free_resources();
     int find_filtra_index(string const & filtra_name);
