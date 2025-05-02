@@ -286,7 +286,12 @@ void Pipeline::run_receiving(ThreadState * state){
 
 void Pipeline::run_processing(ThreadState * state){
     * state = ThreadState::STARTING;
-    for(auto filtra : filtras_) filtra->start();
+    try{
+        for(auto filtra : filtras_) filtra->start();
+    }catch(std::exception const & e){
+        last_error_ = e.what();
+        state_ = PipelineState::FAILED;
+    }
     * state = ThreadState::RUNNING;
     try{
         while(is_active()){

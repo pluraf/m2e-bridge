@@ -87,7 +87,7 @@ public:
         if(thread_ != nullptr) throw std::runtime_error("Thread already started!");
         thread_ = new std::thread(func, pipeline, & state_);
         unsigned cnt {};
-        while(state_ != ThreadState::RUNNING && state_ != ThreadState::FINISHED){
+        while(state_ == ThreadState::STARTING || state_ == ThreadState::UNKN){
             std::this_thread::sleep_for(chrono::milliseconds(10));
             if(++cnt > 1000) throw std::runtime_error("Timeout error while starting pipeline!");
         }
