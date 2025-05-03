@@ -45,9 +45,12 @@ IN THE SOFTWARE.
 
 
 int parse_request_body(struct mg_connection * conn, json & pipeline_data){
-    char buf[1024];
-    int length = mg_read(conn, buf, sizeof(buf));
-    buf[length] = '\0';
+    string buf;
+    char chunk[1024];
+    int length {};
+    while((length = mg_read(conn, chunk, sizeof(chunk))) > 0){
+        buf.append(chunk, length);
+    }
     try {
         pipeline_data = ordered_json::parse(buf);
         return 0;
