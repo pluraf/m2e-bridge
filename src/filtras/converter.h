@@ -75,11 +75,11 @@ public:
     }
 
     string process_message(MessageWrapper &msg_w)override{
-        Message msg = msg_w.orig();
+        Message msg = msg_w.msg();
         string raw = msg.get_raw();
 
         lua_getglobal(L_, "convert");
-        lua_pushlstring(L_, raw.c_str(), 2);
+        lua_pushlstring(L_, raw.data(), raw.size());
         if(lua_pcall(L_, 1, 1, 0)){
             throw std::runtime_error(lua_tostring(L_, -1));
         }
