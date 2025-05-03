@@ -106,7 +106,7 @@ public:
                 {"required", true}
             }},
             {"comparand", {
-                {"type", "integer"},
+                {"type", "float"},
                 {"required", true}
             }}
         });
