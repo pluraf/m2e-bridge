@@ -37,7 +37,6 @@ IN THE SOFTWARE.
 #include "m2e_aliases.h"
 
 
-
 class GlobalConfig {
 public:
     string get_jwt_public_key_path(){
@@ -74,14 +73,6 @@ public:
         return save_config();
     }
 
-    bool save_config(){
-        std::ofstream ofs(config_path_);
-        if(! ofs.is_open()) return false;
-        ofs << config_.dump(4);
-        ofs.close();
-        return true;
-    }
-
     bool add_pipeline(string const & pipeid, json const & pipelineData) {
         if(pipelines_.contains(pipeid)) {
             throw std::invalid_argument(fmt::format("Pipeline [ {} ] already exist!", pipeid));
@@ -104,6 +95,14 @@ public:
         }
         pipelines_.erase(pipeid);
         return save_pipelines();
+    }
+
+    bool save_config(){
+        std::ofstream ofs(config_path_);
+        if(! ofs.is_open()) return false;
+        ofs << config_.dump(4);
+        ofs.close();
+        return true;
     }
 
     bool save_pipelines() {
