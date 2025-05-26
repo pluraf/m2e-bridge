@@ -29,9 +29,10 @@
     },
     "grpc",
     "jwt-cpp",
+    "lua",
     "nlohmann-json",
     "poco",
     "sqlite3",
-    "lua"
+    "pegtl"
   ]
 }

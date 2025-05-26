@@ -46,6 +46,7 @@ class Message{
     mutable std::vector<std::string> topic_levels_;
     string empty_level_ {""};
     MessageFormat format_ {MessageFormat::UNKN};
+    map<string, string> attributes_;
 public:
     Message() = default;
 
@@ -85,6 +86,7 @@ public:
         topic_levels_ = other.topic_levels_;
         is_serialized_ = other.is_serialized_;
         decoded_json_ = other.decoded_json_;
+        attributes_ = other.attributes_;
         msg_topic_ = other.msg_topic_;
         format_ = other.format_;
         is_valid_ = other.is_valid_;
@@ -96,6 +98,7 @@ public:
             topic_levels_ = other.topic_levels_;
             is_serialized_ = other.is_serialized_;
             decoded_json_ = other.decoded_json_;
+            attributes_ = other.attributes_;
             msg_topic_ = other.msg_topic_;
             format_ = other.format_;
             is_valid_ = other.is_valid_;
@@ -109,6 +112,7 @@ public:
         is_serialized_(other.is_serialized_),
         decoded_json_(std::move(other.decoded_json_)),
         msg_topic_(std::move(other.msg_topic_)),
+        attributes_(std::move(other.attributes_)),
         format_(other.format_),
         is_valid_(other.is_valid_) {}
 
@@ -119,6 +123,7 @@ public:
             is_serialized_ = other.is_serialized_;
             decoded_json_ = std::move(other.decoded_json_);
             msg_topic_ = std::move(other.msg_topic_);
+            attributes_ = std::move(other.attributes_);
             format_ = other.format_;
             is_valid_ = other.is_valid_;
         }
@@ -126,6 +131,14 @@ public:
     }
 
     explicit operator bool()const{return is_valid_;}
+
+    void set_attributes(map<string, string> const & attrs){
+        attributes_ = attrs;
+    }
+
+    map<string, string> const & get_attributes(){
+        return attributes_;
+    }
 
     std::string & get_raw(){
         if(! is_serialized_){
@@ -154,13 +167,19 @@ public:
 
     std::string const & get_topic_level(int level){
         using namespace std;
+        auto & levels = get_topic_levels();
+        return level < levels.size() ? levels[level] : empty_level_;
+    }
+
+    std::vector<std::string> const & get_topic_levels(){
+        using namespace std;
         if(topic_levels_.size() == 0){
             regex r("/");
             sregex_token_iterator it(msg_topic_.begin(), msg_topic_.end(), r, -1);
             sregex_token_iterator end;
             topic_levels_ = vector<std::string>(it, end);
         }
-        return level < topic_levels_.size() ? topic_levels_[level] : empty_level_;
+        return topic_levels_;
     }
 
     std::string const & get_topic()const{

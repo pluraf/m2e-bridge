@@ -41,6 +41,7 @@ IN THE SOFTWARE.
 
 #include "connector.h"
 #include "database/authbundle.h"
+#include "substitutions/subs.hpp"
 
 const int QOS=1;
 const int N_RETRY_ATTEMPTS = 10;
@@ -249,31 +250,7 @@ public:
     }
 
     std::string derive_topic(MessageWrapper & msg_w){
-        using namespace std;
-
-        regex pattern("\\{\\{(.*?)\\}\\}");
-        smatch match;
-
-        string topic = topic_template_;
-        try{
-            json const & metadata = msg_w.get_metadata();
-            auto pos = topic.cbegin();
-            while(regex_search(pos, topic.cend(), match, pattern)){
-                string vname = match[1].str();
-                try{
-                    string vvalue = metadata.at(vname);
-                    unsigned int i = (pos - topic.cbegin());
-                    topic.replace(i + match.position(), match.length(), vvalue);
-                    // Restore iterator after string modification
-                    pos = topic.cbegin() + i + match.position() + vvalue.size();
-                }catch(json::exception){
-                    throw runtime_error(fmt::format("Topic template variable [ {} ] not found!", vname));
-                }
-            }
-        }catch(json::exception){
-            throw runtime_error("Message payload is not a valid JSON!");
-        }
-        return topic;
+        return SubsEngine(msg_w.msg(), msg_w.get_metadata(), msg_w.msg().get_attributes()).substitute(topic_template_);
     }
 
     static pair<string, json> get_schema(){

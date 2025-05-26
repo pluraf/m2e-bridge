@@ -28,9 +28,11 @@ IN THE SOFTWARE.
 
 
 #include "filtra.h"
+#include "substitutions/subs.hpp"
 
 
 class BuilderFT:public Filtra{
+    json payload_;
 public:
     BuilderFT(PipelineIface const & pi, json const & json_descr):
             Filtra(pi, json_descr){
@@ -39,9 +41,12 @@ public:
 
     string process_message(MessageWrapper &msg_w)override{
         if(msg_format_ == MessageFormat::JSON){
-            msg_w.msg().get_json() = payload_;
+            auto se = SubsEngine(msg_w.msg(), msg_w.get_metadata(), msg_w.msg().get_attributes());
+            json payload = payload_;
+            substitute(se, payload);
+            msg_w.msg().get_json() = payload;
         }else{
-            throw std::runtime_error("Builder: Unknown encoder type");
+            throw std::runtime_error("Builder: Unknown message format!");
         }
         msg_w.pass();
         return "";
@@ -63,9 +68,16 @@ public:
         });
         return {"builder", schema};
     }
-
 private:
-    json payload_;
+    void substitute(SubsEngine & se, json & j){
+        for(auto it = j.begin(); it != j.end(); ++it){
+            if(it->is_string()){
+                it.value() = se.substitute(it.value());
+            }else if(it->is_object() || it->is_array()){
+                substitute(se, * it);
+            }
+        }
+    }
 };
 
 

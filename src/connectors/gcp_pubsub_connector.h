@@ -50,6 +50,7 @@ IN THE SOFTWARE.
 
 #include "connector.h"
 #include "database/authbundle.h"
+#include "substitutions/subs.hpp"
 
 
 namespace pubsub = ::google::cloud::pubsub;
@@ -137,7 +138,6 @@ public:
                 attributes_[it.key()] = std::pair(is_dynamic, v);
             }
         }
-
     }
 
     void connect()override{
@@ -214,9 +214,10 @@ public:
             }
 
             string msg_text = response->message.data();
-            std::cout << "Received message " << msg_text << "\n";
             std::move(response->handler).ack();
-            return Message(msg_text, subscription_id_);
+            auto msg = Message(msg_text, subscription_id_);
+            msg.set_attributes(response->message.attributes());
+            return msg;
         }catch (google::cloud::Status const& status) {
             std::cerr << "google::cloud::Status thrown: " << status << "\n";
             throw std::runtime_error("Error pulling messages from gcp pubsub");
@@ -244,29 +245,7 @@ public:
     }
 
     string derive_attribute(MessageWrapper & msg_w, string const & atemplate){
-        using namespace std;
-
-        regex pattern_variable("\\{\\{(.*?)\\}\\}");
-        regex pattern_expression("topic\\[(.*?)\\]");
-
-        string attribute = atemplate;
-        auto pos = attribute.cbegin();
-        smatch match1;
-        while(regex_search(pos, attribute.cend(), match1, pattern_variable)){
-            string ve = match1[1].str();
-            smatch match2;
-            if(regex_search(ve.cbegin(), ve.cend(), match2, pattern_expression)){
-                int topic_level = stoi(match2[1].str());
-                string vvalue = msg_w.msg().get_topic_level(topic_level);
-                unsigned int i = (pos - attribute.cbegin());
-                attribute.replace(i + match1.position(), match1.length(), vvalue);
-                // Restore iterator after string modification
-                pos = attribute.cbegin() + i + match1.position() + vvalue.size();
-            }else{
-                pos = pos + match1.position() + match1[0].str().size();
-            }
-        }
-        return attribute;
+        return SubsEngine(msg_w.msg(), msg_w.get_metadata(), msg_w.msg().get_attributes()).substitute(atemplate);
     }
 
     static pair<string, json> get_schema(){
@@ -306,8 +285,8 @@ private:
         auto res = topic_admin_->CreateTopic(topic_url);
         // Throw error if topic doesn't already exists
         if (! res && res.status().code() != gcloud::StatusCode::kAlreadyExists){
-            std::cerr << "Error creating topic: "<<res.status()<<std::endl;
-            throw std::runtime_error("Error creating topic");
+            std::cerr << "Error creating topic: "<< res.status() << std::endl;
+            throw std::runtime_error("Error creating topic: " + res.status().message());
         }
     }
 
