@@ -29,6 +29,7 @@ IN THE SOFTWARE.
 
 #include <regex>
 #include <string>
+#include <variant>
 
 #include <fmt/core.h>
 
