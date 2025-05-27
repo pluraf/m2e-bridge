@@ -80,6 +80,12 @@ public:
         throw std::invalid_argument("Index access is not available!");
     }
 
+    template<typename T>
+    T value(){
+        throw std::logic_error("Not implemented!");
+    }
+
+    template<>
     std::string value(){
         if(std::holds_alternative<std::string const *>(obj_)){
             return * std::get<std::string const *>(obj_);
@@ -92,6 +98,14 @@ public:
             }
         }
         throw std::runtime_error("Value is not a string!");
+    }
+
+    template<>
+    nlohmann::json value(){
+        if(std::holds_alternative<nlohmann::json const *>(obj_)){
+            return * std::get<nlohmann::json const *>(obj_);
+        }
+        throw std::runtime_error("Value is not a JSON!");
     }
 };
 
@@ -127,16 +141,16 @@ public:
         }
     }
 
+    ObjectProxy & get_object(){
+        return obj_;
+    }
+
     void next(std::string const & key){
         obj_ = obj_.next(key);
     }
 
     void next(unsigned ix){
         obj_ = obj_.next(ix);
-    }
-
-    std::string value(){
-        return obj_.value();
     }
 };
 
@@ -170,14 +184,17 @@ struct action<grammar::index> {
     }
 };
 
-
-string SubsEngine::evaluate(string const & expression){
+template<typename T>
+T SubsEngine::evaluate(string const & expression){
     EvalState state(env_);
     tao::pegtl::string_input in(expression, "");
     try{
         tao::pegtl::parse<grammar::expression, action>(in, state);
-        return state.value();
+        return state.get_object().value<T>();
     }catch(std::exception const & e){
         throw;
     }
 }
+
+template string SubsEngine::evaluate<string>(string const &);
+template nlohmann::json SubsEngine::evaluate<nlohmann::json>(string const &);

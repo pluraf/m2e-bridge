@@ -245,7 +245,7 @@ public:
     }
 
     string derive_attribute(MessageWrapper & msg_w, string const & atemplate){
-        return SubsEngine(msg_w.msg(), msg_w.get_metadata(), msg_w.msg().get_attributes()).substitute(atemplate);
+        return std::get<string>(SubsEngine(msg_w.msg(), msg_w.get_metadata(), msg_w.msg().get_attributes()).substitute(atemplate));
     }
 
     static pair<string, json> get_schema(){

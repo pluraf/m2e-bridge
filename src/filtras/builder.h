@@ -43,7 +43,11 @@ public:
         if(msg_format_ == MessageFormat::JSON){
             auto se = SubsEngine(msg_w.msg(), msg_w.get_metadata(), msg_w.msg().get_attributes());
             json payload = payload_;
-            substitute(se, payload);
+            if(payload.is_object()){
+                substitute(se, payload);
+            }else if(payload.is_string()){
+                payload = substitute(se, payload.get<string>());
+            }
             msg_w.msg().get_json() = payload;
         }else{
             throw std::runtime_error("Builder: Unknown message format!");
@@ -72,10 +76,24 @@ private:
     void substitute(SubsEngine & se, json & j){
         for(auto it = j.begin(); it != j.end(); ++it){
             if(it->is_string()){
-                it.value() = se.substitute(it.value());
+                auto result = se.substitute(it.value());
+                if(std::holds_alternative<string>(result)){
+                    it.value() = std::get<string>(result);
+                }else{
+                    it.value() = std::get<json>(result);
+                }
             }else if(it->is_object() || it->is_array()){
                 substitute(se, * it);
             }
+        }
+    }
+
+    json substitute(SubsEngine & se, string const & s){
+        auto result = se.substitute(s);
+        if(std::holds_alternative<string>(result)){
+            return std::get<string>(result);
+        }else{
+            return std::get<json>(result);
         }
     }
 };

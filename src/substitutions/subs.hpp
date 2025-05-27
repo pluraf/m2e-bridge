@@ -56,7 +56,7 @@ public:
         env_["META"] = & meta;
     }
 
-    string substitute(string const & atemplate){
+    std::variant<string, nlohmann::json> substitute(string const & atemplate){
         using namespace std;
         regex pattern("\\{\\{(.*?)\\}\\}");
         smatch match;
@@ -65,14 +65,18 @@ public:
             auto pos = result.cbegin();
             while(regex_search(pos, result.cend(), match, pattern)){
                 string expression = match[1].str();
-                try{
-                    string vvalue = evaluate(expression);
-                    unsigned int i = (pos - result.cbegin());
-                    result.replace(i + match.position(), match.length(), vvalue);
-                    // Restore iterator after string modification
-                    pos = result.cbegin() + i + match.position() + vvalue.size();
-                }catch(json::exception){
-                    throw runtime_error(fmt::format("Can not evaluate: {}!", expression));
+                if(match[0].str() == atemplate){
+                    return evaluate<nlohmann::json>(expression);
+                }else{
+                    try{
+                        string vvalue = evaluate<string>(expression);
+                        unsigned int i = (pos - result.cbegin());
+                        result.replace(i + match.position(), match.length(), vvalue);
+                        // Restore iterator after string modification
+                        pos = result.cbegin() + i + match.position() + vvalue.size();
+                    }catch(json::exception){
+                        throw runtime_error(fmt::format("Can not evaluate: {}!", expression));
+                    }
                 }
             }
         }catch(json::exception){
@@ -81,7 +85,8 @@ public:
         return result;
     }
 
-    string evaluate(string const & exptrssion);
+    template<typename T>
+    T evaluate(string const & exptrssion);
 };
 
 

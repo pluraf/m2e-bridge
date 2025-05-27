@@ -250,7 +250,7 @@ public:
     }
 
     std::string derive_topic(MessageWrapper & msg_w){
-        return SubsEngine(msg_w.msg(), msg_w.get_metadata(), msg_w.msg().get_attributes()).substitute(topic_template_);
+        return std::get<string>(SubsEngine(msg_w.msg(), msg_w.get_metadata(), msg_w.msg().get_attributes()).substitute(topic_template_));
     }
 
     static pair<string, json> get_schema(){
