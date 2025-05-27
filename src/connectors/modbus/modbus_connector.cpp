@@ -100,7 +100,7 @@ ModbusConnector::ModbusConnector(std::string pipeid, ConnectorMode mode, json co
 }
 
 
-void ModbusConnector::connect()
+void ModbusConnector::do_connect()
 {
     ConnectRequest request;
     ConnectResponse response;
@@ -117,7 +117,7 @@ void ModbusConnector::connect()
 }
 
 
-void ModbusConnector::disconnect()
+void ModbusConnector::do_disconnect()
 {
     DisconnectRequest request;
     DisconnectResponse response;

@@ -52,13 +52,13 @@ struct ConnectorStat{
 
 
 class Connector{
+    ConnectorStat stat_ {0};
 protected:
     ConnectorMode mode_ {ConnectorMode::UNKN};
     std::string pipeid_;
     bool is_active_ {false};
     time_t polling_period_ {0};
     string authbundle_id_;
-
 public:
     Connector(std::string pipeid, ConnectorMode mode, json const & config){
         mode_ = mode;
@@ -77,9 +77,20 @@ public:
             authbundle_id_ = "";
         }
     }
-    virtual void connect(){}
-    virtual void disconnect(){}
-    virtual void stop(){is_active_=false;}
+
+    void connect(){
+        is_active_ = true;
+        do_connect();
+    }
+
+    void disconnect(){
+        do_disconnect();
+    }
+
+    void stop(){
+        is_active_ = false;
+        do_stop();
+    }
 
     std::shared_ptr<Message> receive(){
         using namespace std::chrono;
@@ -129,17 +140,20 @@ public:
         return true;
     }
 */
-protected:
+private:
     virtual Message const do_receive(){
-        throw std::runtime_error("do_receive not implemented");
+        throw std::logic_error("do_receive not implemented!");
     }
 
     virtual void do_send(MessageWrapper & msg_w){
-        throw std::runtime_error("do_receive not implemented");
+        throw std::logic_error("do_receive not implemented!");
     }
 
-private:
-    ConnectorStat stat_ {0};
+    virtual void do_connect(){}
+
+    virtual void do_disconnect(){}
+
+    virtual void do_stop(){}
 };
 
 

@@ -45,14 +45,14 @@ public:
         buffer_size_ = config.value("buffer_size", 100);
     }
 
-    void connect()override
+    void do_connect()override
     {
         if(mode_ == ConnectorMode::IN){
             incoming_ = queue_.subscribe(buffer_size_);
         }
     }
 
-    void disconnect()override{
+    void do_disconnect()override{
         if(mode_ == ConnectorMode::IN){
             queue_.unsubscribe(incoming_);
         }
@@ -66,7 +66,7 @@ public:
         queue_.push(msg_w.msg_ptr());
     }
 
-    void stop()override{
+    void do_stop()override{
         Connector::stop();
         incoming_.exit_blocking_calls();
     }

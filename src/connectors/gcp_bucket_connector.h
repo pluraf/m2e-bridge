@@ -123,7 +123,7 @@ public:
                                                 pattern);
     }
 
-    void connect()override{
+    void do_connect()override{
         std::cout << "Connecting to GCP Bucket: " << bucket_name_ << std::endl;
 
         auto metadata = client_.GetBucketMetadata(bucket_name_);

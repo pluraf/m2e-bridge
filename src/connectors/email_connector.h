@@ -213,7 +213,7 @@ public:
         }
     }
 
-    void connect()override{
+    void do_connect()override{
         curl = curl_easy_init();
         if(!curl) {
             throw std::runtime_error("Failed to initialize CURL");
@@ -296,7 +296,7 @@ public:
         return Message(email_data, "");
     }
 
-    void disconnect()override{
+    void do_disconnect()override{
         std::cout << "EmailConnector is disconnecting..." << std::endl;
 
         if(curl) {

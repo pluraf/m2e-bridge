@@ -140,7 +140,7 @@ public:
         }
     }
 
-    void connect()override{
+    void do_connect()override{
         parse_authbundle();
         auth_options_ = gcloud::Options{}.set<gcloud::UnifiedCredentialsOption>(
             gcloud::MakeServiceAccountCredentials(service_key_data_));
@@ -205,7 +205,9 @@ public:
                                               std::chrono::milliseconds(500))
                                               .clone());
             google::cloud::StatusOr<google::cloud::pubsub::PullResponse> response;
+            std::cout << "C A: " << is_active_ << std::endl;
             while(is_active_){
+                std::cout << "PULLING" << std::endl;
                 response = subscriber_ptr_->Pull(opts);
                 if(response) break;
             }

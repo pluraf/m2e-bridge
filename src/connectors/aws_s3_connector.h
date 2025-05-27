@@ -121,7 +121,7 @@ public:
                                                 pattern);
     }
 
-    void connect()override{
+    void do_connect()override{
         Aws::S3::Model::ListObjectsRequest request;
         request.SetBucket(bucket_name_);
 

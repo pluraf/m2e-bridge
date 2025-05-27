@@ -244,7 +244,7 @@ public:
         }
     }
 
-    void connect()override{
+    void do_connect()override{
         if(! authbundle_id_.empty()){
             parse_authbundle();
         }
@@ -254,7 +254,7 @@ public:
         }
     }
 
-    void disconnect()override{
+    void do_disconnect()override{
         if(curl) {
             curl_easy_cleanup(curl);
         }

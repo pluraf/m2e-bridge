@@ -259,8 +259,10 @@ void Pipeline::run_receiving(ThreadState * state){
         Message msg;
         connector_in_->connect();
         * state = ThreadState::RUNNING;
+        std::cout << state_to_string(state_) << std::endl;
         while(is_active()){
             try{
+                std::cout << "LOOP" << std::endl;
                 auto msg_ptr = connector_in_->receive();
                 r_queue_.push(std::move(msg_ptr));
                 pipeline_event_.notify_one();
@@ -405,7 +407,7 @@ void Pipeline::execute_stop(){
     processing_thread_.terminate();
     sending_thread_.terminate();
 
-    state_= PipelineState::STOPPED;
+    state_ = PipelineState::STOPPED;
 }
 
 

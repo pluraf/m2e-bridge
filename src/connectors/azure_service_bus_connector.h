@@ -206,7 +206,7 @@ public:
         }
     }
 
-    void connect()override{
+    void do_connect()override{
         try{
             parse_connection_string();
         }catch(std::exception& e){
@@ -305,7 +305,7 @@ public:
         return Message(response, entity_path_);
     }
 
-    void disconnect()override{
+    void do_disconnect()override{
         if(curl_){
             curl_easy_cleanup(curl_);
         }

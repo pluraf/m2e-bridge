@@ -55,8 +55,8 @@ class ModbusConnector: public Connector{
     size_t connection_id_ {};
 public:
     ModbusConnector(std::string pipeid, ConnectorMode mode, json const & config);
-    void connect()override;
-    void disconnect()override;
+    void do_connect()override;
+    void do_disconnect()override;
 
     static pair<string, json> get_schema(){
         json schema = Connector::get_schema();

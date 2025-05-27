@@ -106,7 +106,7 @@ public:
         curl_slist_free_all(headers);
     }
 
-    void connect()override{
+    void do_connect()override{
         parse_authbundle();
         curl_ = curl_easy_init();
         if(!curl_){
@@ -119,7 +119,7 @@ public:
         send_message(msg_w.msg().get_raw());
     }
 
-    void disconnect()override{
+    void do_disconnect()override{
         if(curl_){
             curl_easy_cleanup(curl_);
         }

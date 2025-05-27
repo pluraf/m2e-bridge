@@ -181,7 +181,7 @@ public:
         client_ptr_->set_callback(* callback_ptr_);
     }
 
-    void connect()override{
+    void do_connect()override{
         msg_queue_ = std::make_unique<mqtt::thread_queue<mqtt::message>>(1000);
         conn_opts_.set_clean_session(false);
         conn_opts_.set_mqtt_version(mqtt_version_);
@@ -202,7 +202,7 @@ public:
         if(! token->wait_for(5000)) throw std::runtime_error("MQTT Connection Timeout!");
     }
 
-    void disconnect()override{
+    void do_disconnect()override{
         stop();
         if(client_ptr_->is_connected()){
             auto token = client_ptr_->disconnect();
@@ -245,7 +245,7 @@ public:
         return Message(mqtt_msg.get_payload(), mqtt_msg.get_topic());
     }
 
-    void stop()override{
+    void do_stop()override{
         msg_queue_->exit_blocking_calls();
     }
 
