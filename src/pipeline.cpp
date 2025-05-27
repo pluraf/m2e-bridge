@@ -253,12 +253,18 @@ void Pipeline::handle_messages(){
 }
 
 
-void Pipeline::run_receiving(ThreadState * state){
-    * state = ThreadState::STARTING;
+void Pipeline::run_receiving(ThreadState * thread_state){
+    * thread_state = ThreadState::STARTING;
+    // Connect
     try{
-        Message msg;
         connector_in_->connect();
-        * state = ThreadState::RUNNING;
+    }catch(std::exception const & e){
+        last_error_ = e.what();
+        state_ = PipelineState::FAILED;
+    }
+    // Receiving forever
+    if(state_ != PipelineState::FAILED){
+        * thread_state = ThreadState::RUNNING;
         std::cout << state_to_string(state_) << std::endl;
         while(is_active()){
             try{
@@ -268,33 +274,33 @@ void Pipeline::run_receiving(ThreadState * state){
                 pipeline_event_.notify_one();
             }catch(std::underflow_error){
                 break;
+            }catch(std::exception const & e){
+                last_error_ = e.what();
+                // sleep to prevent while(1) flood (temp.)
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
         }
-    }catch(std::underflow_error){
-        // This is normal
-    }catch(std::exception const & e){
-        last_error_ = e.what();
-        state_ = PipelineState::FAILED;
     }
+    // Disconnect
     try{
         connector_in_->disconnect();
     }catch(std::exception const & e){
         last_error_ = e.what();
         state_ = PipelineState::FAILED;
     }
-    * state = ThreadState::FINISHED;
+    * thread_state = ThreadState::FINISHED;
 }
 
 
-void Pipeline::run_processing(ThreadState * state){
-    * state = ThreadState::STARTING;
+void Pipeline::run_processing(ThreadState * thread_state){
+    * thread_state = ThreadState::STARTING;
     try{
         for(auto filtra : filtras_) filtra->start();
     }catch(std::exception const & e){
         last_error_ = e.what();
         state_ = PipelineState::FAILED;
     }
-    * state = ThreadState::RUNNING;
+    * thread_state = ThreadState::RUNNING;
     try{
         while(is_active()){
             handle_events();
@@ -306,32 +312,45 @@ void Pipeline::run_processing(ThreadState * state){
         last_error_ = e.what();
         state_ = PipelineState::FAILED;
     }
-    * state = ThreadState::FINISHED;
+    * thread_state = ThreadState::FINISHED;
 }
 
 
-void Pipeline::run_sending(ThreadState * state){
-    * state = ThreadState::STARTING;
+void Pipeline::run_sending(ThreadState * thread_state){
+    * thread_state = ThreadState::STARTING;
+    // Connect
     try{
         connector_out_->connect();
-        * state = ThreadState::RUNNING;
-        while(is_active()){
-            auto msg_w = s_queue_.pop();
-            connector_out_->send(msg_w);
-        }
-    }catch(std::underflow_error){
-        // This is normal
     }catch(std::exception const & e){
         last_error_ = e.what();
         state_ = PipelineState::FAILED;
     }
+    // Sending forever
+    if(state_ != PipelineState::FAILED){
+        * thread_state = ThreadState::RUNNING;
+        while(is_active()){
+            try{
+                auto msg_w = s_queue_.pop();
+                connector_out_->send(msg_w);
+            }catch(std::underflow_error){
+                break;
+            }catch(std::exception const & e){
+                last_error_ = e.what();
+                // sleep to prevent while(1) flood (temp.)
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                continue;
+            }
+            last_error_ = "";  // Clear error on successful sending
+        }
+    }
+    // Disconnect
     try{
         connector_out_->disconnect();
     }catch(std::exception const & e){
         last_error_ = e.what();
         state_ = PipelineState::FAILED;
     }
-    * state = ThreadState::FINISHED;
+    * thread_state = ThreadState::FINISHED;
 }
 
 

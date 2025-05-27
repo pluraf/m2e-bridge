@@ -214,14 +214,8 @@ public:
     void do_send(MessageWrapper & msg_w)override{
         string derived_topic;
         if(is_topic_template_){
-            try{
-                derived_topic = derive_topic(msg_w);
-            }catch(std::runtime_error const & e){
-                std::cerr<<e.what()<<std::endl;
-                return;
-            }
+            derived_topic = derive_topic(msg_w);
         }
-
         string const & topic = is_topic_template_ ? derived_topic : topic_template_;
         try {
             mqtt::delivery_token_ptr pubtok;

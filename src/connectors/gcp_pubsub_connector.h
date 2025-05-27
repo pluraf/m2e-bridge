@@ -205,9 +205,7 @@ public:
                                               std::chrono::milliseconds(500))
                                               .clone());
             google::cloud::StatusOr<google::cloud::pubsub::PullResponse> response;
-            std::cout << "C A: " << is_active_ << std::endl;
             while(is_active_){
-                std::cout << "PULLING" << std::endl;
                 response = subscriber_ptr_->Pull(opts);
                 if(response) break;
             }
