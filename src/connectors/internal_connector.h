@@ -67,7 +67,6 @@ public:
     }
 
     void do_stop()override{
-        Connector::stop();
         incoming_.exit_blocking_calls();
     }
 
