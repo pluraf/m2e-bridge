@@ -268,7 +268,6 @@ void Pipeline::run_receiving(ThreadState * thread_state){
         std::cout << state_to_string(state_) << std::endl;
         while(is_active()){
             try{
-                std::cout << "LOOP" << std::endl;
                 auto msg_ptr = connector_in_->receive();
                 r_queue_.push(std::move(msg_ptr));
                 pipeline_event_.notify_one();
@@ -288,6 +287,7 @@ void Pipeline::run_receiving(ThreadState * thread_state){
         last_error_ = e.what();
         state_ = PipelineState::FAILED;
     }
+    std::cout << "run_receiving finished" << std::endl;
     * thread_state = ThreadState::FINISHED;
 }
 
@@ -312,6 +312,7 @@ void Pipeline::run_processing(ThreadState * thread_state){
         last_error_ = e.what();
         state_ = PipelineState::FAILED;
     }
+    std::cout << "run_processing finished" << std::endl;
     * thread_state = ThreadState::FINISHED;
 }
 
@@ -350,6 +351,7 @@ void Pipeline::run_sending(ThreadState * thread_state){
         last_error_ = e.what();
         state_ = PipelineState::FAILED;
     }
+    std::cout << "run_sending finished" << std::endl;
     * thread_state = ThreadState::FINISHED;
 }
 
