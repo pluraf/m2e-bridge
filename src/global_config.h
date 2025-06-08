@@ -98,27 +98,30 @@ public:
     }
 
     bool save_config(){
+        auto data = config_.dump(4);
         std::ofstream ofs(config_path_);
         if(! ofs.is_open()) return false;
-        ofs << config_.dump(4);
+        ofs << data;
         ofs.close();
         return true;
     }
 
-    bool save_pipelines() {
+    bool save_pipelines(){
+        auto data = pipelines_.dump(4);
         std::string pipelines_path = config_.at("pipelines_path").get<std::string>();
         std::ofstream ofs(pipelines_path);
         if(! ofs.is_open()) return false;
-        ofs << pipelines_.dump(4);
+        ofs << data;
         ofs.close();
         return true;
     }
 
-    bool save_http_gate(json const & config) {
+    bool save_http_gate(json const & config){
+        auto data = config.dump(4);
         string const & http_gate_path = config_.at("http_gate_path").get<std::string>();
         std::ofstream ofs(http_gate_path);
         if(! ofs.is_open()) return false;
-        ofs << config.dump(4);
+        ofs << data;
         ofs.close();
         return true;
     }
