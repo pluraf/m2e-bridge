@@ -18,8 +18,9 @@ TEST_CASE("NopFT", "[nop_filtra]"){
     };
 
     json initial_msg = {{"value1", "2", "3", "value4"}};
-    Message msg(initial_msg.dump(), "/topc/test", MessageFormat::JSON);
-    MessageWrapper msg_w(msg);
+    MessageWrapper msg_w(
+        std::make_shared<Message>(initial_msg.dump(), MessageFormat::JSON, "/topc/test")
+    );
 
     NopFT nop_ft(mock_pi, filtras);
 

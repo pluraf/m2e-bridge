@@ -21,8 +21,9 @@ TEST_CASE("EraserFT", "[eraser_filtra]"){
     vector<string> v_keys = vector<string>(keys.begin(), keys.end());
 
     json initial_msg = {{"value1", "value2", "temp", "hum"}};
-    Message msg(initial_msg.dump(), "/topc/test", MessageFormat::JSON);
-    MessageWrapper msg_w(msg);
+    MessageWrapper msg_w(
+        std::make_shared<Message>(initial_msg.dump(), MessageFormat::JSON, "/topc/test")
+    );
 
     EraserFT eraser_ft(mock_pi, filtras);
 

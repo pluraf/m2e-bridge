@@ -5,7 +5,6 @@
 
 #include  "../src/connectors/email_connector.h"
 
-#include "../src/database.h"
 #include "../src/global_config.h"
 
 

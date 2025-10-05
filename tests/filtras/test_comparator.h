@@ -46,12 +46,10 @@ TEST_CASE("ComparatorFT", "[comparator_filtra]"){
     std::string val_key = filtras.at("value_key");
 
     json initial_msg_i = {{val_key, random_int}};
-    Message msg_i(initial_msg_i, "/topc/test", MessageFormat::JSON);
-    MessageWrapper msg_wi(msg_i);
+    MessageWrapper msg_wi(std::make_shared<Message>(initial_msg_i, MessageFormat::JSON, "/topc/test"));
 
     json initial_msg_f = {{val_key, random_float}};
-    Message msg_f(initial_msg_f, "/topc/test", MessageFormat::JSON);
-    MessageWrapper msg_wf(msg_f);
+    MessageWrapper msg_wf(std::make_shared<Message>(initial_msg_f, MessageFormat::JSON, "/topc/test"));
 
     json const & msg_payload_i = msg_wi.msg().get_json();
     json const & msg_payload_f = msg_wf.msg().get_json();
@@ -160,8 +158,9 @@ TEST_CASE("ComparatorFT", "[comparator_filtra]"){
     SECTION("Type of key_val"){
         ComparatorFT comparator_ft(mock_pi, filtras);
         json initial_msg = {{val_key, "value"}};
-        Message msg(initial_msg.dump(), "/topc/test", MessageFormat::JSON);
-        MessageWrapper msg_w(msg);
+        MessageWrapper msg_w(
+            std::make_shared<Message>(initial_msg.dump(), MessageFormat::JSON, "/topc/test")
+        );
         REQUIRE_THROWS_AS(comparator_ft.process_message(msg_w), std::invalid_argument);
     }
 }

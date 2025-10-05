@@ -20,8 +20,7 @@ TEST_CASE("SplitterFT", "[splitter_filtra]"){
     unsigned long chunk_size = filtras.at("chunk_size");
 
     std::string initial_msg = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    Message msg(initial_msg, "/topc/test");
-    MessageWrapper msg_w(msg);
+    MessageWrapper msg_w(std::make_shared<Message>(initial_msg, std::string("/topc/test")));
 
     string const & msg_data = msg_w.msg().get_raw();
 

@@ -128,9 +128,17 @@ if(ENABLE_TESTS)
 
     file(GLOB_RECURSE TESTS_HEASERS "tests/*.h")
 
-    add_executable(tests ./tests/test.cpp ${MQTT_SOURCES} ./src/database.cpp)
+    add_executable(tests
+        ${SOURCES}
+        ${MQTT_SOURCES}
+        ${api_grpc_srcs}
+        ${api_grpc_hdrs}
+        ${api_proto_srcs}
+        ${api_proto_hdrs}
+    )
 
     target_include_directories(tests PRIVATE ${CMAKE_SOURCE_DIR}/src)
+    target_include_directories(tests PRIVATE ${JWT_CPP_INCLUDE_DIRS})
     target_include_directories(tests PRIVATE ${JWT_CPP_INCLUDE_DIRS})
 
     target_link_libraries(tests PRIVATE
@@ -147,7 +155,10 @@ if(ENABLE_TESTS)
         aws-cpp-sdk-core
         aws-cpp-sdk-s3
         ${ZeroMQ_LIBRARIES}
+        cbor
         Poco::Foundation
+        ${LUA_LIBRARIES}
+        "${CMAKE_SOURCE_DIR}/external/lua-cjson/build/cjson.a"
         "${CMAKE_SOURCE_DIR}/external/paho.mqtt.cpp/externals/paho-mqtt-c/build/src/libpaho-mqtt3as.a"
         "${CMAKE_SOURCE_DIR}/external/paho.mqtt.cpp/externals/paho-mqtt-c/build/src/libpaho-mqtt3cs.a"
     )

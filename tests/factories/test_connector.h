@@ -5,7 +5,7 @@
 
 #include  "../src/factories/connector_factory.h"
 
-#include "../../src/internal_queues.cpp"
+#include "../../src/internal_queue.cpp"
 #include "../connectors/mock_database.h"
 
 
@@ -22,7 +22,7 @@ namespace TestConnectorFactory {
         test_bundle_email.username = "test_user";
         test_bundle_email.password = "test_pass";
 
-        db.insert_authbundle(test_bundle_email);
+        db.insert(test_bundle_email);
 
         AuthBundle test_bundle_s3;
 
@@ -32,7 +32,7 @@ namespace TestConnectorFactory {
         test_bundle_s3.username = "test_user";
         test_bundle_s3.password = "test_acckey";
 
-        db.insert_authbundle(test_bundle_s3);
+        db.insert(test_bundle_s3);
 
         AuthBundle test_bundle_bucket;
 
@@ -41,15 +41,15 @@ namespace TestConnectorFactory {
         test_bundle_bucket.auth_type = AuthType::SERVICE_KEY;
         test_bundle_bucket.keydata = "test_keydata";
 
-        db.insert_authbundle(test_bundle_bucket);
+        db.insert(test_bundle_bucket);
     }
 
     inline void cleanup_test_environment(){
         AuthbundleTable db;
 
-        db.delete_authbundle("test_email");
-        db.delete_authbundle("test_s3");
-        db.delete_authbundle("test_bucket");
+        db.remove("test_email");
+        db.remove("test_s3");
+        db.remove("test_bucket");
     }
 }
 
@@ -100,31 +100,31 @@ TEST_CASE("ConnectorF", "[connector_factory]"){
     create_test_database("../configs/test_config.json");
     TestConnectorFactory::setup_test_environment();
 
-    if(type == "unknown"){
+    if(std::strcmp(type, "unknown") == 0){
         REQUIRE_THROWS_AS(ConnectorFactory::create("mock_pi", mode, config), std::invalid_argument);
     }else{
         Connector *connector = ConnectorFactory::create("mock_pi", mode, config);
-        if(type == "mqtt"){
+        if(std::strcmp(type, "mqtt") == 0){
             SECTION("mqtt"){
                 auto *mqtt_connector = dynamic_cast<MqttConnector *>(connector);
                 REQUIRE(mqtt_connector != nullptr);
             }
-        }else if(type == "gcp_pubsub"){
+        }else if(std::strcmp(type, "gcp_pubsub") == 0){
             SECTION("gcp_pubsub"){
                 auto *pubsub_connector = dynamic_cast<PubSubConnector *>(connector);
                 REQUIRE(pubsub_connector != nullptr);
             }
-        }else if(type == "queue"){
+        }else if(std::strcmp(type, "queue") == 0){
             SECTION("queue"){
                 auto *internal_connector = dynamic_cast<InternalConnector *>(connector);
                 REQUIRE(internal_connector != nullptr);
             }
-        }else if(type == "gcp_bucket"){
+        }else if(std::strcmp(type, "gcp_bucket") == 0){
             SECTION("gcp_bucket"){
                 auto *bucket_connector = dynamic_cast<CloudStorageConnector *>(connector);
                 REQUIRE(bucket_connector != nullptr);
             }
-        }else if(type == "aws_s3"){
+        }else if(std::strcmp(type, "aws_s3") == 0){
             SECTION("aws_s3"){
                 auto *s3_connector = dynamic_cast<S3Connector *>(connector);
                 REQUIRE(s3_connector != nullptr);

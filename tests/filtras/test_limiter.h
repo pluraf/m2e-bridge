@@ -21,8 +21,9 @@ TEST_CASE("LimiterFT", "[limiter_filtra]"){
     unsigned long size = filtras.at("size");
 
     json initial_msg = {"value1", 2, 3, "value5"};
-    Message msg(initial_msg.dump(), "/topc/test", MessageFormat::JSON);
-    MessageWrapper msg_w(msg);
+    MessageWrapper msg_w(
+        std::make_shared<Message>(initial_msg.dump(), MessageFormat::JSON, "/topc/test")
+    );
 
     string const & msg_data = msg_w.msg().get_raw();
 
