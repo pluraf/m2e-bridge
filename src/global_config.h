@@ -59,6 +59,10 @@ public:
         return http_gate_;
     }
 
+    json const & get_shared_objects_config(){
+        return shared_objects_;
+    }
+
     bool get_api_authentication(){
         return config_.value("api_authentication", true);
     }
@@ -128,6 +132,8 @@ public:
 
     void load(std::string const & config_path){
         config_path_ = config_path;
+
+        ///////////////////
         // Load main config
         std::ifstream file(config_path);
         if(! file){
@@ -140,6 +146,7 @@ public:
 
         config_ = json::parse(buffer.str());
 
+        /////////////////
         // Load pipelines
         std::string pipelines_path = config_.at("pipelines_path").get<std::string>();
         file = std::ifstream(pipelines_path);
@@ -152,6 +159,20 @@ public:
         file.close();
         pipelines_ = ordered_json::parse(buffer.str());
 
+        //////////////////////
+        // Load shared objects
+        std::string shared_objects_path = config_.at("shared_objects_path").get<std::string>();
+        file = std::ifstream(shared_objects_path);
+        if(!file){
+            std::cerr << "Failed to open file: " << shared_objects_path << std::endl;
+            throw std::runtime_error("");
+        }
+        buffer = std::stringstream();
+        buffer << file.rdbuf();
+        file.close();
+        shared_objects_ = json::parse(buffer.str());
+
+        /////////////////
         // Load HTTP Gate
         std::string http_gate_path = config_.at("http_gate_path").get<std::string>();
         file = std::ifstream(http_gate_path);
@@ -164,9 +185,11 @@ public:
         file.close();
         http_gate_ = ordered_json::parse(buffer.str());
 
+        ///////////////////////////
         // Load authbundles_db_path
         authbundles_db_path_ = config_.at("authbundles_db_path").get<std::string>();
 
+        //////////////////////////
         // Load converters_db_path
         converters_db_path_ = config_.at("converters_db_path").get<std::string>();
     }
@@ -174,6 +197,7 @@ private:
     json config_;
     ordered_json pipelines_;
     ordered_json http_gate_;
+    json shared_objects_;
     std::string authbundles_db_path_;
     std::string converters_db_path_;
     std::string config_path_;

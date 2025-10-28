@@ -34,6 +34,7 @@ IN THE SOFTWARE.
 #include <fmt/core.h>
 
 #include "m2e_aliases.h"
+#include "shared_objects.h"
 #include "m2e_message/message.h"
 
 
@@ -46,14 +47,18 @@ class SubsEngine {
 public:
     SubsEngine(Message & msg, json const & meta, json const & attr){
         env_["MSG"] = & msg;
-        env_["ATTR"] = & attr;
         env_["META"] = & meta;
+        env_["ATTR"] = & attr;
+        // For now, only JSON shared objects are supported
+        env_["SHARED"] = & SharedObjects::get_json();
     }
 
     SubsEngine(Message & msg, json const & meta, StringMap const & attr){
         env_["MSG"] = & msg;
-        env_["ATTR"] = & attr;
         env_["META"] = & meta;
+        env_["ATTR"] = & attr;
+        // For now, only JSON shared objects are supported
+        env_["SHARED"] = & SharedObjects::get_json();
     }
 
     std::variant<string, nlohmann::json> substitute(string const & atemplate){

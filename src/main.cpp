@@ -37,6 +37,7 @@ IN THE SOFTWARE.
 #include "global_state.h"
 #include "global_config.h"
 #include "pipeline_supervisor.h"
+#include "shared_objects.h"
 #include "zmq_listner.h"
 #include "gates/http_gate.h"
 
@@ -67,6 +68,8 @@ int main(int argc, char* argv[]){
         std::cerr << "Please provide path to config file as the first argument!"<<std::endl;
         return 1;
     }
+
+    SharedObjects::get_instance().init(gc.get_shared_objects_config());
 
     if (curl_global_init(CURL_GLOBAL_DEFAULT) != 0) {
         std::cerr << "Failed to initialize libcurl!\n";

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 
 /*
-Copyright (c) 2024 Pluraf Embedded AB <code@pluraf.com>
+Copyright (c) 2025 Pluraf Embedded AB <code@pluraf.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the “Software”), to deal in
@@ -23,51 +23,32 @@ IN THE SOFTWARE.
 */
 
 
-#ifndef __M2E_BRIDGE_ALIASES_H__
-#define __M2E_BRIDGE_ALIASES_H__
+#ifndef __M2E_SHARED_OBJECTS_H__
+#define __M2E_SHARED_OBJECTS_H__
 
 
-#include <vector>
-#include <string>
-#include <string_view>
-#include <map>
-#include <unordered_map>
-#include <set>
-#include <sstream>
-#include <iostream>
-#include <chrono>
-#include <ctime>
-#include <cstddef>
-
-#include <nlohmann/json.hpp>
+#include "m2e_aliases.h"
 
 
-namespace chrono = std::chrono;
+class SharedObjects{
+    json json_shared_objects_;
+    map<string, byte*> memory_shared_objects_;
 
-using json = nlohmann::json;
-using ordered_json = nlohmann::ordered_json;
+    SharedObjects() {}
+public:
+    SharedObjects(SharedObjects const &) = delete;
+    SharedObjects & operator=(SharedObjects const &) = delete;
 
-using std::string;
-using std::string_view;
-using std::vector;
-using std::map;
-using std::unordered_map;
-using std::set;
-using std::stringstream;
-using std::pair;
-using std::time_t;
-using std::byte;
+    static SharedObjects & get_instance(){
+        static SharedObjects instance;
+        return instance;
+    }
 
-
-typedef pair<string,string> hops_t;
-
-
-template<typename T>
-T lexical_cast(std::string const &);
+    void init(json const & config);
+    static json & get_json(string const & name);
+    static json const & get_json();
+    static byte * get_memory(string const & name);
+};
 
 
-template<typename T>
-std::string lexical_cast(T const &);
-
-
-#endif  // __M2E_BRIDGE_ALIASES_H__
+#endif  // __M2E_SHARED_OBJECTS_H__
