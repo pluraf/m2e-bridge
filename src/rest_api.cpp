@@ -133,7 +133,7 @@ public:
         json pipeline_data;
         const struct mg_request_info * req_info = mg_get_request_info(conn);
 
-        ordered_json pipelines = gc.get_pipelines_config();
+        auto & pipelines = gc.get_pipelines_config();
 
         const char * last_segment = strrchr(req_info->request_uri, '/');
         if(last_segment && strlen(last_segment) > 1){

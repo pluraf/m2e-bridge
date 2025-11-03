@@ -32,12 +32,165 @@ IN THE SOFTWARE.
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <filesystem>
 #include <fmt/core.h>
 
 #include "m2e_aliases.h"
 
 
-class GlobalConfig {
+namespace fs = std::filesystem;
+
+
+class PipelineConfigsIterator
+{
+    map<fs::path, ordered_json> const * configs_ { nullptr };
+    map<fs::path, ordered_json>::const_iterator configs_iterator_;
+    nlohmann::ordered_json::const_iterator pipelines_iterator_;
+
+    public:
+        using value_type = ordered_json;
+        using iterator_category = std::forward_iterator_tag;
+        using iterator_type = nlohmann::ordered_json::const_iterator;
+
+        PipelineConfigsIterator() = default;
+
+        PipelineConfigsIterator(map<fs::path, ordered_json> const * configs, bool end = false):
+                configs_(configs)
+        {
+            if(end){
+                configs_iterator_ = configs_->cend();
+                if(configs_->size() > 0){
+                    pipelines_iterator_ = (--(configs_->cend()))->second.cend();
+                }
+            }else{
+                configs_iterator_ = configs_->cbegin();
+                pipelines_iterator_ = configs_iterator_->second.cbegin();
+            }
+        }
+
+        ordered_json const & operator*()
+        {
+            return *pipelines_iterator_;
+        }
+
+        PipelineConfigsIterator & operator++()
+        {
+            ++pipelines_iterator_;
+            if(pipelines_iterator_ == configs_iterator_->second.cend()){
+                ++configs_iterator_;
+                if(configs_iterator_ != configs_->cend()){
+                    pipelines_iterator_ = configs_iterator_->second.cbegin();
+                }
+            }
+            return *this;
+        }
+
+        bool operator!=(PipelineConfigsIterator const & other)
+        {
+            return (configs_ != other.configs_
+                    || configs_iterator_ != other.configs_iterator_
+                    || pipelines_iterator_ != other.pipelines_iterator_);
+        }
+
+        string const & key()
+        {
+            return pipelines_iterator_.key();
+        }
+};
+
+
+class PipelineConfigs{
+    map<fs::path, ordered_json> configs_;
+    fs::path default_path_;
+public:
+    void load_config(fs::path const & p, bool default_path = false)
+    {
+        std::ifstream file(p);
+        if(! file){
+            std::cerr << "Failed to open file: " << p << std::endl;
+            throw std::runtime_error("");
+        }
+        std::stringstream buffer = std::stringstream();
+        buffer << file.rdbuf();
+        file.close();
+        configs_[p] = ordered_json::parse(buffer.str());
+
+        if(default_path){ default_path_ = p; }
+    }
+
+    bool save()
+    {
+        for(auto & config : configs_){
+            auto data = config.second.dump(4);
+            std::ofstream ofs(config.first);
+            if(! ofs.is_open()) { return false; }
+            ofs << data;
+            ofs.close();
+        }
+
+        return true;
+    }
+
+    void erase(string const& pipeid)
+    {
+        for(auto & config : configs_){
+            if(config.second.contains(pipeid)){
+                config.second.erase(pipeid);
+                return;
+            }
+        }
+    }
+
+    string dump()
+    {
+        json merged;
+        for(auto & config : configs_){
+            merged.merge_patch(config.second);
+        }
+
+        return merged.dump(4);
+    }
+
+    PipelineConfigsIterator cbegin() const
+    {
+        return PipelineConfigsIterator(&configs_);
+    }
+
+    PipelineConfigsIterator cend() const
+    {
+        return PipelineConfigsIterator(&configs_, true);
+    }
+
+    bool contains(string const & pipeid)
+    {
+        for(auto & config : configs_){
+            if(config.second.contains(pipeid)) { return true; }
+        }
+
+        return false;
+    }
+
+    ordered_json & operator[](string const & pipeid)
+    {
+        for(auto & config : configs_){
+            if(config.second.contains(pipeid)) { return config.second[pipeid]; }
+        }
+
+        return configs_[default_path_][pipeid];
+    }
+
+    ordered_json & at(string const & pipeid)
+    {
+        for(auto & config : configs_){
+            if(config.second.contains(pipeid)) { return config.second[pipeid]; }
+        }
+
+        throw std::out_of_range(pipeid);
+    }
+};
+
+
+class GlobalConfig{
 public:
     string get_jwt_public_key_path(){
         return config_.at("jwt_public_key_path").get<std::string>();
@@ -51,7 +204,7 @@ public:
         return converters_db_path_;
     }
 
-    ordered_json const & get_pipelines_config(){
+    PipelineConfigs & get_pipelines_config(){
         return pipelines_;
     }
 
@@ -82,15 +235,20 @@ public:
             throw std::invalid_argument(fmt::format("Pipeline [ {} ] already exist!", pipeid));
         }
         pipelines_[pipeid] = pipelineData;
-        return save_pipelines();
+        return pipelines_.save();
     }
 
-    bool update_pipeline(string const & pipeid, json const & pipelineData){
-        if(! pipelines_.contains(pipeid)) {
+    bool update_pipeline(string const & pipeid, json const & pipelineData, bool override = false){
+        if(! pipelines_.contains(pipeid)){
             throw std::invalid_argument(fmt::format("Pipeline [ {} ] doesn't exist!", pipeid));
         }
-        pipelines_[pipeid].merge_patch(pipelineData);
-        return save_pipelines();
+
+        if(override){
+            pipelines_[pipeid] = pipelineData;
+        }else{
+            pipelines_[pipeid].merge_patch(pipelineData);
+        }
+        return pipelines_.save();
     }
 
     bool delete_pipeline(string const& pipeid){
@@ -98,22 +256,12 @@ public:
             throw std::invalid_argument(fmt::format("Pipeline [ {} ] doesn't exist!", pipeid));
         }
         pipelines_.erase(pipeid);
-        return save_pipelines();
+        return pipelines_.save();
     }
 
     bool save_config(){
         auto data = config_.dump(4);
         std::ofstream ofs(config_path_);
-        if(! ofs.is_open()) return false;
-        ofs << data;
-        ofs.close();
-        return true;
-    }
-
-    bool save_pipelines(){
-        auto data = pipelines_.dump(4);
-        std::string pipelines_path = config_.at("pipelines_path").get<std::string>();
-        std::ofstream ofs(pipelines_path);
         if(! ofs.is_open()) return false;
         ofs << data;
         ofs.close();
@@ -149,15 +297,23 @@ public:
         /////////////////
         // Load pipelines
         std::string pipelines_path = config_.at("pipelines_path").get<std::string>();
-        file = std::ifstream(pipelines_path);
-        if(! file){
-            std::cerr << "Failed to open file: " << pipelines_path << std::endl;
-            throw std::runtime_error("");
+        pipelines_.load_config(pipelines_path, true);
+
+        // If pipelines directory is specified, load all pipelines from it as well
+        if(config_.contains("pipelines_dir_path")){
+            std::string pipelines_dir_path = config_.at("pipelines_dir_path").get<std::string>();
+            try{
+                for(auto const & file_entry : fs::directory_iterator(pipelines_dir_path)){
+                    if(file_entry.is_regular_file()){
+                        pipelines_.load_config(file_entry.path());
+                    }
+                }
+            }
+            catch(const fs::filesystem_error& e){
+                std::cerr << "Error accessing directory: " << e.what() << std::endl;
+                throw std::runtime_error("");
+            }
         }
-        buffer = std::stringstream();
-        buffer << file.rdbuf();
-        file.close();
-        pipelines_ = ordered_json::parse(buffer.str());
 
         //////////////////////
         // Load shared objects
@@ -195,7 +351,7 @@ public:
     }
 private:
     json config_;
-    ordered_json pipelines_;
+    PipelineConfigs pipelines_;
     ordered_json http_gate_;
     json shared_objects_;
     std::string authbundles_db_path_;
