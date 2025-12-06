@@ -1,35 +1,50 @@
-/* SPDX-License-Identifier: MIT */
+/* SPDX-License-Identifier: BSD-3-Clause */
 
 /*
-Copyright (c) 2025 Pluraf Embedded AB <code@pluraf.com>
+Copyright (c) 2024-2025 Pluraf Embedded AB <code@pluraf.com>
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the “Software”), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-of the Software, and to permit persons to whom the Software is furnished to
-do so, subject to the following conditions:
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
 
-THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-IN THE SOFTWARE.
+2. Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its contributors
+may be used to endorse or promote products derived from this software without
+specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 
 #include <tao/pegtl.hpp>
+#include <cbor.h>
 
 #include "subs.hpp"
 
 
 class ObjectProxy{
-    std::variant<Message *, nlohmann::json const *, std::vector<std::string> const *, std::string const *, std::map<std::string, std::string> const *> obj_;
+    std::variant<
+        Message *,
+        nlohmann::json const *,
+        std::vector<std::string> const *,
+        std::string const *,
+        std::map<std::string, std::string> const *,
+        cbor_item_t const *
+    > obj_;
 public:
     ObjectProxy() = default;
 
@@ -39,6 +54,10 @@ public:
 
     ObjectProxy(nlohmann::json const * j){
         obj_ = j;
+    }
+
+    ObjectProxy(cbor_item_t const * c){
+        obj_ = c;
     }
 
     ObjectProxy(std::vector<std::string> const * v){
@@ -56,19 +75,40 @@ public:
     ObjectProxy next(std::string const & key){
         if(std::holds_alternative<Message *>(obj_)){
             if(key == "PAYLOAD"){
-                return ObjectProxy(& std::get<Message *>(obj_)->get_json());
-            }else if(key == "TOPIC_LEVELS"){
+                Message * msg = std::get<Message *>(obj_);
+                switch(msg->get_format()){
+                    case MessageFormat::Type::JSON:
+                        return ObjectProxy(&std::get<Message *>(obj_)->get_json());
+                    case MessageFormat::Type::CBOR:
+                        return ObjectProxy(std::get<Message *>(obj_)->get_cbor());
+                }
+            }
+            else if(key == "TOPIC_LEVELS"){
                 return ObjectProxy(& std::get<Message *>(obj_)->get_topic_levels());
-            }else if(key == "TOPIC"){
+            }
+            else if(key == "TOPIC"){
                 return ObjectProxy(& std::get<Message *>(obj_)->get_topic());
             }
-        }else if(std::holds_alternative<nlohmann::json const *>(obj_)){
-            return ObjectProxy(& std::get<nlohmann::json const *>(obj_)->at(key));
-        }else if(std::holds_alternative<std::map<std::string, std::string> const *>(obj_)){
-            return ObjectProxy(& std::get<std::map<std::string, std::string> const *>(obj_)->at(key));
-
         }
-        throw std::out_of_range(key);
+        else if(std::holds_alternative<nlohmann::json const *>(obj_)){
+            return ObjectProxy(&std::get<nlohmann::json const *>(obj_)->at(key));
+        }
+        else if(std::holds_alternative<std::map<std::string, std::string> const *>(obj_)){
+            return ObjectProxy(&std::get<std::map<std::string, std::string> const *>(obj_)->at(key));
+        }
+        else if(std::holds_alternative<cbor_item_t const *>(obj_)){
+            cbor_item_t const * cbor_map = std::get<cbor_item_t const *>(obj_);
+            struct cbor_pair *pairs = cbor_map_handle(cbor_map);
+            size_t map_size = cbor_map_size(cbor_map);
+            for (size_t i = 0; i < map_size; ++i){
+                char *map_key = (char *)cbor_string_handle(pairs[i].key);
+                size_t map_key_len = cbor_string_length(pairs[i].key);
+                if(key.compare(0, key.size(), map_key, map_key_len) == 0){
+                    return ObjectProxy(pairs[i].value);
+                }
+            }
+        }
+        throw std::out_of_range(fmt::format("Can not find key: {}!", key));
     }
 
     ObjectProxy next(unsigned ix){
@@ -80,32 +120,48 @@ public:
         throw std::invalid_argument("Index access is not available!");
     }
 
-    template<typename T>
-    T value(){
-        throw std::logic_error("Not implemented!");
-    }
-
-    template<>
-    std::string value(){
+    substituted_t value(){
         if(std::holds_alternative<std::string const *>(obj_)){
-            return * std::get<std::string const *>(obj_);
-        }else if(std::holds_alternative<nlohmann::json const *>(obj_)){
-            nlohmann::json const * j = std::get<nlohmann::json const *>(obj_);
+            return *std::get<std::string const *>(obj_);
+        }
+        else if(std::holds_alternative<nlohmann::json const *>(obj_)){
+            nlohmann::json const *j = std::get<nlohmann::json const *>(obj_);
             if(j->is_string()){
                 return std::get<nlohmann::json const *>(obj_)->get<std::string>();
-            }else if(j->is_number_integer()){
+            }
+            else if(j->is_number_integer()){
                 return std::to_string(std::get<nlohmann::json const *>(obj_)->template get<unsigned>());
             }
+            else{
+                return *std::get<nlohmann::json const *>(obj_);
+            }
         }
-        throw std::runtime_error("Value is not a string!");
-    }
+        else if(std::holds_alternative<cbor_item_t const *>(obj_)){
+            cbor_item_t const * item = std::get<cbor_item_t const *>(obj_);
+            if(cbor_is_int(item)){
+                cbor_int_width width = cbor_int_get_width(item);
+                switch(width){
+                    case CBOR_INT_8: return std::to_string(cbor_get_uint8(item));
+                    case CBOR_INT_16: return std::to_string(cbor_get_uint16(item));
+                    case CBOR_INT_32: return std::to_string(cbor_get_uint32(item));
+                    case CBOR_INT_64: return std::to_string(cbor_get_uint64(item));
+                }
+            }
+            else if(cbor_isa_bytestring(item)){
+                return std::span<byte>(
+                    reinterpret_cast<byte *>(cbor_bytestring_handle(item)),
+                    cbor_bytestring_length(item)
+                );
+            }
+            else if(cbor_isa_string(item)){
+                return std::string(
+                    reinterpret_cast<char *>(cbor_string_handle(item)),
+                    reinterpret_cast<char *>(cbor_string_handle(item) + cbor_string_length(item))
+                );
+            }
+        }
 
-    template<>
-    nlohmann::json value(){
-        if(std::holds_alternative<nlohmann::json const *>(obj_)){
-            return * std::get<nlohmann::json const *>(obj_);
-        }
-        throw std::runtime_error("Value is not a JSON!");
+        throw std::runtime_error("Value is not substitutable!");
     }
 };
 
@@ -184,17 +240,14 @@ struct action<grammar::index> {
     }
 };
 
-template<typename T>
-T SubsEngine::evaluate(string const & expression){
+
+substituted_t SubsEngine::evaluate(string const & expression){
     EvalState state(env_);
     tao::pegtl::string_input in(expression, "");
     try{
         tao::pegtl::parse<grammar::expression, action>(in, state);
-        return state.get_object().value<T>();
+        return state.get_object().value();
     }catch(std::exception const & e){
         throw;
     }
 }
-
-template string SubsEngine::evaluate<string>(string const &);
-template nlohmann::json SubsEngine::evaluate<nlohmann::json>(string const &);

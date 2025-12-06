@@ -40,9 +40,9 @@ public:
 
         std::string const & msg_format = config.value("msg_format", "raw");
         if(msg_format == "json"){
-            msg_format_ = MessageFormat::JSON;
+            msg_format_ = MessageFormat::Type::JSON;
         }else if(msg_format == "raw"){
-            msg_format_ = MessageFormat::RAW;
+            msg_format_ = MessageFormat::Type::RAW;
         }
 
         logical_negation_ = config.value("logical_negation", false);
@@ -124,7 +124,7 @@ protected:
     virtual string process_message(MessageWrapper &msg_w) = 0;
     virtual Message generate_message(){return Message();}
 
-    MessageFormat msg_format_ {MessageFormat::UNKN};
+    MessageFormat::Type msg_format_ {MessageFormat::Type::UNKN};
     bool logical_negation_ {false};
     vector<string> queue_ids_;
 

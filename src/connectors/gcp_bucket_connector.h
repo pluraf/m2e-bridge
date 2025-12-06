@@ -244,7 +244,7 @@ public:
                 }
             }
 
-            return Message(file_content, object_name_template_);
+            return Message(file_content, msg_format_, object_name_template_);
         }catch(google::cloud::Status const& status){
             std::cerr << "google::cloud::Status thrown: " << status << "\n";
             throw std::runtime_error("Error pulling messages from gcp storage");

@@ -40,7 +40,7 @@ public:
     }
 
     string process_message(MessageWrapper &msg_w)override{
-        if(msg_format_ == MessageFormat::JSON){
+        if(msg_format_ == MessageFormat::Type::JSON){
             auto se = SubsEngine(msg_w.msg(), msg_w.get_metadata(), msg_w.msg().get_attributes());
             json payload = payload_;
             if(payload.is_object()){
@@ -83,7 +83,7 @@ private:
                     it.value() = std::get<json>(result);
                 }
             }else if(it->is_object() || it->is_array()){
-                substitute(se, * it);
+                substitute(se, *it);
             }
         }
     }

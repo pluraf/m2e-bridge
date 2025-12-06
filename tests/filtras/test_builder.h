@@ -29,7 +29,7 @@ TEST_CASE("BuilderFT", "[builder_filtra]"){
 
     json initial_msg_j = {{key, false}};
     MessageWrapper msg_w_j(
-        make_shared<Message>(initial_msg_j.dump(), MessageFormat::JSON, "/topc/test")
+        make_shared<Message>(initial_msg_j.dump(), MessageFormat::Type::JSON, "/topc/test")
     );
 
     std::string initial_msg = "key: false";

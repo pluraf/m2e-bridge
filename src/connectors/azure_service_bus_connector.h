@@ -47,7 +47,6 @@ IN THE SOFTWARE.
 
 
 class ServiceBusConnector: public Connector{
-private:
     std::string connection_string_;
     std::string endpoint_;
     std::string access_key_name_;
@@ -302,7 +301,7 @@ public:
         // Clean up
         curl_slist_free_all(headers);
 
-        return Message(response, entity_path_);
+        return Message(response, msg_format_, entity_path_);
     }
 
     void do_disconnect()override{

@@ -36,6 +36,7 @@ find_package(Poco REQUIRED Foundation)
 find_package(gRPC CONFIG REQUIRED)
 find_package(Protobuf CONFIG REQUIRED)
 find_package(Lua REQUIRED)
+find_package(libpqxx CONFIG REQUIRED)
 
 message(STATUS "Using protobuf ${Protobuf_VERSION}")
 message(STATUS "Using gRPC ${gRPC_VERSION}")
@@ -82,6 +83,7 @@ add_executable(m2e-bridge
     ${api_proto_hdrs}
 )
 
+target_compile_definitions(m2e-bridge PRIVATE JWT_DISABLE_PICOJSON)
 target_compile_definitions(m2e-bridge PRIVATE OPENSSL)
 
 target_link_libraries(m2e-bridge PRIVATE nlohmann_json::nlohmann_json)
@@ -111,6 +113,7 @@ target_link_libraries(m2e-bridge PRIVATE
 )
 target_link_libraries(m2e-bridge PRIVATE ${LUA_LIBRARIES})
 target_link_libraries(m2e-bridge PRIVATE "${CMAKE_SOURCE_DIR}/external/lua-cjson/build/cjson.a")
+target_link_libraries(m2e-bridge PRIVATE libpqxx::pqxx)
 
 target_include_directories(m2e-bridge PRIVATE ${JWT_CPP_INCLUDE_DIRS})
 

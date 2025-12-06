@@ -59,6 +59,7 @@ protected:
     bool is_active_ {false};
     time_t polling_period_ {0};
     string authbundle_id_;
+    MessageFormat::Type msg_format_ {MessageFormat::Type::UNKN};
 public:
     Connector(std::string pipeid, ConnectorMode mode, json const & config){
         mode_ = mode;
@@ -75,6 +76,12 @@ public:
             authbundle_id_ = config.at("authbundle_id").get<std::string>();
         }catch(json::exception){
             authbundle_id_ = "";
+        }
+        // msg_format
+        try{
+            msg_format_ = MessageFormat::from_string(config.at("msg_format").get<std::string>());
+        }catch(json::exception){
+            msg_format_ = MessageFormat::Type::UNKN;
         }
     }
 

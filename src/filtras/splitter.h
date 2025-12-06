@@ -70,7 +70,7 @@ public:
         j_chunk.push_back(orig_data.size());
         j_chunk.push_back(chunk_counter_++);
         j_chunk.push_back(json::binary(std::move(buffer)));
-        return Message(j_chunk, MessageFormat::CBOR, msg_w_->msg().get_topic());
+        return Message(j_chunk, MessageFormat::Type::CBOR, msg_w_->msg().get_topic());
     }
 
     static pair<string, json> get_schema(){

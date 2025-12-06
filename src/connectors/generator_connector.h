@@ -50,12 +50,12 @@ public:
     Message const do_receive()override{
         if(first_call_){
             first_call_ = false;
-            return Message(payload_);
+            return Message(payload_, MessageFormat::Type::JSON);
         }
         unsigned long cnt = period_;
         while(is_active_){
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            if (--cnt == 0) return Message(payload_);
+            if (--cnt == 0) return Message(payload_, MessageFormat::Type::JSON);
         }
         throw std::underflow_error("No messages");
     }

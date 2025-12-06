@@ -128,8 +128,8 @@ private:
     }
 
 public:
-    EmailConnector(std::string pipeid, ConnectorMode mode_, json const & json_descr):
-            Connector(pipeid, mode_, json_descr)
+    EmailConnector(std::string pipeid, ConnectorMode mode, json const & json_descr):
+            Connector(pipeid, mode, json_descr)
     {
         if(authbundle_id_.empty()){
             throw std::runtime_error("authbundle_id cannot be null for email connector");
@@ -293,7 +293,7 @@ public:
             throw std::runtime_error("Failed to receive email: " + std::string(curl_easy_strerror(res)));
         }
 
-        return Message(email_data, "");
+        return Message(email_data, msg_format_);
     }
 
     void do_disconnect()override{

@@ -215,7 +215,7 @@ public:
 
             string msg_text = response->message.data();
             std::move(response->handler).ack();
-            auto msg = Message(msg_text, subscription_id_);
+            auto msg = Message(msg_text, msg_format_, subscription_id_);
             msg.set_attributes(response->message.attributes());
             return msg;
         }catch (google::cloud::Status const& status) {

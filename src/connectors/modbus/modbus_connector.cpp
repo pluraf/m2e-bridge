@@ -170,7 +170,7 @@ Message const ModbusConnector::do_receive()
             for(int ix = 0; ix < response_bits.bits_size(); ++ ix){
                 ret.push_back(static_cast<std::byte>(response_bits.bits(ix)));
             }
-            return Message(ret);
+            return Message(ret, msg_format_);
         }else if(table_ == ModbusTable::INPUT_REGISTERS || table_ == ModbusTable::HOLDING_REGISTERS){
             if(response_registers.status() == -1){
                 throw std::runtime_error(
@@ -183,7 +183,7 @@ Message const ModbusConnector::do_receive()
                 ret.push_back(static_cast<std::byte>(reg >> 8 & 0xFF));
                 ret.push_back(static_cast<std::byte>(reg & 0xFF));
             }
-            return Message(ret);
+            return Message(ret, msg_format_);
         }
     }
     throw std::runtime_error("Unknown MODBUS Connector Error");

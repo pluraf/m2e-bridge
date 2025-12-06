@@ -22,7 +22,7 @@ TEST_CASE("LimiterFT", "[limiter_filtra]"){
 
     json initial_msg = {"value1", 2, 3, "value5"};
     MessageWrapper msg_w(
-        std::make_shared<Message>(initial_msg.dump(), MessageFormat::JSON, "/topc/test")
+        std::make_shared<Message>(initial_msg.dump(), MessageFormat::Type::JSON, "/topc/test")
     );
 
     string const & msg_data = msg_w.msg().get_raw();

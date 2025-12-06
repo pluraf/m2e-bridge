@@ -10,7 +10,6 @@
         "email",
         "eventbridge",
         "iot",
-        "iot1click-devices",
         "iotevents",
         "s3",
         "sns",
@@ -29,10 +28,16 @@
     },
     "grpc",
     "jwt-cpp",
+    {
+      "name": "libpqxx",
+      "version>=": "7.10.1"
+    },
     "lua",
     "nlohmann-json",
+    "pegtl",
     "poco",
     "sqlite3",
-    "pegtl"
-  ]
+    "libcbor"
+  ],
+  "builtin-baseline": "ceaa2404d370c7a40fcfb11d747a71c9fd1df044"
 }

@@ -126,15 +126,15 @@ TEST_CASE("FinderFT - Keys", "[finder_filtra]"){
     json keys = filtras.at("keys");
 
     json initial_msg_1 = {{"temp", "value1"}, {"hum", "value2"}};
-    Message msg_1(initial_msg_1, MessageFormat::JSON, "/topc/test");
+    Message msg_1(initial_msg_1, MessageFormat::Type::JSON, "/topc/test");
     MessageWrapper msg_w_1(std::make_shared<Message>(std::move(msg_1)));
 
     json initial_msg_2 = {{"value1", "value1"}, {"value2", "value2"}};
-    Message msg_2(initial_msg_2, MessageFormat::JSON, "/topc/test");
+    Message msg_2(initial_msg_2, MessageFormat::Type::JSON, "/topc/test");
     MessageWrapper msg_w_2(std::make_shared<Message>(std::move(msg_2)));
 
     json initial_msg_3 = {{"temp", "value1"}, {"hum", "value2"}, {"moi", "value3"}};
-    Message msg_3(initial_msg_3, MessageFormat::JSON, "/topc/test");
+    Message msg_3(initial_msg_3, MessageFormat::Type::JSON, "/topc/test");
     MessageWrapper msg_w_3(std::make_shared<Message>(std::move(msg_3)));
 
 
@@ -186,19 +186,19 @@ TEST_CASE("FinderFT - Value Key", "[finder_filtra]"){
     std::string val_key = filtras.at("value_key");
 
     json initial_msg_1 = {{"temp", "value"}, {"hum", "value"}};
-    Message msg_1(initial_msg_1, MessageFormat::JSON, "/topc/test");
+    Message msg_1(initial_msg_1, MessageFormat::Type::JSON, "/topc/test");
     MessageWrapper msg_w_1(std::make_shared<Message>(std::move(msg_1)));
 
     json initial_msg_2 = {{"hum", "value"}, {"moi", "value"}};
-    Message msg_2(initial_msg_2, MessageFormat::JSON, "/topc/test");
+    Message msg_2(initial_msg_2, MessageFormat::Type::JSON, "/topc/test");
     MessageWrapper msg_w_2(std::make_shared<Message>(std::move(msg_2)));
 
     json initial_msg_3 = {{"temp", "temp correct value"}, {"hum", "value"}};
-    Message msg_3(initial_msg_3, MessageFormat::JSON, "/topc/test");
+    Message msg_3(initial_msg_3, MessageFormat::Type::JSON, "/topc/test");
     MessageWrapper msg_w_3(std::make_shared<Message>(std::move(msg_3)));
 
     json initial_msg_4 = {{"temp", "correct value"}, {"moi", "value"}};
-    Message msg_4(initial_msg_4, MessageFormat::JSON, "/topc/test");
+    Message msg_4(initial_msg_4, MessageFormat::Type::JSON, "/topc/test");
     MessageWrapper msg_w_4(std::make_shared<Message>(std::move(msg_4)));
 
 

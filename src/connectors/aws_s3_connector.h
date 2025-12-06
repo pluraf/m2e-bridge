@@ -249,7 +249,7 @@ public:
             }
         }
 
-        return Message(file_content, object_name_template_);
+        return Message(file_content, msg_format_, object_name_template_);
     }
 
     static pair<string, json> get_schema(){

@@ -39,7 +39,7 @@ public:
     }
 
     string process_message(MessageWrapper &msg_w)override{
-        if(msg_format_ == MessageFormat::JSON){
+        if(msg_format_ == MessageFormat::Type::JSON){
             json & j_payload = msg_w.msg().get_json();
             for(auto const & key : keys_){
                 try{

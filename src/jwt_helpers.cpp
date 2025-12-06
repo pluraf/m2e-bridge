@@ -28,6 +28,7 @@ IN THE SOFTWARE.
 
 #include "jwt_helpers.h"
 #include <jwt-cpp/jwt.h>
+#include <jwt-cpp/traits/nlohmann-json/traits.h>
 
 
 std::string load_public_key(std::string const & path){
@@ -42,10 +43,10 @@ std::string load_public_key(std::string const & path){
 
 bool jwt_verify(const std::string& jwt_token, const std::string& public_key) {
     try {
-        auto decoded_token = jwt::decode(jwt_token);
+        auto decoded_token = jwt::decode<jwt::traits::nlohmann_json>(jwt_token);
 
-        auto verifier = jwt::verify()
-                            .allow_algorithm(jwt::algorithm::es256(public_key, "", "", ""));
+        auto verifier = jwt::verify<jwt::traits::nlohmann_json>()
+                .allow_algorithm(jwt::algorithm::es256(public_key, "", "", ""));
 
         verifier.verify(decoded_token);
 

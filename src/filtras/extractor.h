@@ -43,7 +43,7 @@ public:
 
     string process_message(MessageWrapper & msg_w)override{
         json output = json::object();
-        if(msg_format_ == MessageFormat::JSON){
+        if(msg_format_ == MessageFormat::Type::JSON){
             json const & j_payload = msg_w.msg().get_json();
             for(auto const & [name, key] : map_){
                 try{
@@ -59,7 +59,7 @@ public:
             if(output.empty()){
                 msg_w.reject();
             }else{
-                msg_w.set_message(Message(output, MessageFormat::JSON));
+                msg_w.set_message(Message(output, MessageFormat::Type::JSON));
                 msg_w.pass();
             }
         }

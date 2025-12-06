@@ -22,7 +22,7 @@ TEST_CASE("EraserFT", "[eraser_filtra]"){
 
     json initial_msg = {{"value1", "value2", "temp", "hum"}};
     MessageWrapper msg_w(
-        std::make_shared<Message>(initial_msg.dump(), MessageFormat::JSON, "/topc/test")
+        std::make_shared<Message>(initial_msg.dump(), MessageFormat::Type::JSON, "/topc/test")
     );
 
     EraserFT eraser_ft(mock_pi, filtras);

@@ -38,7 +38,6 @@ IN THE SOFTWARE.
 
 
 class SlackConnector: public Connector {
-private:
     std::string webhook_url_;
     std::string oauth_token_;
     std::string channel_id_;

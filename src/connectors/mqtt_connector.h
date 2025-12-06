@@ -36,6 +36,7 @@ IN THE SOFTWARE.
 
 #include <fmt/core.h>
 #include <jwt-cpp/jwt.h>
+#include <jwt-cpp/traits/nlohmann-json/traits.h>
 #include "mqtt/async_client.h"
 #include "Poco/String.h"
 
@@ -236,7 +237,7 @@ public:
     Message const do_receive()override{
         mqtt::message mqtt_msg;
         msg_queue_->get(&mqtt_msg);  // blocking call
-        return Message(mqtt_msg.get_payload(), mqtt_msg.get_topic());
+        return Message(mqtt_msg.get_payload(), msg_format_, mqtt_msg.get_topic());
     }
 
     void do_stop()override{
@@ -327,11 +328,11 @@ private:
                     if(!ab.username.empty()){
                         conn_opts_.set_user_name(ab.username);
                     }
-                    token = jwt::create()
+                    token = jwt::create<jwt::traits::nlohmann_json>()
                         .set_issuer("m2e-bridge")
                         .set_type("JWT")
                         .set_issued_at(std::chrono::system_clock::now())
-                        .set_payload_claim("client_id", jwt::claim(std::string{client_id_}))
+                        .set_payload_claim("client_id", jwt::basic_claim<jwt::traits::nlohmann_json>(std::string{client_id_}))
                         .sign(jwt::algorithm::es256( "", ab.keydata, "", ""));
                     conn_opts_.set_password(token);
                     break;

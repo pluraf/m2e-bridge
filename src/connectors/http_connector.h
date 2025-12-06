@@ -272,7 +272,7 @@ public:
         if (response.curl_code != CURLE_OK){
             throw std::runtime_error("Error while sending Http request");
         }
-        return Message(response.resp_str, "http");
+        return Message(response.resp_str, msg_format_, "http");
     }
 
     static pair<string, json> get_schema(){

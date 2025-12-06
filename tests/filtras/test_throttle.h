@@ -19,7 +19,7 @@ TEST_CASE("ThrottleFT", "[throttle_filtra]"){
     };
 
     json initial_msg = "Hello!";
-    Message msg(initial_msg, MessageFormat::JSON, "/topc/test");
+    Message msg(initial_msg, MessageFormat::Type::JSON, "/topc/test");
 
     ThrottleFT throttle_ft(mock_pi, filtras);
 
