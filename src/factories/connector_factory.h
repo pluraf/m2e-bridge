@@ -73,6 +73,9 @@ public:
         else if(conn_type == "postgresql"){
             return new PostgreSQLConnector(pipeid, mode, config);
         }
+        else if(conn_type == "sqlite"){
+            return new SQLiteConnector(pipeid, mode, config);
+        }
         else{
             throw std::invalid_argument(fmt::format("Unknown Connector type [ {} ]", conn_type));
         }

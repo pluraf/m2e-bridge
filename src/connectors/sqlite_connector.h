@@ -30,45 +30,41 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 
-#ifndef __M2E_BRIDGE_POSTGRESQL_CONNECTOR_H__
-#define __M2E_BRIDGE_POSTGRESQL_CONNECTOR_H__
+#ifndef __M2E_BRIDGE_SQLITE_CONNECTOR_H__
+#define __M2E_BRIDGE_SQLITE_CONNECTOR_H__
 
 
 #include <sstream>
 #include <memory>
 #include <span>
+#include <stdexcept>
 
-#include <pqxx/pqxx>
+#include <sqlite3.h>
 
 #include "connector.h"
-#include "database/authbundle.h"
 #include "substitutions/subs.hpp"
 
 
-struct PostgreSQLConnectorConfig
+struct SQLiteConnectorConfig
 {
-    string db_name;
-    string db_host;
-    unsigned db_port;
+    string db_path;
     string table;
     vector<string> columns;
     vector<string> values;
 };
 
 
-class PostgreSQLConnector: public Connector
+class SQLiteConnector: public Connector
 {
-    PostgreSQLConnectorConfig config_;
-    std::unique_ptr<pqxx::connection> db_conn_;
+    SQLiteConnectorConfig config_;
+    sqlite3 *db_;
     string statement_;
 
 public:
-    PostgreSQLConnector(std::string pipeid, ConnectorMode mode, json const & config)
+    SQLiteConnector(std::string pipeid, ConnectorMode mode, json const & config)
         :Connector(pipeid, mode, config)
     {
-        config_.db_name = config.at("db_name").get<string>();
-        config_.db_host = config.at("db_host").get<string>();
-        config_.db_port = config.at("db_port").get<unsigned>();
+        config_.db_path = config.at("db_path").get<string>();
         config_.table = config.at("table").get<string>();
 
         auto j_columns {config.at("columns")};
@@ -78,12 +74,28 @@ public:
         config_.values = vector<string>(j_values.begin(), j_values.end());
     }
 
-    virtual void do_send(MessageWrapper & msg_w)
+    void do_connect() override
     {
+        statement_ = build_statement();
+    }
+
+    void do_send(MessageWrapper & msg_w) override
+    {
+        int res = sqlite3_open_v2(config_.db_path.c_str(), &db_, SQLITE_OPEN_READWRITE, nullptr);
+        if(res != SQLITE_OK){ throw std::runtime_error("Can't open database"); }
+
+        sqlite3_stmt *stmt;
+        res = sqlite3_prepare_v2(db_, statement_.c_str(), -1, &stmt, nullptr);
+        if(res != SQLITE_OK){
+            sqlite3_close(db_);
+            throw std::runtime_error(sqlite3_errmsg(db_));
+        }
+
         auto se = SubsEngine(msg_w.msg(), msg_w.get_metadata(), msg_w.msg().get_attributes());
 
-        pqxx::params p;
-        // Make sure vector does not reallocate elements as we use views
+        // Build a query and do substitutions
+        unsigned pix {0};
+        // Make sure vector does not reallocate elements as we use .c_str()
         vector<substituted_t> row_values(config_.values.size());
 
         for(auto &vtemplate : config_.values){
@@ -92,44 +104,24 @@ public:
 
             if(std::holds_alternative<std::span<std::byte>>(v)){
                 auto d {std::get<std::span<std::byte>>(v)};
-                p.append(std::basic_string_view<std::byte>(d.data(), d.size()));
+                sqlite3_bind_blob(stmt, ++pix, d.data(), d.size(), nullptr);
             }
             else if(std::holds_alternative<string>(v)){
-                p.append(std::get<string>(v));
+                sqlite3_bind_text(stmt, ++pix, std::get<string>(v).c_str(), -1, nullptr);
             }
             else{
                 throw std::runtime_error("Value is not a string or blob!");
             }
         }
 
-        pqxx::work txn(*db_conn_);
-        pqxx::result r = txn.exec(pqxx::prepped{"insert"}, p);
-        txn.commit();
-    }
+        res = sqlite3_step(stmt);
+        if (res != SQLITE_DONE) { throw std::runtime_error(sqlite3_errmsg(db_)); }
 
-    virtual void do_connect()
-    {
-        AuthbundleTable db;
-        AuthBundle ab;
-        bool res = db.get(authbundle_id_, ab);
-        if(! res){ throw std::runtime_error("Not able to retrieve authbundle!"); }
+        res = sqlite3_finalize(stmt);
+        if (res != SQLITE_OK) { throw std::runtime_error(sqlite3_errmsg(db_)); }
 
-        string conn_str = fmt::format(
-            "dbname={} user={} password={} host={} port={}",
-            config_.db_name,
-            ab.username,
-            ab.password,
-            config_.db_host,
-            config_.db_port
-        );
-
-        db_conn_ = std::make_unique<pqxx::connection>(conn_str);
-
-        db_conn_->prepare("insert", build_statement());
-    }
-
-    virtual void do_disconnect(){
-        if(db_conn_){ db_conn_->close(); }
+        res = sqlite3_close(db_);
+        if (res != SQLITE_OK) { throw std::runtime_error(sqlite3_errmsg(db_)); }
     }
 
     string build_statement()
@@ -143,15 +135,14 @@ public:
         auto it = config_.columns.begin();
         auto end = config_.columns.end();
 
-        unsigned vcnt {0};
         if(it != end){
             into << *it++;
-            values << "$" << ++vcnt;
+            values << "?";
         }
         while(it != end){
             into << ", " << *it;
             ++it;
-            values << ", $" << ++vcnt;
+            values << ", ?";
         }
 
         into << ")";
@@ -184,9 +175,9 @@ public:
                 {"required", true}
             }}
         });
-        return {"postgresql", schema};
+        return {"sqlite", schema};
     }
 };
 
 
-#endif  // __M2E_BRIDGE_POSTGRESQL_CONNECTOR_H__
+#endif  // __M2E_BRIDGE_SQLITE_CONNECTOR_H__

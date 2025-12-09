@@ -46,6 +46,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "connectors/generator_connector.h"
 #include "connectors/modbus/modbus_connector.h"
 #include "connectors/postgresql_connector.h"
+#include "connectors/sqlite_connector.h"
 
 
 #endif  // __M2E_BRIDGE_ALL_CONNECTORS_H__
