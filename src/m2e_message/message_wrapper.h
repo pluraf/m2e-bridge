@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 
 /*
-Copyright (c) 2024 Pluraf Embedded AB <code@pluraf.com>
+Copyright (c) 2024-2026 Pluraf Embedded AB <code@pluraf.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the “Software”), to deal in
@@ -31,6 +31,7 @@ IN THE SOFTWARE.
 
 #include "m2e_aliases.h"
 #include "message.h"
+#include "message_extra.h"
 
 
 class MessageWrapper{
@@ -40,6 +41,7 @@ class MessageWrapper{
     bool is_passed_ {false};
     set<string> destinations_;
     json metadata_;
+    MessageExtra extra_;
 public:
     MessageWrapper() = default;
 
@@ -82,6 +84,10 @@ public:
 
     json const & get_metadata(){
         return metadata_;
+    }
+
+    MessageExtra & get_extra(){
+        return extra_;
     }
 };
 
