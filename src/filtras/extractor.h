@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 
 /*
-Copyright (c) 2025 Pluraf Embedded AB <code@pluraf.com>
+Copyright (c) 2025-2026 Pluraf Embedded AB <code@pluraf.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the “Software”), to deal in
@@ -32,37 +32,77 @@ IN THE SOFTWARE.
 #include "filtra.h"
 
 
-class ExtractorFT:public Filtra{
+class ExtractorFT:public Filtra
+{
+    vector<pair<string, vector<string>>> map_;
+    string output_;
 public:
-    ExtractorFT(PipelineIface const & pi, json const & json_descr):
-            Filtra(pi, json_descr){
-        for(auto const & [key, value] : json_descr["map"].items()){
-            map_.push_back({key, vector<string>(value.begin(), value.end())});
+    ExtractorFT(PipelineIface const & pi, json const & json_descr)
+        :Filtra(pi, json_descr)
+    {
+        if( json_descr.contains("map") )
+        {
+            for( auto const & [key, value] : json_descr["map"].items() )
+            {
+                map_.push_back({key, vector<string>(value.begin(), value.end())});
+            }
+        }
+        else if( json_descr.contains("output") )
+        {
+            output_ = json_descr.at("output").get<string>();
         }
     }
 
-    string process_message(MessageWrapper & msg_w)override{
-        json output = json::object();
-        if(msg_format_ == MessageFormat::Type::JSON){
-            json const & j_payload = msg_w.msg().get_json();
-            for(auto const & [name, key] : map_){
-                try{
-                    json const * payload = & j_payload;
-                    for(auto const & subkey : key){
-                        payload = & payload->at(subkey);
+    string process_message(MessageWrapper & msg_w) override
+    {
+        if( map_.size() > 0 )
+        {
+            json output = json::object();
+            if(msg_format_ == MessageFormat::Type::JSON){
+                json const & j_payload = msg_w.msg().get_json();
+                for(auto const & [name, key] : map_){
+                    try{
+                        json const * payload = & j_payload;
+                        for(auto const & subkey : key){
+                            payload = & payload->at(subkey);
+                        }
+                        output[name] = std::move(* payload);
+                    }catch(std::exception){
+                        continue;
                     }
-                    output[name] = std::move(* payload);
-                }catch(std::exception){
-                    continue;
+                }
+                if(output.empty()){
+                    msg_w.reject();
+                }
+                else{
+                    msg_w.set_message(Message(output, MessageFormat::Type::JSON));
+                    msg_w.pass();
                 }
             }
-            if(output.empty()){
-                msg_w.reject();
-            }else{
-                msg_w.set_message(Message(output, MessageFormat::Type::JSON));
+        }
+        else if( ! output_.empty() )
+        {
+            auto se = SubsEngine(msg_w);
+            auto result = se.substitute(output_);
+
+            if( std::holds_alternative<std::span<std::byte>>(result) )
+            {
+                auto d {std::get<std::span<std::byte>>(result)};
+
+                msg_w.set_message(
+                    Message(
+                        reinterpret_cast<char const *>(d.data()),
+                        d.size(),
+                        MessageFormat::Type::RAW
+                    )
+                );
                 msg_w.pass();
             }
+            else{
+                msg_w.reject();
+            }
         }
+
         return "";
     }
 
@@ -82,9 +122,6 @@ public:
         });
         return {"extractor", schema};
     }
-
-private:
-    vector<pair<string, vector<string>>> map_;
 };
 
 

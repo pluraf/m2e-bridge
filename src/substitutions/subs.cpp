@@ -1,49 +1,46 @@
-/* SPDX-License-Identifier: BSD-3-Clause */
+/* SPDX-License-Identifier: MIT */
 
 /*
-Copyright (c) 2024-2025 Pluraf Embedded AB <code@pluraf.com>
+Copyright (c) 2024-2026 Pluraf Embedded AB <code@pluraf.com>
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the “Software”), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to
+do so, subject to the following conditions:
 
-1. Redistributions of source code must retain the above copyright notice,
-this list of conditions and the following disclaimer.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-2. Redistributions in binary form must reproduce the above copyright notice,
-this list of conditions and the following disclaimer in the documentation
-and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its contributors
-may be used to endorse or promote products derived from this software without
-specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS
-BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
-GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
-OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
 */
 
 
 #include <tao/pegtl.hpp>
 #include <cbor.h>
 
+#include "modifiers/modifier.h"
+
 #include "subs.hpp"
 
 
-class ObjectProxy{
+class ObjectProxy
+{
     std::variant<
         Message *,
         nlohmann::json const *,
         std::vector<std::string> const *,
         std::string const *,
         std::map<std::string, std::string> const *,
-        cbor_item_t const *
+        cbor_item_t const *,
+        MessageExtra *
     > obj_;
 public:
     ObjectProxy() = default;
@@ -70,6 +67,10 @@ public:
 
     ObjectProxy(std::map<std::string, std::string> const * m){
         obj_ = m;
+    }
+
+    ObjectProxy(MessageExtra * extra){
+        obj_ = extra;
     }
 
     ObjectProxy next(std::string const & key){
@@ -108,6 +109,12 @@ public:
                 }
             }
         }
+        else if(std::holds_alternative<MessageExtra *>(obj_)){
+            auto extra = std::get<MessageExtra *>(obj_);
+            extra->set_key(key);
+            return ObjectProxy(extra);
+        }
+
         throw std::out_of_range(fmt::format("Can not find key: {}!", key));
     }
 
@@ -160,6 +167,10 @@ public:
                 );
             }
         }
+        else if(std::holds_alternative<MessageExtra *>(obj_)){
+            auto extra = std::get<MessageExtra *>(obj_);
+            return std::span<byte>(extra->get_extra(), extra->get_extra_size());
+        }
 
         throw std::runtime_error("Value is not substitutable!");
     }
@@ -170,21 +181,23 @@ namespace grammar {
     using namespace tao::pegtl;
 
     struct dot : tao::pegtl::string<'.'> {};
-    struct number : seq<> {};
+    struct comma : tao::pegtl::string<','> {};
+    struct pipe : tao::pegtl::string<'|'> {};
     struct lbracket : tao::pegtl::string<'['> {};
     struct rbracket : tao::pegtl::string<']'> {};
+    struct modifier : seq<pipe, identifier_first, star<identifier_other>, opt<comma, plus<digit>>> {};
     struct property : seq<dot, identifier_first, star<identifier_other>> {};
     struct index : seq<lbracket, plus<digit>, rbracket> {};
-    struct expression : seq<identifier, plus<sor<property, index>>> {};
+    struct expression : seq<identifier, plus<sor<property, index>>, opt<modifier>> {};
 }
 
 
 class EvalState {
-    ObjectProxy obj_;
     EnvObjects & env_;
+    ObjectProxy obj_;
+    std::vector<unsigned char> value_;
 public:
-    EvalState(EnvObjects & env): env_(env){
-    }
+    EvalState( EnvObjects & env ) :env_(env) {}
 
     void start(std::string const & name){
         auto v = env_.at(name);
@@ -197,16 +210,33 @@ public:
         }
     }
 
-    ObjectProxy & get_object(){
-        return obj_;
+    substituted_t get_value(){
+        if( value_.size() > 0 )
+        {
+            return value_;
+        }
+        else{
+            return obj_.value();
+        }
     }
 
     void next(std::string const & key){
         obj_ = obj_.next(key);
     }
 
-    void next(unsigned ix){
+    void next(unsigned ix)
+    {
         obj_ = obj_.next(ix);
+    }
+
+    void modify( std::string const & modifier_def )
+    {
+        auto substituted = obj_.value();
+        auto value = std::get<std::span<std::byte>>(substituted);
+
+        Modifier modifier { modifier_def };
+
+        value_ = modifier.modify(value);
     }
 };
 
@@ -232,6 +262,15 @@ struct action<grammar::property> {
 };
 
 template<>
+struct action<grammar::modifier> {
+    template<typename Input>
+    static void apply(const Input & in, EvalState & state) {
+        auto p = in.string();
+        state.modify(std::string(p.begin() + 1, p.end()));
+    }
+};
+
+template<>
 struct action<grammar::index> {
     template<typename Input>
     static void apply(const Input & in, EvalState & state) {
@@ -241,13 +280,19 @@ struct action<grammar::index> {
 };
 
 
-substituted_t SubsEngine::evaluate(string const & expression){
+substituted_t SubsEngine::evaluate( string const & expression )
+{
     EvalState state(env_);
+
     tao::pegtl::string_input in(expression, "");
+
     try{
         tao::pegtl::parse<grammar::expression, action>(in, state);
-        return state.get_object().value();
-    }catch(std::exception const & e){
+
+        return state.get_value();
+    }
+    catch(std::exception const & e)
+    {
         throw;
     }
 }
