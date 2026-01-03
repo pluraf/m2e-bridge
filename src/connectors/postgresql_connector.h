@@ -90,11 +90,18 @@ public:
             row_values.push_back(se.substitute(vtemplate));
             auto &v = row_values.back();
 
-            if(std::holds_alternative<std::span<std::byte>>(v)){
-                auto d {std::get<std::span<std::byte>>(v)};
-                p.append(std::basic_string_view<std::byte>(d.data(), d.size()));
+            if( std::holds_alternative<std::vector<unsigned char>>(v) )
+            {
+                auto & d {std::get<std::vector<unsigned char>>(v)};
+                p.append(std::basic_string_view<std::byte>(reinterpret_cast<std::byte *>(d.data()), d.size()));
             }
-            else if(std::holds_alternative<string>(v)){
+            else if( std::holds_alternative< std::span<std::byte>>(v) )
+            {
+                auto d { std::get<std::span<std::byte>>(v) };
+                p.append( std::basic_string_view<std::byte>(d.data(), d.size()) );
+            }
+            else if( std::holds_alternative<string>(v) )
+            {
                 p.append(std::get<string>(v));
             }
             else{

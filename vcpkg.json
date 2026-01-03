@@ -2,6 +2,7 @@
   "name": "m2e-brige",
   "version-string": "1.0",
   "description": "M2E Bridge",
+  "builtin-baseline": "ceaa2404d370c7a40fcfb11d747a71c9fd1df044",
   "dependencies": [
     {
       "name": "aws-sdk-cpp",
@@ -28,6 +29,7 @@
     },
     "grpc",
     "jwt-cpp",
+    "libcbor",
     {
       "name": "libpqxx",
       "version>=": "7.10.1"
@@ -37,7 +39,14 @@
     "pegtl",
     "poco",
     "sqlite3",
-    "libcbor"
-  ],
-  "builtin-baseline": "ceaa2404d370c7a40fcfb11d747a71c9fd1df044"
+    {
+      "name": "opencv",
+      "default-features": false,
+      "features": [
+        "jpeg",
+        "openjpeg",
+        "png"
+      ]
+    }
+  ]
 }

@@ -26,12 +26,17 @@ cd build
 cmake -DPAHO_BUILD_STATIC=TRUE -DPAHO_WITH_SSL=TRUE -DPAHO_ENABLE_TESTING=FALSE ..
 make -j8
 ```
+
 ##### Install dependencies
 
 ```
-sudo apt install libfmt-dev
-sudo apt install libzmq3-dev
+apt install libfmt-dev
+apt install libzmq3-dev
+apt install autoconf autoconf-archive automake libtool
+apt install libxi-dev libxtst-dev
+apt install libxrandr-dev
 ```
+
 ##### Build package
 
 ```

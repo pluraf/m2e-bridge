@@ -74,11 +74,13 @@ struct MessageFormat
 
 
 using bytes = std::vector<std::byte>;
+using uchars = std::vector<unsigned char>;
 
 
 class Message{
     bool is_valid_ {false};
-    bytes payload_;
+    bytes payload_bytes_;
+    uchars payload_uchars_;
     std::string msg_raw_;
     std::string msg_topic_;
     mutable json decoded_json_;
@@ -94,10 +96,6 @@ public:
     Message(string const & data, MessageFormat::Type format, string const & topic = ""){
         is_serialized_ = true;
         msg_raw_ = data;
-        payload_.assign(
-            reinterpret_cast<std::byte const*>(data.data()),
-            reinterpret_cast<std::byte const*>(data.data() + data.size())
-        );
         msg_topic_ = topic;
         format_ = format;
         is_valid_ = true;
@@ -131,7 +129,8 @@ public:
 
     Message(Message const & other){
         msg_raw_ = other.msg_raw_;
-        payload_ = other.payload_;
+        payload_bytes_ = other.payload_bytes_;
+        payload_uchars_ = other.payload_uchars_;
         topic_levels_ = other.topic_levels_;
         is_serialized_ = other.is_serialized_;
         decoded_json_ = other.decoded_json_;
@@ -144,7 +143,8 @@ public:
     Message & operator=(Message const & other){
         if(this != & other){
             msg_raw_ = other.msg_raw_;
-            payload_ = other.payload_;
+            payload_bytes_ = other.payload_bytes_;
+            payload_uchars_ = other.payload_uchars_;
             topic_levels_ = other.topic_levels_;
             is_serialized_ = other.is_serialized_;
             decoded_json_ = other.decoded_json_;
@@ -158,7 +158,8 @@ public:
 
     Message(Message && other)noexcept:
         msg_raw_(std::move(other.msg_raw_)),
-        payload_(std::move(other.payload_)),
+        payload_bytes_(std::move(other.payload_bytes_)),
+        payload_uchars_(std::move(other.payload_uchars_)),
         topic_levels_(std::move(other.topic_levels_)),
         is_serialized_(other.is_serialized_),
         decoded_json_(std::move(other.decoded_json_)),
@@ -170,7 +171,8 @@ public:
     Message & operator=(Message && other)noexcept{
         if(this != & other){
             msg_raw_ = std::move(other.msg_raw_);
-            payload_ = std::move(other.payload_);
+            payload_bytes_= std::move(other.payload_bytes_);
+            payload_uchars_= std::move(other.payload_uchars_);
             topic_levels_ = std::move(other.topic_levels_);
             is_serialized_ = other.is_serialized_;
             decoded_json_ = std::move(other.decoded_json_);
@@ -229,14 +231,14 @@ public:
         return decoded_json_;
     }
 
-    cbor_item_t *get_cbor()
+    cbor_item_t * get_cbor()
     {
         if(is_serialized_){
             if(decoded_cbor_){ cbor_decref(&decoded_cbor_); }
             cbor_load_result res;
             decoded_cbor_ = cbor_load(
-                reinterpret_cast<cbor_data>(payload_.data()),
-                payload_.size(),
+                reinterpret_cast<cbor_data>(msg_raw_.data()),
+                msg_raw_.size(),
                 &res
             );
             if(res.error.code != CBOR_ERR_NONE){
@@ -245,6 +247,32 @@ public:
             is_serialized_ = false;
         }
         return decoded_cbor_;
+    }
+
+    bytes & get_payload_byte()
+    {
+        if( payload_bytes_.size() != msg_raw_.size() )
+        {
+            payload_bytes_.assign(
+                reinterpret_cast<std::byte const*>(msg_raw_.data()),
+                reinterpret_cast<std::byte const*>(msg_raw_.data() + msg_raw_.size())
+            );
+        }
+
+        return payload_bytes_;
+    }
+
+    uchars & get_payload_uchar()
+    {
+        if( payload_uchars_.size() != msg_raw_.size() )
+        {
+            payload_uchars_.assign(
+                reinterpret_cast<unsigned char const*>(msg_raw_.data()),
+                reinterpret_cast<unsigned char const*>(msg_raw_.data() + msg_raw_.size())
+            );
+        }
+
+        return payload_uchars_;
     }
 
     std::string const & get_topic_level(int level){

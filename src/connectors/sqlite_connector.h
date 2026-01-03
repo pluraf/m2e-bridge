@@ -102,11 +102,18 @@ public:
             row_values.push_back(se.substitute(vtemplate));
             auto &v = row_values.back();
 
-            if(std::holds_alternative<std::span<std::byte>>(v)){
+            if( std::holds_alternative<std::vector<unsigned char>>(v) )
+            {
+                auto & d {std::get<std::vector<unsigned char>>(v)};
+                sqlite3_bind_blob(stmt, ++pix, d.data(), d.size(), nullptr);
+            }
+            else if( std::holds_alternative<std::span<std::byte>>(v) )
+            {
                 auto d {std::get<std::span<std::byte>>(v)};
                 sqlite3_bind_blob(stmt, ++pix, d.data(), d.size(), nullptr);
             }
-            else if(std::holds_alternative<string>(v)){
+            else if( std::holds_alternative<string>(v) )
+            {
                 sqlite3_bind_text(stmt, ++pix, std::get<string>(v).c_str(), -1, nullptr);
             }
             else{
