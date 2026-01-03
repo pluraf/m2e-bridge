@@ -38,7 +38,8 @@ public:
         keys_ = vector<string>(j_keys.begin(), j_keys.end());
     }
 
-    string process_message(MessageWrapper &msg_w)override{
+    string process_message( MessageWrapper &msg_w ) override
+    {
         if(msg_format_ == MessageFormat::Type::JSON){
             json & j_payload = msg_w.msg().get_json();
             for(auto const & key : keys_){

@@ -56,6 +56,7 @@ bool Pipeline::construct(json const & pjson){
     bool success = true;
     // Enabled
     is_enabled_ = pjson.value("enabled", false);
+
     // Create connector IN
     try{
         connector_in_ = ConnectorFactory::create(
@@ -65,6 +66,7 @@ bool Pipeline::construct(json const & pjson){
         last_error_ = e.what();
         return false;
     }
+
     // Create filtras
     if(pjson.contains("filtras")){
         try{
@@ -77,6 +79,7 @@ bool Pipeline::construct(json const & pjson){
             return false;
         }
     }
+
     // Create connector OUT
     try{
         connector_out_ = ConnectorFactory::create(
