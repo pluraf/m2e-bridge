@@ -37,6 +37,7 @@ IN THE SOFTWARE.
 #include "filtras/throttle.h"
 #include "filtras/extractor.h"
 #include "filtras/converter.h"
+#include "filtras/image.h"
 
 
 #endif  // __M2E_BRIDGE_ALL_FILTRAS_H__

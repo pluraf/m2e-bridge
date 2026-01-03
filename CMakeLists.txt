@@ -5,6 +5,7 @@ project(m2e-brdige)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0")
 
 set(SOURCE_DIR "${CMAKE_SOURCE_DIR}/src")
 add_definitions(-DPROJECT_SOURCE_DIR=\"${SOURCE_DIR}\")
@@ -37,6 +38,7 @@ find_package(gRPC CONFIG REQUIRED)
 find_package(Protobuf CONFIG REQUIRED)
 find_package(Lua REQUIRED)
 find_package(libpqxx CONFIG REQUIRED)
+find_package(OpenCV CONFIG REQUIRED)
 
 message(STATUS "Using protobuf ${Protobuf_VERSION}")
 message(STATUS "Using gRPC ${gRPC_VERSION}")
@@ -114,6 +116,7 @@ target_link_libraries(m2e-bridge PRIVATE
 target_link_libraries(m2e-bridge PRIVATE ${LUA_LIBRARIES})
 target_link_libraries(m2e-bridge PRIVATE "${CMAKE_SOURCE_DIR}/external/lua-cjson/build/cjson.a")
 target_link_libraries(m2e-bridge PRIVATE libpqxx::pqxx)
+target_link_libraries(m2e-bridge PRIVATE opencv_core opencv_imgproc opencv_imgcodecs)
 
 target_include_directories(m2e-bridge PRIVATE ${JWT_CPP_INCLUDE_DIRS})
 

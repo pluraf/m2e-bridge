@@ -38,6 +38,7 @@ IN THE SOFTWARE.
 #include <chrono>
 #include <ctime>
 #include <cstddef>
+#include <stdexcept>
 
 #include <nlohmann/json.hpp>
 
@@ -46,6 +47,9 @@ namespace chrono = std::chrono;
 
 using json = nlohmann::json;
 using ordered_json = nlohmann::ordered_json;
+
+using bytes = std::vector<std::byte>;
+using uchars = std::vector<unsigned char>;
 
 using std::string;
 using std::string_view;
