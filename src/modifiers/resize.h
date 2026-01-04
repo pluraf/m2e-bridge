@@ -45,10 +45,10 @@ public:
         width_ = std::stoi(params);
     }
 
-    uchars modify( std::span<std::byte> data ) override
+    uchars modify( std::span<std::byte const> data ) override
     {
         // Load the image
-        cv::_InputArray input { reinterpret_cast<uchar *>( data.data() ), static_cast<int>(data.size()) };
+        cv::_InputArray input { reinterpret_cast<uchar const *>( data.data() ), static_cast<int>(data.size()) };
         auto original = cv::imdecode( input, cv::IMREAD_COLOR);
 
         double ratio = static_cast<double>(width_) / original.cols;

@@ -80,7 +80,7 @@ public:
 
     virtual void do_send(MessageWrapper & msg_w)
     {
-        auto se = SubsEngine(msg_w.msg(), msg_w.get_metadata(), msg_w.msg().get_attributes());
+        auto se = SubsEngine(msg_w);
 
         pqxx::params p;
         // Make sure vector does not reallocate elements as we use views
@@ -95,9 +95,9 @@ public:
                 auto & d {std::get<std::vector<unsigned char>>(v)};
                 p.append(std::basic_string_view<std::byte>(reinterpret_cast<std::byte *>(d.data()), d.size()));
             }
-            else if( std::holds_alternative< std::span<std::byte>>(v) )
+            else if( std::holds_alternative<std::span<std::byte const>>(v) )
             {
-                auto d { std::get<std::span<std::byte>>(v) };
+                auto d { std::get<std::span<std::byte const>>(v) };
                 p.append( std::basic_string_view<std::byte>(d.data(), d.size()) );
             }
             else if( std::holds_alternative<string>(v) )

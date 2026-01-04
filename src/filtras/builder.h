@@ -31,27 +31,48 @@ IN THE SOFTWARE.
 #include "substitutions/subs.hpp"
 
 
-class BuilderFT:public Filtra{
+class BuilderFT: public Filtra
+{
     json payload_;
+    json extra_;
+
 public:
-    BuilderFT(PipelineIface const & pi, json const & json_descr):
-            Filtra(pi, json_descr){
-        payload_ = json_descr.at("payload");
+    BuilderFT(PipelineIface const & pi, json const & config)
+            :Filtra(pi, config)
+    {
+        if( config.contains("payload") )
+        {
+            payload_ = config.at("payload");
+        }
+
+        if( config.contains("extra") )
+        {
+            extra_ = config.at("extra");
+        }
     }
 
-    string process_message(MessageWrapper &msg_w)override{
-        if(msg_format_ == MessageFormat::Type::JSON){
-            auto se = SubsEngine(msg_w.msg(), msg_w.get_metadata(), msg_w.msg().get_attributes());
+    string process_message( MessageWrapper &msg_w ) override
+    {
+        if( ! payload_.empty() )
+        {
             json payload = payload_;
-            if(payload.is_object()){
-                substitute(se, payload);
-            }else if(payload.is_string()){
-                payload = substitute(se, payload.get<string>());
-            }
+            build(payload, msg_w);
             msg_w.msg().get_json() = payload;
-        }else{
-            throw std::runtime_error("Builder: Unknown message format!");
         }
+
+        if( ! extra_.empty() )
+        {
+            json extra = extra_;
+            build(extra, msg_w);
+
+            auto & extra_storage = msg_w.get_extra();
+
+            for( auto & [key, val] : extra.items() )
+            {
+                extra_storage.add_extra(key, val.dump());
+            }
+        }
+
         msg_w.pass();
         return "";
     }
@@ -67,12 +88,34 @@ public:
             }},
             {"payload", {
                 {"type", "object"},
-                {"required", true}
+                {"required", false}
+            }},
+            {"extra", {
+                {"type", "object"},
+                {"required", false}
             }}
         });
         return {"builder", schema};
     }
+
 private:
+    void build( json & output, MessageWrapper &msg_w )
+    {
+        auto se = SubsEngine(msg_w);
+
+        if( output.is_object() )
+        {
+            substitute(se, output);
+        }
+        else if( output.is_string() )
+        {
+            output = substitute(se, output.get<string>());
+        }
+        else{
+            throw std::runtime_error("Can not build!");
+        }
+    }
+
     void substitute(SubsEngine & se, json & j){
         for(auto it = j.begin(); it != j.end(); ++it){
             if(it->is_string()){

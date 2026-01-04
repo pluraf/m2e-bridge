@@ -40,7 +40,7 @@ public:
 
     virtual ~ModifierInternal() {}
 
-    virtual uchars modify( std::span<std::byte> data ) = 0;
+    virtual uchars modify( std::span<std::byte const> data ) = 0;
 
     static json get_schema(){
         return json {};

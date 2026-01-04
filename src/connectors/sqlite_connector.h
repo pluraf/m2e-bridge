@@ -91,7 +91,7 @@ public:
             throw std::runtime_error(sqlite3_errmsg(db_));
         }
 
-        auto se = SubsEngine(msg_w.msg(), msg_w.get_metadata(), msg_w.msg().get_attributes());
+        auto se = SubsEngine(msg_w);
 
         // Build a query and do substitutions
         unsigned pix {0};
@@ -107,9 +107,9 @@ public:
                 auto & d {std::get<std::vector<unsigned char>>(v)};
                 sqlite3_bind_blob(stmt, ++pix, d.data(), d.size(), nullptr);
             }
-            else if( std::holds_alternative<std::span<std::byte>>(v) )
+            else if( std::holds_alternative<std::span<std::byte const>>(v) )
             {
-                auto d {std::get<std::span<std::byte>>(v)};
+                auto d {std::get<std::span<std::byte const>>(v)};
                 sqlite3_bind_blob(stmt, ++pix, d.data(), d.size(), nullptr);
             }
             else if( std::holds_alternative<string>(v) )

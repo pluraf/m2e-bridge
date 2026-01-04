@@ -40,7 +40,7 @@ class ObjectProxy
         std::string const *,
         std::map<std::string, std::string> const *,
         cbor_item_t const *,
-        MessageExtra *
+        MessageExtra const *
     > obj_;
 public:
     ObjectProxy() = default;
@@ -69,7 +69,7 @@ public:
         obj_ = m;
     }
 
-    ObjectProxy(MessageExtra * extra){
+    ObjectProxy(MessageExtra const * extra){
         obj_ = extra;
     }
 
@@ -109,8 +109,8 @@ public:
                 }
             }
         }
-        else if(std::holds_alternative<MessageExtra *>(obj_)){
-            auto extra = std::get<MessageExtra *>(obj_);
+        else if(std::holds_alternative<MessageExtra const *>(obj_)){
+            auto extra = std::get<MessageExtra const *>(obj_);
             extra->set_key(key);
             return ObjectProxy(extra);
         }
@@ -155,7 +155,7 @@ public:
                 }
             }
             else if(cbor_isa_bytestring(item)){
-                return std::span<byte>(
+                return std::span<byte const>(
                     reinterpret_cast<byte *>(cbor_bytestring_handle(item)),
                     cbor_bytestring_length(item)
                 );
@@ -167,9 +167,9 @@ public:
                 );
             }
         }
-        else if(std::holds_alternative<MessageExtra *>(obj_)){
-            auto extra = std::get<MessageExtra *>(obj_);
-            return std::span<byte>(extra->get_extra(), extra->get_extra_size());
+        else if(std::holds_alternative<MessageExtra const *>(obj_)){
+            auto extra = std::get<MessageExtra const *>(obj_);
+            return std::span<byte const>(extra->get_extra(), extra->get_extra_size());
         }
 
         throw std::runtime_error("Value is not substitutable!");
@@ -201,12 +201,21 @@ public:
 
     void start(std::string const & name){
         auto v = env_.at(name);
-        if(std::holds_alternative<Message *>(v)){
+        if( std::holds_alternative<Message *>(v) )
+        {
             obj_ = ObjectProxy(std::get<Message *>(v));
-        }else if(std::holds_alternative<json const *>(v)){
+        }
+        else if( std::holds_alternative<json const *>(v) )
+        {
             obj_ = ObjectProxy(std::get<json const *>(v));
-        }else if(std::holds_alternative<StringMap const *>(v)){
+        }
+        else if( std::holds_alternative<StringMap const *>(v) )
+        {
             obj_ = ObjectProxy(std::get<StringMap const *>(v));
+        }
+        else if( std::holds_alternative<MessageExtra const *>(v) )
+        {
+            obj_ = ObjectProxy(std::get<MessageExtra const *>(v));
         }
     }
 
@@ -232,7 +241,7 @@ public:
     void modify( std::string const & modifier_def )
     {
         auto substituted = obj_.value();
-        auto value = std::get<std::span<std::byte>>(substituted);
+        auto value = std::get<std::span<std::byte const>>(substituted);
 
         Modifier modifier { modifier_def };
 

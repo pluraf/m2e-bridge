@@ -245,7 +245,7 @@ public:
     }
 
     string derive_attribute(MessageWrapper & msg_w, string const & atemplate){
-        auto se = SubsEngine(msg_w.msg(), msg_w.get_metadata(), msg_w.msg().get_attributes());
+        auto se = SubsEngine(msg_w);
         return std::get<string>(se.substitute(atemplate));
     }
 

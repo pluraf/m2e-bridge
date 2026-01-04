@@ -85,9 +85,9 @@ public:
             auto se = SubsEngine(msg_w);
             auto result = se.substitute(output_);
 
-            if( std::holds_alternative<std::span<std::byte>>(result) )
+            if( std::holds_alternative<std::span<std::byte const>>(result) )
             {
-                auto d {std::get<std::span<std::byte>>(result)};
+                auto d {std::get<std::span<std::byte const>>(result)};
 
                 msg_w.set_message(
                     Message(

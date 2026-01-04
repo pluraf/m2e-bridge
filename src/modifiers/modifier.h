@@ -79,7 +79,7 @@ public:
 
     virtual ~Modifier() {}
 
-    uchars modify( std::span<std::byte> data )
+    uchars modify( std::span<std::byte const> data )
     {
         return modifier_ptr_->modify( data );
     }

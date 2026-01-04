@@ -40,9 +40,9 @@ IN THE SOFTWARE.
 
 
 using StringMap = std::map<std::string, std::string>;
-using EnvObjects = std::map<std::string, std::variant<Message *, json const *, StringMap const *, MessageExtra *>>;
+using EnvObjects = std::map<std::string, std::variant<Message *, json const *, StringMap const *, MessageExtra const *>>;
 
-using substituted_t = std::variant<string, nlohmann::json, std::span<std::byte>, std::vector<unsigned char>>;
+using substituted_t = std::variant<string, nlohmann::json, std::span<const std::byte>, std::vector<unsigned char>>;
 
 
 class SubsEngine {

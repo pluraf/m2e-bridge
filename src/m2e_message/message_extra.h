@@ -39,11 +39,12 @@ using uchars = std::vector<unsigned char>;
 
 class MessageExtra
 {
-    string key_;
-    map<string, std::variant<bytes, uchars>> extras_;
+    mutable string key_;
+    map<string, std::variant<bytes, uchars, string>> extras_;
+
 public:
     template< typename T >
-    void add_extra(string const & key, T && data)
+    void add_extra( string const & key, T && data )
     {
         // Since we return the pointer to an extra in get_extra, we must be careful
         // with adding extras more than once...
@@ -55,25 +56,32 @@ public:
         }
     }
 
-    void set_key(string const & key){
+    void set_key( string const & key ) const
+    {
         key_ = key;
     }
 
-    byte * get_extra()
+    byte const * get_extra() const
     {
         auto & extra = extras_.at(key_);
 
         if( std::holds_alternative<bytes>(extra) )
         {
-            return reinterpret_cast<byte *>( & std::get<bytes>(extra).front() );
+            return reinterpret_cast<byte const *>( & std::get<bytes>(extra).front() );
         }
-        else
+        else if( std::holds_alternative<uchars>(extra) )
         {
-            return reinterpret_cast<byte *>( & std::get<uchars>(extra).front() );
+            return reinterpret_cast<byte const *>( & std::get<uchars>(extra).front() );
         }
+        else if( std::holds_alternative<string>(extra) )
+        {
+            return reinterpret_cast<byte const *>( & std::get<string>(extra).front() );
+        }
+
+        throw std::runtime_error("Unknown Extra type!");
     }
 
-    size_t get_extra_size()
+    size_t get_extra_size() const
     {
         auto & extra = extras_.at(key_);
 
@@ -81,10 +89,16 @@ public:
         {
             return std::get<bytes>(extra).size();
         }
-        else
+        else if( std::holds_alternative<uchars>(extra) )
         {
             return std::get<uchars>(extra).size();
         }
+        else if( std::holds_alternative<string>(extra) )
+        {
+            return std::get<string>(extra).size();
+        }
+
+        throw std::runtime_error("Unknown Extra type!");
     }
 };
 
