@@ -148,10 +148,18 @@ public:
             if(cbor_is_int(item)){
                 cbor_int_width width = cbor_int_get_width(item);
                 switch(width){
-                    case CBOR_INT_8: return std::to_string(cbor_get_uint8(item));
-                    case CBOR_INT_16: return std::to_string(cbor_get_uint16(item));
-                    case CBOR_INT_32: return std::to_string(cbor_get_uint32(item));
-                    case CBOR_INT_64: return std::to_string(cbor_get_uint64(item));
+                    case CBOR_INT_8: return static_cast<long>(cbor_get_uint8(item));
+                    case CBOR_INT_16: return static_cast<long>(cbor_get_uint16(item));
+                    case CBOR_INT_32: return static_cast<long>(cbor_get_uint32(item));
+                    case CBOR_INT_64: return static_cast<long>(cbor_get_uint64(item));
+                }
+            }
+            if(cbor_is_float(item)){
+                cbor_float_width width = cbor_float_get_width(item);
+                switch(width){
+                    case CBOR_FLOAT_16: return static_cast<double>(cbor_float_get_float2(item));
+                    case CBOR_FLOAT_32: return static_cast<double>(cbor_float_get_float4(item));
+                    case CBOR_FLOAT_64: return static_cast<double>(cbor_float_get_float8(item));
                 }
             }
             else if(cbor_isa_bytestring(item)){

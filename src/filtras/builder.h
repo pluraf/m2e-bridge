@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 
 /*
-Copyright (c) 2024 Pluraf Embedded AB <code@pluraf.com>
+Copyright (c) 2024-2026 Pluraf Embedded AB <code@pluraf.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the “Software”), to deal in
@@ -118,12 +118,48 @@ private:
 
     void substitute(SubsEngine & se, json & j){
         for(auto it = j.begin(); it != j.end(); ++it){
-            if(it->is_string()){
+            if( it->is_string() )
+            {
                 auto result = se.substitute(it.value());
-                if(std::holds_alternative<string>(result)){
+
+                if( std::holds_alternative<string>(result) )
+                {
                     it.value() = std::get<string>(result);
-                }else{
+                }
+                else if( std::holds_alternative<double>(result) )
+                {
+                    it.value() = std::get<double>(result);
+                }
+                else if( std::holds_alternative<long>(result) )
+                {
+                    it.value() = std::get<long>(result);
+                }
+                else if( std::holds_alternative<json>(result) )
+                {
                     it.value() = std::get<json>(result);
+                }
+                else if( std::holds_alternative<std::span<const std::byte>>(result) )
+                {
+                    auto v = std::get<std::span<const std::byte>>(result);
+                    auto j = json::array();
+                    for(const auto & s : v )
+                    {
+                        j.push_back(s);
+                    }
+                    it.value() = std::move(j);
+                }
+                else if( std::holds_alternative<std::vector<unsigned char>>(result) )
+                {
+                    auto v = std::get<std::vector<unsigned char>>(result);
+                    auto j = json::array();
+                    for( const auto & s : v )
+                    {
+                        j.push_back(s);
+                    }
+                    it.value() = std::move(j);
+                }
+                else{
+                    throw std::runtime_error("Unexpected substituted value!");
                 }
             }else if(it->is_object() || it->is_array()){
                 substitute(se, *it);

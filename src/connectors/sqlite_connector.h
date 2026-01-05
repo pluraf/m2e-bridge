@@ -116,8 +116,16 @@ public:
             {
                 sqlite3_bind_text(stmt, ++pix, std::get<string>(v).c_str(), -1, nullptr);
             }
+            else if( std::holds_alternative<double>(v) )
+            {
+                sqlite3_bind_double(stmt, ++pix, std::get<double>(v));
+            }
+            else if( std::holds_alternative<long>(v) )
+            {
+                sqlite3_bind_int64(stmt, ++pix, std::get<long>(v));
+            }
             else{
-                throw std::runtime_error("Value is not a string or blob!");
+                throw std::runtime_error("Unexpected substituted value!");
             }
         }
 

@@ -104,8 +104,16 @@ public:
             {
                 p.append(std::get<string>(v));
             }
+            else if( std::holds_alternative<long>(v) )
+            {
+                p.append(std::get<long>(v));
+            }
+            else if( std::holds_alternative<double>(v) )
+            {
+                p.append(std::get<double>(v));
+            }
             else{
-                throw std::runtime_error("Value is not a string or blob!");
+                throw std::runtime_error("Unexpected substituted value!");
             }
         }
 
@@ -135,8 +143,9 @@ public:
         db_conn_->prepare("insert", build_statement());
     }
 
-    virtual void do_disconnect(){
-        if(db_conn_){ db_conn_->close(); }
+    virtual void do_disconnect()
+    {
+        if( db_conn_ ){ db_conn_->close(); }
     }
 
     string build_statement()
