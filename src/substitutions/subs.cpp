@@ -145,7 +145,9 @@ public:
         }
         else if(std::holds_alternative<cbor_item_t const *>(obj_)){
             cbor_item_t const * item = std::get<cbor_item_t const *>(obj_);
-            if(cbor_is_int(item)){
+
+            if( cbor_is_int(item) )
+            {
                 cbor_int_width width = cbor_int_get_width(item);
                 switch(width){
                     case CBOR_INT_8: return static_cast<long>(cbor_get_uint8(item));
@@ -154,7 +156,8 @@ public:
                     case CBOR_INT_64: return static_cast<long>(cbor_get_uint64(item));
                 }
             }
-            if(cbor_is_float(item)){
+            else if( cbor_is_float(item) )
+            {
                 cbor_float_width width = cbor_float_get_width(item);
                 switch(width){
                     case CBOR_FLOAT_16: return static_cast<double>(cbor_float_get_float2(item));
@@ -162,13 +165,19 @@ public:
                     case CBOR_FLOAT_64: return static_cast<double>(cbor_float_get_float8(item));
                 }
             }
-            else if(cbor_isa_bytestring(item)){
+            else if( cbor_is_bool(item) )
+            {
+                return cbor_get_bool(item);
+            }
+            else if( cbor_isa_bytestring(item) )
+            {
                 return std::span<byte const>(
                     reinterpret_cast<byte *>(cbor_bytestring_handle(item)),
                     cbor_bytestring_length(item)
                 );
             }
-            else if(cbor_isa_string(item)){
+            else if( cbor_isa_string(item) )
+            {
                 return std::string(
                     reinterpret_cast<char *>(cbor_string_handle(item)),
                     reinterpret_cast<char *>(cbor_string_handle(item) + cbor_string_length(item))
@@ -253,7 +262,13 @@ public:
 
         Modifier modifier { modifier_def };
 
-        value_ = modifier.modify(value);
+        try{
+            value_ = modifier.modify(value);
+        }
+        catch(std::exception const & e)
+        {
+            std::cerr << e.what() << std::endl;
+        }
     }
 };
 

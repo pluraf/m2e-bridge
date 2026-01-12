@@ -134,6 +134,10 @@ private:
                 {
                     it.value() = std::get<long>(result);
                 }
+                else if( std::holds_alternative<bool>(result) )
+                {
+                    it.value() = std::get<bool>(result);
+                }
                 else if( std::holds_alternative<json>(result) )
                 {
                     it.value() = std::get<json>(result);

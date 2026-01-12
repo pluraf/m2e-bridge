@@ -43,6 +43,7 @@ using StringMap = std::map<std::string, std::string>;
 using EnvObjects = std::map<std::string, std::variant<Message *, json const *, StringMap const *, MessageExtra const *>>;
 
 using substituted_t = std::variant<
+        bool,
         double,
         long,
         string,

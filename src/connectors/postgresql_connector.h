@@ -112,6 +112,10 @@ public:
             {
                 p.append(std::get<double>(v));
             }
+            else if( std::holds_alternative<bool>(v) )
+            {
+                p.append(std::get<bool>(v));
+            }
             else{
                 throw std::runtime_error("Unexpected substituted value!");
             }

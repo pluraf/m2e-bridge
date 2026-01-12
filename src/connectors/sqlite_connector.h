@@ -124,6 +124,10 @@ public:
             {
                 sqlite3_bind_int64(stmt, ++pix, std::get<long>(v));
             }
+            else if( std::holds_alternative<bool>(v) )
+            {
+                sqlite3_bind_int64(stmt, ++pix, std::get<bool>(v));
+            }
             else{
                 throw std::runtime_error("Unexpected substituted value!");
             }
