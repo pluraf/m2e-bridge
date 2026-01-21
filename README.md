@@ -35,6 +35,7 @@ apt install libzmq3-dev
 apt install autoconf autoconf-archive automake libtool
 apt install libxi-dev libxtst-dev
 apt install libxrandr-dev
+apt install bison flex
 ```
 
 ##### Build package
