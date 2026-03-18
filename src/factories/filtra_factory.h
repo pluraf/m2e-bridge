@@ -33,32 +33,60 @@ IN THE SOFTWARE.
 #include "filtras/all.h"
 
 
-class FiltraFactory {
+class FiltraFactory
+{
 public:
     static Filtra * create(PipelineIface const & pi, json const & json_descr) {
-        if(json_descr["type"] == "comparator"){
+        if(json_descr["type"] == "comparator")
+        {
             return new ComparatorFT(pi, json_descr);
-        }else if(json_descr["type"] == "finder"){
+        }
+        else if(json_descr["type"] == "finder")
+        {
             return new FinderFT(pi, json_descr);
-        }else if(json_descr["type"] == "eraser"){
+        }
+        else if(json_descr["type"] == "eraser")
+        {
             return new EraserFT(pi, json_descr);
-        }else if(json_descr["type"] == "builder"){
+        }
+        else if(json_descr["type"] == "builder")
+        {
             return new BuilderFT(pi, json_descr);
-        }else if(json_descr["type"] == "splitter"){
+        }
+        else if(json_descr["type"] == "splitter")
+        {
             return new SplitterFT(pi, json_descr);
-        }else if(json_descr["type"] == "limiter"){
+        }
+        else if(json_descr["type"] == "limiter")
+        {
             return new LimiterFT(pi, json_descr);
-        }else if(json_descr["type"] == "nop"){
+        }
+        else if(json_descr["type"] == "nop")
+        {
             return new NopFT(pi, json_descr);
-        }else if(json_descr["type"] == "throttle"){
+        }
+        else if(json_descr["type"] == "throttle")
+        {
             return new ThrottleFT(pi, json_descr);
-        }else if(json_descr["type"] == "extractor"){
+        }
+        else if(json_descr["type"] == "extractor")
+        {
             return new ExtractorFT(pi, json_descr);
-        }else if(json_descr["type"] == "converter"){
-            return new ConverterFT(pi, json_descr);
-        }else if(json_descr["type"] == "image"){
+        }
+#ifdef WITH_LUA
+        else if(json_descr["type"] == "converter_lua")
+        {
+            return new LuaConverterFT(pi, json_descr);
+        }
+#endif
+#ifdef WITH_IMAGE_HANDLERS
+        else if(json_descr["type"] == "image")
+        {
             return new ImageFT(pi, json_descr);
-        }else{
+        }
+#endif
+        else
+        {
             throw std::invalid_argument("Unknown filtra");
         }
     }

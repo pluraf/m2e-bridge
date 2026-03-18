@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 
 /*
-Copyright (c) 2024 Pluraf Embedded AB <code@pluraf.com>
+Copyright (c) 2024-2026 Pluraf Embedded AB <code@pluraf.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the “Software”), to deal in
@@ -32,37 +32,83 @@ IN THE SOFTWARE.
 pair<bool, string> validate_connector(ConnectorMode mode, json const & config){
     try{
         string const & conn_type = config.at("type");
-        if(conn_type == "mqtt"){
-            MqttConnector("pipeid", mode, config);
-        }else if(conn_type == "gcp_pubsub"){
-            PubSubConnector("pipeid", mode, config);
-        }else if(conn_type == "email"){
-            EmailConnector("pipeid", mode, config);
-        }else if(conn_type == "queue"){
+        if(conn_type == "queue")
+        {
             InternalConnector("pipeid", mode, config);
-        }else if(conn_type == "gcp_bucket"){
-            CloudStorageConnector("pipeid", mode, config);
-        }else if(conn_type == "aws_s3"){
-            S3Connector("pipeid", mode, config);
-        }else if(conn_type == "http"){
-            HttpConnector("pipeid", mode, config);
-        }else if(conn_type == "azure_sbc"){
-            ServiceBusConnector("pipeid", mode, config);
-        }else if(conn_type == "slack"){
-            SlackConnector("pipeid", mode, config);
-        }else if(conn_type == "generator"){
+        }
+        else if(conn_type == "generator")
+        {
             GeneratorConnector("pipeid", mode, config);
-        }else if(conn_type == "modbus"){
+        }
+#ifdef WITH_MQTT_CONNECTOR
+        else if(conn_type == "mqtt")
+        {
+            MqttConnector("pipeid", mode, config);
+        }
+#endif
+#ifdef WITH_EMAIL_CONNECTOR
+        else if(conn_type == "email")
+        {
+            EmailConnector("pipeid", mode, config);
+        }
+#endif
+#ifdef WITH_GCP_PUBSUB_CONNECTOR
+        else if(conn_type == "gcp_pubsub")
+        {
+            PubSubConnector("pipeid", mode, config);
+        }
+#endif
+#ifdef WITH_GCP_CLOUD_STORAGE_CONNECTOR
+        else if(conn_type == "gcp_bucket")
+        {
+            CloudStorageConnector("pipeid", mode, config);
+        }
+#endif
+#ifdef WITH_AWS_S3_CONNECTOR
+        else if(conn_type == "aws_s3")
+        {
+            S3Connector("pipeid", mode, config);
+        }
+#endif
+#ifdef WITH_HTTP_CONNECTOR
+        else if(conn_type == "http")
+        {
+            HttpConnector("pipeid", mode, config);
+        }
+#endif
+#ifdef WITH_AZURE_SERVICE_BUS_CONNECTOR
+        else if(conn_type == "azure_sbc")
+        {
+            ServiceBusConnector("pipeid", mode, config);
+        }
+#endif
+#ifdef WITH_SLACK_CONNECTOR
+        else if(conn_type == "slack")
+        {
+            SlackConnector("pipeid", mode, config);
+        }
+#endif
+#ifdef WITH_MODBUS_CONNECTOR
+        else if(conn_type == "modbus")
+        {
             ModbusConnector("pipeid", mode, config);
-        }else{
+        }
+#endif
+        else
+        {
             return {false, "Unknown connector type: " + conn_type + "!"};
         }
-        return {true, ""};
-    }catch(std::out_of_range const & e){
+    }
+    catch( std::out_of_range const &e )
+    {
         return {false, e.what()};
-    }catch(json::exception const & e){
+    }
+    catch( json::exception const &e )
+    {
         return {false, e.what()};
-    }catch(std::runtime_error const & e){
+    }
+    catch( std::runtime_error const &e )
+    {
         return {true, ""};
     }
 }

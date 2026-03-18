@@ -45,7 +45,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 struct MessageFormat
 {
-    enum class Type {UNKN, RAW, JSON, CBOR};
+    enum class Type{ UNKN, RAW, JSON, CBOR };
 
     static std::string to_string(MessageFormat::Type v)
     {

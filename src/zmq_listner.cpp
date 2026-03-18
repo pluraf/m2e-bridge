@@ -28,10 +28,10 @@ IN THE SOFTWARE.
 
 
 //Initialize static member to null
-ZmqListner * ZmqListner::instance_ = nullptr;
+ZmqListener * ZmqListener::instance_ = nullptr;
 
 
-void ZmqListner::run(){
+void ZmqListener::run(){
     try{
         context_ = zmq::context_t(2);
         socket_ = zmq::socket_t(context_, zmq::socket_type::rep);
@@ -62,15 +62,15 @@ void ZmqListner::run(){
 }
 
 
-void ZmqListner::start(){
+void ZmqListener::start(){
     if(listner_th_ == nullptr){
         stop_ = false;
-        listner_th_ = new std::thread(&ZmqListner::run, this);
+        listner_th_ = new std::thread(&ZmqListener::run, this);
     }
 }
 
 
-void ZmqListner::stop(){
+void ZmqListener::stop(){
     stop_ = true;
     context_.shutdown();
     socket_.close();

@@ -54,7 +54,7 @@ struct ChannelStat{
 };
 
 
-class HTTPGate;
+class HTTPListener;
 
 
 template <typename Key, typename Value>
@@ -135,7 +135,7 @@ public:
         }
     }
 
-    friend class HTTPGate;
+    friend class HTTPListener;
 };
 
 
@@ -150,15 +150,15 @@ public:
 };
 
 
-class HTTPGate
+class HTTPListener
 {
-    static HTTPGate * instance_;
+    static HTTPListener * instance_;
     std::unique_ptr<CivetServer> server_;
     unordered_map<string, HTTPChannel> channels_;
     HTTPChannelIterator channel_iterator_;
     bool enabled_ {false};
 
-    HTTPGate();  // private constructor to make class singleton
+    HTTPListener();  // private constructor to make class singleton
     void save();
 public:
     static void start();
@@ -177,10 +177,10 @@ public:
         return get_instance().channel_iterator_;
     }
 
-    static HTTPGate & get_instance()
+    static HTTPListener & get_instance()
     {
         if (instance_ == nullptr){
-            instance_ = new HTTPGate();
+            instance_ = new HTTPListener();
         }
         return *instance_;
     }

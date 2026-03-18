@@ -36,20 +36,40 @@ IN THE SOFTWARE.
 static json get_schemas(){
     return {
         {"connector", {
+#ifdef WITH_MQTT_CONNECTOR
             MqttConnector::get_schema(),
+#endif
+#ifdef WITH_GCP_PUBSUB_CONNECTOR
             PubSubConnector::get_schema(),
+#endif
+#ifdef WITH_EMAIL_CONNECTOR
             EmailConnector::get_schema(),
-            InternalConnector::get_schema(),
+#endif
+#ifdef WITH_GCP_CLOUD_STORAGE_CONNECTOR
             CloudStorageConnector::get_schema(),
+#endif
+#ifdef WITH_AWS_S3_CONNECTOR
             S3Connector::get_schema(),
+#endif
+#ifdef WITH_HTTP_CONNECTOR
             HttpConnector::get_schema(),
+#endif
+#ifdef WITH_AZURE_SERVICE_BUS_CONNECTOR
             ServiceBusConnector::get_schema(),
+#endif
+#ifdef WITH_SLACK_CONNECTOR
             SlackConnector::get_schema(),
+#endif
+#ifdef WITH_MODBUS_CONNECTOR
+            ModbusConnector::get_schema(),
+#endif
             GeneratorConnector::get_schema(),
-            ModbusConnector::get_schema()
-
+            InternalConnector::get_schema()
         }},
         {"filtra", {
+#ifdef WITH_LUA
+            LuaConverterFT::get_schema(),
+#endif
             ComparatorFT::get_schema(),
             FinderFT::get_schema(),
             EraserFT::get_schema(),
@@ -59,7 +79,6 @@ static json get_schemas(){
             NopFT::get_schema(),
             ThrottleFT::get_schema(),
             ExtractorFT::get_schema(),
-            ConverterFT::get_schema()
         }}
     };
 }

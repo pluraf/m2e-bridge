@@ -31,7 +31,7 @@ extern "C"{
 #include "API_VERSION.h"
 #include "zmq_api.h"
 #include "api_helpers.h"
-#include "gates/http_gate.h"
+#include "listeners/http_listener.h"
 #include "global_config.h"
 #include "m2e_exceptions.h"
 
@@ -148,7 +148,7 @@ string ZMQAPI::zmq_channel_get(string_view path, char const * payload, size_t pa
     segments = get_last_segments(path);
     if(segments.size() == 1){
         json j_channels = json::array();
-        for(auto const & channel : HTTPGate::get_channels()){
+        for(auto const & channel : HTTPListener::get_channels()){
             json j_channel = json::object();
             j_channel["id"] = channel.get_id();
             j_channel["type"] = "http";
@@ -163,7 +163,7 @@ string ZMQAPI::zmq_channel_get(string_view path, char const * payload, size_t pa
     }else if(segments.size() == 2){
         HTTPChannel const * channel {nullptr};
         try{
-            channel = & HTTPGate::get_channel(segments[1]);
+            channel = & HTTPListener::get_channel(segments[1]);
         }catch(std::out_of_range){
             return "{\"error\": \"error\"}";
         }
@@ -195,7 +195,7 @@ string ZMQAPI::zmq_channel_put(string_view path, char const * payload, size_t pa
     if(segments.size() == 2){
         auto & channel_id = segments.back();
         try{
-            if(HTTPGate::update_channel(channel_id, string_view(payload, payload_len))){
+            if(HTTPListener::update_channel(channel_id, string_view(payload, payload_len))){
                 return "";
             }
         }catch(configuration_error const & e){
@@ -212,7 +212,7 @@ string ZMQAPI::zmq_channel_post(string_view path, char const * payload, size_t p
     if(segments.size() == 2){
         auto & channel_id = segments.back();
         try{
-            if(HTTPGate::create_channel(channel_id, string_view(payload, payload_len))) return "";
+            if(HTTPListener::create_channel(channel_id, string_view(payload, payload_len))) return "";
         }catch(configuration_error const & e){
             return fmt::format("{{\"error\": {}}}", e.what());
         }
@@ -226,7 +226,7 @@ string ZMQAPI::zmq_channel_delete(string_view path, char const * payload, size_t
     auto segments = get_last_segments(path);
     if(segments.size() == 2){
         auto & channel_id = segments.back();
-        if(HTTPGate::delete_channel(channel_id)){
+        if(HTTPListener::delete_channel(channel_id)){
             return "";
         }
     }

@@ -30,8 +30,11 @@ IN THE SOFTWARE.
 #include <memory>
 
 #include "m2e_aliases.h"
+#include "modifier_internal.h"
 
-#include "resize.h"
+#ifdef WITH_IMAGE_HANDLERS
+    #include "resize.h"
+#endif
 
 
 struct ModifierType
@@ -71,9 +74,11 @@ public:
 
         switch( mtype )
         {
+#ifdef WITH_IMAGE_HANDLERS
         case ModifierType::Type::RESIZE:
             modifier_ptr_ = std::make_unique<ResizeModifier>(mparams);
             break;
+#endif
         }
     }
 

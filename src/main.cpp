@@ -33,61 +33,81 @@ IN THE SOFTWARE.
 #include <curl/curl.h>
 
 #include "m2e_aliases.h"
-#include "pipeline.h"
 #include "global_state.h"
 #include "global_config.h"
+#include "pipeline.h"
 #include "pipeline_supervisor.h"
 #include "shared_objects.h"
-#include "zmq_listner.h"
-#include "gates/http_gate.h"
+
+#ifdef WITH_ZEROMQ_API
+    #include "zmq_listner.h"
+#endif
+
+#ifdef WITH_HTTP_API
+    #include "rest_api.h"
+#endif
+
+#ifdef WITH_HTTP_LISTENER
+    #include "listeners/http_listener.h"
+#endif
 
 using namespace std;
 
 GlobalConfig gc;
 GlobalState gs;
 
-#include "rest_api.h"
-
 std::atomic<bool> g_running(true);
-
 
 void signalHandler(int signal) {
     std::cout << "\nCaught signal " << signal << ". Ending call..." << std::endl;
     g_running = false;
 }
 
-int main(int argc, char* argv[]){
+int main(int argc, char* argv[])
+{
     using namespace std;
 
      // Set up signal handler for Ctrl+C (SIGINT)
     signal(SIGINT, signalHandler);
 
-    if(argc > 1){
+    if( argc > 1 )
+    {
         gc.load(argv[1]);
-    }else{
+    }
+    else
+    {
         std::cerr << "Please provide path to config file as the first argument!"<<std::endl;
         return 1;
     }
 
     SharedObjects::get_instance().init(gc.get_shared_objects_config());
 
-    if (curl_global_init(CURL_GLOBAL_DEFAULT) != 0) {
+#ifdef _WITH_CURL
+    if( curl_global_init(CURL_GLOBAL_DEFAULT) != 0 )
+    {
         std::cerr << "Failed to initialize libcurl!\n";
         return 1;
     }
+#endif
 
     PipelineSupervisor *ps = PipelineSupervisor::get_instance();
     ps->start_all();
 
-    ZmqListner *zmq = ZmqListner::get_instance();
+#ifdef WITH_ZEROMQ_API
+    ZmqListener *zmq = ZmqListener::get_instance();
     zmq->start();
+#endif
 
-    HTTPGate::start();
-
+#ifdef WITH_HTTP_API
     CivetServer * server = start_server();
-    if(! server) g_running = false;
+#endif
 
-    while(g_running){
+#ifdef WITH_HTTP_LISTENER
+    HTTPListener::start();
+#endif
+
+    while( g_running )
+    {
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
@@ -95,11 +115,17 @@ int main(int argc, char* argv[]){
 
     ps->terminate_all();
 
+#ifdef _WITH_CURL
     curl_global_cleanup();
+#endif
 
+#ifdef WITH_HTTP_API
     stop_server(server);
+#endif
 
+#ifdef WITH_ZEROMQ_API
     zmq->stop();
+#endif
 
     return 0;
 }

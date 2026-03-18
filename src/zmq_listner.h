@@ -60,13 +60,13 @@ inline ZmqRequest zmq_request_from_string(std::string request){
 }
 
 
-class ZmqListner{
+class ZmqListener{
 public:
     void start();
     void stop();
-    static ZmqListner* get_instance(){
+    static ZmqListener* get_instance(){
         if(instance_ == nullptr){
-            instance_ = new ZmqListner();
+            instance_ = new ZmqListener();
         }
         return instance_;
     }
@@ -74,8 +74,8 @@ public:
 private:
     std::thread *listner_th_ {nullptr};
     std::atomic<bool> stop_ {false};
-    static ZmqListner* instance_;
-    ZmqListner(){} // private constructor to make class singleton
+    static ZmqListener* instance_;
+    ZmqListener(){} // private constructor to make class singleton
     void run();
     zmq::socket_t socket_;
     zmq::context_t context_;

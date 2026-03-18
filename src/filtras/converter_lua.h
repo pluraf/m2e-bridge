@@ -37,7 +37,8 @@ extern "C" {
 }
 
 
-class ConverterFT: public Filtra{
+class LuaConverterFT: public Filtra
+{
     string converter_id_;
     string lua_code_;
     lua_State * L_ = nullptr;
@@ -64,7 +65,7 @@ class ConverterFT: public Filtra{
         }
     }
 public:
-    ConverterFT(PipelineIface const & pi, json const & config):
+    LuaConverterFT(PipelineIface const & pi, json const & config):
             Filtra(pi, config){
         converter_id_ = config.at("converter_id").get<string>();
     }

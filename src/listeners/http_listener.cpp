@@ -29,19 +29,19 @@ IN THE SOFTWARE.
 #include <utility>
 #include <string_view>
 
-#include "http_gate.h"
+#include "http_listener.h"
 #include "civet_helpers.h"
 #include "global_config.h"
 #include "m2e_exceptions.h"
 
 
-HTTPGate * HTTPGate::instance_ = nullptr;
+HTTPListener * HTTPListener::instance_ = nullptr;
 
 
 class HTTPChannelAuthHandler: public CivetAuthHandler{
-    HTTPGate & gate_;
+    HTTPListener & gate_;
 public:
-    HTTPChannelAuthHandler(HTTPGate & gate): gate_(gate) {}
+    HTTPChannelAuthHandler(HTTPListener & gate): gate_(gate) {}
 
     bool authorize(CivetServer *server, struct mg_connection *conn)override{
         mg_request_info const * req_info = mg_get_request_info(conn);
@@ -73,9 +73,9 @@ private:
 
 
 class HTTPChannelApiHandler: public CivetHandler{
-    HTTPGate & gate_;
+    HTTPListener & gate_;
 public:
-    HTTPChannelApiHandler(HTTPGate & gate): gate_(gate) {}
+    HTTPChannelApiHandler(HTTPListener & gate): gate_(gate) {}
 
     bool handlePost(CivetServer * server, struct mg_connection * conn)override{
         json pipeline_data;
@@ -205,7 +205,7 @@ bool HTTPChannel::verify_token(char const * token)const
 }
 
 
-HTTPGate::HTTPGate():channel_iterator_(channels_)
+HTTPListener::HTTPListener():channel_iterator_(channels_)
 {
     json const & config = gc.get_http_gate_config();
     if(config.contains("channels")){
@@ -223,7 +223,7 @@ HTTPGate::HTTPGate():channel_iterator_(channels_)
 }
 
 
-void HTTPGate::save()
+void HTTPListener::save()
 {
     json channels(json::value_t::object);
     for(auto it = channels_.cbegin(); it != channels_.cend(); ++it){
@@ -244,7 +244,7 @@ void HTTPGate::save()
 }
 
 
-void HTTPGate::start()
+void HTTPListener::start()
 {
     char const * options[] = {
         "listening_ports", "8010",
@@ -259,7 +259,7 @@ void HTTPGate::start()
 }
 
 
-bool HTTPGate::create_channel(string const & id, string_view config)
+bool HTTPListener::create_channel(string const & id, string_view config)
 {
     auto & instance = get_instance();
     if(instance_->channels_.contains(id)){
@@ -276,7 +276,7 @@ bool HTTPGate::create_channel(string const & id, string_view config)
 }
 
 
-bool HTTPGate::update_channel(string const & id, string_view config)
+bool HTTPListener::update_channel(string const & id, string_view config)
 {
     auto j_channel = json::parse(config);
     get_channel(id).reconfigure(j_channel);
@@ -285,7 +285,7 @@ bool HTTPGate::update_channel(string const & id, string_view config)
 }
 
 
-bool HTTPGate::delete_channel(string const & id)
+bool HTTPListener::delete_channel(string const & id)
 {
     auto & instance = get_instance();
     instance.channels_.erase(id);
