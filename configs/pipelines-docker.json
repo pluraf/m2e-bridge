@@ -13,7 +13,7 @@
       "project_id":"feisty-enigma-416319",
       "topic_id":"sensor-data",
       "attributes":{
-        "deviceId":"{{topic[2]}}",
+        "deviceId":"{{MSG.topic[2]}}",
         "projectId": "G-NODE"
       }
     },
@@ -42,7 +42,7 @@
     },
     "connector_out": {
       "type": "mqtt",
-      "topic": "/devices/{{node_id}}/commands/{{command}}",
+      "topic": "/devices/{{ATTR.node_id}}/commands/{{MSG.PAYLOAD.command[0]}}",
       "server": "mqtt://localhost:1884",
       "qos": 1,
       "retry_attempts": 5
