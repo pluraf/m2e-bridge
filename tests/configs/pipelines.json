@@ -1,0 +1,29 @@
+{
+    "f": {
+        "connector_in": {
+            "qos": 1,
+            "topic": "/topic/event",
+            "type": "mqtt"
+        },
+        "connector_out": {
+            "type": "postgresql",
+            "sql_statement": "INSERT INTO table(f1, f2) VALUES ({{MSG.PAYLOAD.cnode_id}}, {{MSG.PAYLOAD.timestamp}}, {{MSG.PAYLOAD.image}});",
+            "authbundle_id": ""
+        },
+        "filtras": [
+            {
+                "map": {
+                    "key1": [
+                        "time",
+                        "rt"
+                    ],
+                    "key2": [
+                        "m"
+                    ]
+                },
+                "msg_format": "json",
+                "type": "extractor"
+            }
+        ]
+    }
+}

@@ -3,7 +3,8 @@
 
 #include "../src/filtras/filtra.h"
 
-class MockPipeline:public PipelineIface {
+class MockPipeline: public PipelineIface
+{
 public:
     void schedule_event(std::chrono::milliseconds msec)override{
         std::cout << "MockPipeline: schedule_event called with " << msec.count() << "ms" << std::endl;

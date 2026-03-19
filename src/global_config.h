@@ -106,7 +106,8 @@ public:
     void load_config(fs::path const & p, bool default_path = false)
     {
         std::ifstream file(p);
-        if(! file){
+        if(! file)
+        {
             std::cerr << "Failed to open file: " << p << std::endl;
             throw std::runtime_error("");
         }

@@ -20,6 +20,8 @@ option(WITH_AZURE_SERVICE_BUS_CONNECTOR "" OFF)
 
 option(WITH_HTTP_LISTENER "" OFF)
 
+option(WITH_IMAGE_HANDLERS "" OFF)
+
 option(WITH_LUA "" OFF)
 
 option(WITH_ZEROMQ_API "" OFF)
@@ -29,8 +31,8 @@ option(ENABLE_TESTS OFF)
 
 set(_WITH_CIVETWEB OFF)
 set(_WITH_CURL OFF)
-option(_WITH_OPENSSL "" OFF)
-option(_WITH_OPENCV "" OFF)
+set(_WITH_OPENSSL OFF)
+set(_WITH_OPENCV OFF)
 
 
 if( WITH_HTTP_API OR WITH_HTTP_LISTENER )
@@ -39,6 +41,10 @@ endif()
 
 if( WITH_EMAIL_CONNECTOR OR WITH_HTTP_CONNECTOR )
     set(_WITH_CURL ON)
+endif()
+
+if( WITH_IMAGE_HANDLERS )
+    set(_WITH_OPENCV ON)
 endif()
 
 
@@ -92,11 +98,11 @@ if( WITH_POSTGRESQL_CONNECTOR )
     find_package(libpqxx CONFIG REQUIRED)
 endif()
 
-if( _WITH_OPENSSL_LIBRARY )
+if( _WITH_OPENSSL )
     find_package(OpenSSL REQUIRED)
 endif()
 
-if( WITH_IMAGE_HANDLERS )
+if( _WITH_OPENCV )
     find_package(OpenCV CONFIG REQUIRED)
 endif()
 
@@ -144,7 +150,7 @@ endif()
 ##############################################################################
 
 set(CORE_SOURCES
-    ${SOURCE_DIR}/main.cpp
+    ${SOURCE_DIR}/global.cpp
     ${SOURCE_DIR}/pipeline.cpp
     ${SOURCE_DIR}/pipeline_supervisor.cpp
     ${SOURCE_DIR}/shared_objects.cpp
@@ -186,31 +192,14 @@ if( WITH_HTTP_API )
     )
 endif()
 
+include(cmake/target.cmake)
 
-add_executable(m2e-bridge
-    ${CORE_SOURCES}
-    ${OPTIONAL_SOURCES}
-)
+add_target(m2e-bridge)
+
+target_sources(m2e-bridge PRIVATE ${SOURCE_DIR}/main.cpp)
+
 
 ##############################################################################
-
-target_compile_definitions(m2e-bridge PRIVATE
-    $<$<BOOL:${WITH_SQLITE_CONNECTOR}>:WITH_SQLITE_CONNECTOR>
-    $<$<BOOL:${WITH_POSTGRESQL_CONNECTOR}>:WITH_POSTGRESQL_CONNECTOR>
-    $<$<BOOL:${WITH_MODBUS_CONNECTOR}>:WITH_MODBUS_CONNECTOR>
-    $<$<BOOL:${WITH_SLACK_CONNECTOR}>:WITH_SLACK_CONNECTOR>
-    $<$<BOOL:${WITH_MQTT_CONNECTOR}>:WITH_MQTT_CONNECTOR>
-    $<$<BOOL:${WITH_GCP_PUBSUB_CONNECTOR}>:WITH_GCP_PUBSUB_CONNECTOR>
-    $<$<BOOL:${WITH_GCP_CLOUD_STORAGE_CONNECTOR}>:WITH_GCP_CLOUD_STORAGE_CONNECTOR>
-    $<$<BOOL:${WITH_AZURE_SERVICE_BUS_CONNECTOR}>:WITH_AZURE_SERVICE_BUS_CONNECTOR>
-    $<$<BOOL:${WITH_AWS_S3_CONNECTOR}>:WITH_AWS_S3_CONNECTOR>
-    $<$<BOOL:${WITH_HTTP_CONNECTOR}>:WITH_HTTP_CONNECTOR>
-    $<$<BOOL:${WITH_EMAIL_CONNECTOR}>:WITH_EMAIL_CONNECTOR>
-
-    $<$<BOOL:${WITH_LUA}>:WITH_LUA>
-
-    $<$<BOOL:${WITH_IMAGE_HANDLERS}>:WITH_IMAGE_HANDLERS>
-)
 
 
 find_path(JWT_CPP_INCLUDE_DIRS "jwt-cpp/jwt.h"
@@ -218,75 +207,10 @@ find_path(JWT_CPP_INCLUDE_DIRS "jwt-cpp/jwt.h"
             PATHS ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET})
 
 
-target_compile_definitions(m2e-bridge PRIVATE JWT_DISABLE_PICOJSON)
-target_link_libraries(m2e-bridge PRIVATE nlohmann_json::nlohmann_json)
 
-##############################################################################
 
-if (_WITH_CIVETWEB )
-    target_link_libraries(m2e-bridge PRIVATE civetweb::civetweb-cpp)
-endif()
 
-if( _WITH_CURL )
-    target_link_libraries(m2e-bridge PRIVATE CURL::libcurl)
-endif()
 
-if( WITH_GCP_PUBSUB_CONNECTOR )
-    target_link_libraries(m2e-bridge PRIVATE google-cloud-cpp::pubsub)
-endif()
-
-if( WITH_GCP_CLOUD_STORAGE_CONNECTOR )
-    target_link_libraries(m2e-bridge PRIVATE google-cloud-cpp::storage)
-endif()
-
-if( WITH_SQLITE_CONNECTOR )
-    target_link_libraries(m2e-bridge PRIVATE SQLite3::SQLite3)
-endif()
-
-if( WITH_AWS_S3_CONNECTOR )
-    target_link_libraries(m2e-bridge PRIVATE aws-cpp-sdk-core)
-    target_link_libraries(m2e-bridge PRIVATE aws-cpp-sdk-s3)
-endif()
-
-if( WITH_MODBUS_CONNECTOR )
-    target_link_libraries(m2e-bridge PRIVATE
-        ${_REFLECTION}
-        ${_GRPC_GRPCPP}
-        ${_PROTOBUF_LIBPROTOBUF}
-    )
-endif()
-
-if( WITH_POSTGRESQL_CONNECTOR )
-    target_link_libraries(m2e-bridge PRIVATE libpqxx::pqxx)
-endif()
-
-if( WITH_MQTT_CONNECTOR )
-    target_link_libraries(m2e-bridge PRIVATE "${CMAKE_SOURCE_DIR}/external/paho.mqtt.cpp/externals/paho-mqtt-c/build/src/libpaho-mqtt3as.a")
-    target_link_libraries(m2e-bridge PRIVATE "${CMAKE_SOURCE_DIR}/external/paho.mqtt.cpp/externals/paho-mqtt-c/build/src/libpaho-mqtt3cs.a")
-endif()
-
-if( _WITH_OPENSSL_LIBRARY )
-    target_link_libraries(m2e-bridge PRIVATE OpenSSL::SSL OpenSSL::Crypto)
-endif()
-
-if( WITH_IMAGE_HANDLERS )
-    target_link_libraries(m2e-bridge PRIVATE opencv_core opencv_imgproc opencv_imgcodecs)
-endif()
-
-if( WITH_ZEROMQ_API )
-    target_link_libraries(m2e-bridge PRIVATE ${ZeroMQ_LIBRARIES})
-endif()
-
-if( WITH_LUA )
-    target_link_libraries(m2e-bridge PRIVATE ${LUA_LIBRARIES})
-    target_link_libraries(m2e-bridge PRIVATE "${CMAKE_SOURCE_DIR}/external/lua-cjson/build/cjson.a")
-endif()
-
-target_include_directories(m2e-bridge PRIVATE ${JWT_CPP_INCLUDE_DIRS})
-target_link_libraries(m2e-bridge PRIVATE fmt::fmt)
-target_link_libraries(m2e-bridge PRIVATE Poco::Foundation)
-target_link_libraries(m2e-bridge PRIVATE Poco::Foundation)
-target_link_libraries(m2e-bridge PRIVATE cbor)
 
 #target_link_libraries(m2e-bridge PRIVATE
 #    absl::check
@@ -296,52 +220,5 @@ target_link_libraries(m2e-bridge PRIVATE cbor)
 #)
 
 if( ENABLE_TESTS )
-    message(STATUS "ENABLE_TESTS is set to ${ENABLE_TESTS}")
-    include(FetchContent)
-    FetchContent_Declare(
-        Catch2
-        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-        GIT_TAG        v3.4.0
-    )
-    FetchContent_MakeAvailable(Catch2)
-
-    file(GLOB_RECURSE TESTS_HEASERS "tests/*.h")
-
-    add_executable(tests
-        ${CORE_SOURCES}
-        ${OPTIONAL_SOURCES}
-        ${MQTT_SOURCES}
-        ${api_grpc_srcs}
-        ${api_grpc_hdrs}
-        ${api_proto_srcs}
-        ${api_proto_hdrs}
-    )
-
-    target_include_directories(tests PRIVATE ${CMAKE_SOURCE_DIR}/src)
-    target_include_directories(tests PRIVATE ${JWT_CPP_INCLUDE_DIRS})
-    target_include_directories(tests PRIVATE ${JWT_CPP_INCLUDE_DIRS})
-
-    target_link_libraries(tests PRIVATE
-        Catch2::Catch2WithMain
-        nlohmann_json::nlohmann_json
-        google-cloud-cpp::pubsub
-        google-cloud-cpp::storage
-        civetweb::civetweb-cpp
-        OpenSSL::SSL
-        OpenSSL::Crypto
-        SQLite::SQLite3
-        fmt::fmt
-        CURL::libcurl
-        aws-cpp-sdk-core
-        aws-cpp-sdk-s3
-        ${ZeroMQ_LIBRARIES}
-        cbor
-        Poco::Foundation
-        ${LUA_LIBRARIES}
-        "${CMAKE_SOURCE_DIR}/external/lua-cjson/build/cjson.a"
-        "${CMAKE_SOURCE_DIR}/external/paho.mqtt.cpp/externals/paho-mqtt-c/build/src/libpaho-mqtt3as.a"
-        "${CMAKE_SOURCE_DIR}/external/paho.mqtt.cpp/externals/paho-mqtt-c/build/src/libpaho-mqtt3cs.a"
-    )
-    enable_testing()
-    add_test(NAME Tests COMMAND tests)
+    add_subdirectory(tests)
 endif()

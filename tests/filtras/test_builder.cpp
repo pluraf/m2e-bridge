@@ -33,7 +33,9 @@ TEST_CASE("BuilderFT", "[builder_filtra]"){
     );
 
     std::string initial_msg = "key: false";
-    MessageWrapper msg_w(make_shared<Message>(initial_msg, std::string("/topc/test")));
+    MessageWrapper msg_w(
+        make_shared<Message>(initial_msg, MessageFormat::Type::RAW, std::string("/topc/test"))
+    );
 
     SECTION("Msg format is json"){
         BuilderFT builder_ft(mock_pi, filtras);

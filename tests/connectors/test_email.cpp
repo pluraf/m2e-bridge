@@ -1,14 +1,17 @@
 #ifndef TEST_EMAIL_CONNECTOR_H
 #define TEST_EMAIL_CONNECTOR_H
 
-#include <catch2/catch_all.hpp>
 #include <fstream>
+
+#include <catch2/catch_all.hpp>
 #include <nlohmann/json.hpp>
 #include <sqlite3.h>
 
 #include  "../src/connectors/email_connector.h"
 #include "mock_database.h"
 
+
+#define CONFIG_PATH TEST_CONFIG_DIR "/m2e-bridge.json"
 
 
 namespace TestEmailConnector {
@@ -21,7 +24,7 @@ namespace TestEmailConnector {
         test_bundle_correct.auth_type = AuthType::PASSWORD;
         test_bundle_correct.username = "mock_user";
         test_bundle_correct.password = "mock_pass";
-        db.insert_authbundle(test_bundle_correct);
+        db.insert(test_bundle_correct);
 
         AuthBundle test_bundle_wrong;
         test_bundle_wrong.authbundle_id = "test_f";
@@ -29,14 +32,14 @@ namespace TestEmailConnector {
         test_bundle_wrong.auth_type = AuthType::PASSWORD;
         test_bundle_wrong.username = "test_user";
         test_bundle_wrong.password = "test_pass";
-        db.insert_authbundle(test_bundle_wrong);
+        db.insert(test_bundle_wrong);
     }
 
     inline void cleanup_test_environment(){
         AuthbundleTable db;
 
-        db.delete_authbundle("test_t");
-        db.delete_authbundle("test_f");
+        db.remove("test_t");
+        db.remove("test_f");
     }
 }
 
@@ -44,7 +47,7 @@ namespace TestEmailConnector {
 class EmailConnectorTests {
 public:
     static void setup(){
-        create_test_database("../configs/test_config.json");
+        create_test_database(CONFIG_PATH);
         TestEmailConnector::setup_test_environment();
     }
 
@@ -65,7 +68,7 @@ public:
         }
 
         SECTION("Parse values from json file"){
-            REQUIRE_FALSE(email_connector.to_.empty());
+            REQUIRE_FALSE(email_connector.address_.empty());
             REQUIRE_FALSE(email_connector.authbundle_id_.empty());
             REQUIRE_FALSE(email_connector.smtp_server_.empty());
         }
@@ -84,8 +87,8 @@ public:
             email_connector.connect();
 
             std::string raw_data = "This is a test message";
-            Message message(raw_data, "test");
-            MessageWrapper msg_w(message);
+            Message message(raw_data, MessageFormat::Type::RAW, "test");
+            MessageWrapper msg_w(std::make_shared<Message>(std::move(message)));
 
             std::ostringstream error_stream;
             std::streambuf* original_cerr = std::cerr.rdbuf(error_stream.rdbuf());
@@ -123,7 +126,7 @@ public:
         }
 
         SECTION("Parse values from json file"){
-            REQUIRE_FALSE(email_connector.to_.empty());
+            REQUIRE_FALSE(email_connector.address_.empty());
             REQUIRE_FALSE(email_connector.authbundle_id_.empty());
             REQUIRE_FALSE(email_connector.smtp_server_.empty());
         }
@@ -143,8 +146,8 @@ public:
             email_connector.connect();
 
             std::string raw_data = "This is a test message";
-            Message message(raw_data, "test");
-            MessageWrapper msg_w(message);
+            Message message(raw_data, MessageFormat::Type::RAW, "test");
+            MessageWrapper msg_w(std::make_shared<Message>(std::move(message)));
 
             std::ostringstream error_stream;
             std::streambuf* original_cerr = std::cerr.rdbuf(error_stream.rdbuf());

@@ -1,13 +1,16 @@
 #ifndef TEST_CONNECTOR_FACTORY_H
 #define TEST_CONNECTOR_FACTORY_H
 
+
 #include <catch2/catch_all.hpp>
 
 #include  "../src/factories/connector_factory.h"
 
-#include "../../src/internal_queue.cpp"
+#include "../../src/internal_queue.h"
 #include "../connectors/mock_database.h"
 
+
+#define CONFIG_PATH TEST_CONFIG_DIR "/m2e-bridge.json"
 
 
 namespace TestConnectorFactory {
@@ -97,7 +100,7 @@ TEST_CASE("ConnectorF", "[connector_factory]"){
         })
     );
 
-    create_test_database("../configs/test_config.json");
+    create_test_database(CONFIG_PATH);
     TestConnectorFactory::setup_test_environment();
 
     if(std::strcmp(type, "unknown") == 0){

@@ -1,5 +1,6 @@
-#ifndef TEST_SPLITTER_FILTRA_H
-#define TEST_SPLITTER_FILTRA_H
+#ifndef __TEST_SPLITTER_FILTRA_H__
+#define __TEST_SPLITTER_FILTRA_H__
+
 
 #include <catch2/catch_all.hpp>
 
@@ -20,7 +21,9 @@ TEST_CASE("SplitterFT", "[splitter_filtra]"){
     unsigned long chunk_size = filtras.at("chunk_size");
 
     std::string initial_msg = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    MessageWrapper msg_w(std::make_shared<Message>(initial_msg, std::string("/topc/test")));
+    MessageWrapper msg_w(
+        std::make_shared<Message>(initial_msg, MessageFormat::Type::RAW, std::string("/topc/test"))
+    );
 
     string const & msg_data = msg_w.msg().get_raw();
 
@@ -67,4 +70,4 @@ TEST_CASE("SplitterFT", "[splitter_filtra]"){
     }
 }
 
-#endif
+#endif  // __TEST_SPLITTER_FILTRA_H__

@@ -7,32 +7,33 @@
 #include "mock_pipeline.h"
 
 
-TEST_CASE("FinderFT - String", "[finder_filtra]"){
+TEST_CASE("FinderFT - String", "[finder_filtra]")
+{
     MockPipeline mock_pi;
 
     json filtras = {
         {"type", "finder"},
         {"operator", "contain"},
         {"logical_negation", false},
-        {"string", "LOG MSG"}
+        {"text", "LOG MSG"}
     };
 
     std::string oper = filtras.at("operator");
 
     bool logical_negation = filtras.at("logical_negation");
 
-    std::string string = filtras.at("string");
+    std::string string = filtras.at("text");
 
     std::string initial_msg_1 = "LOG MSG";
-    Message msg_1(initial_msg_1, "/topc/test");
+    Message msg_1(initial_msg_1, MessageFormat::Type::RAW, "/topc/test");
     MessageWrapper msg_w_1(std::make_shared<Message>(std::move(msg_1)));
 
     std::string initial_msg_2 = "MOCK";
-    Message msg_2(initial_msg_2, "/topc/test");
+    Message msg_2(initial_msg_2, MessageFormat::Type::RAW, "/topc/test");
     MessageWrapper msg_w_2(std::make_shared<Message>(std::move(msg_2)));
 
     std::string initial_msg_3 = "LOG";
-    Message msg_3(initial_msg_3, "/topc/test");
+    Message msg_3(initial_msg_3, MessageFormat::Type::RAW, "/topc/test");
     MessageWrapper msg_w_3(std::make_shared<Message>(std::move(msg_3)));
 
 
@@ -107,8 +108,8 @@ TEST_CASE("FinderFT - String", "[finder_filtra]"){
 }
 
 
-
-TEST_CASE("FinderFT - Keys", "[finder_filtra]"){
+TEST_CASE("FinderFT - Keys", "[finder_filtra]")
+{
     MockPipeline mock_pi;
 
     json filtras = {
@@ -138,7 +139,8 @@ TEST_CASE("FinderFT - Keys", "[finder_filtra]"){
     MessageWrapper msg_w_3(std::make_shared<Message>(std::move(msg_3)));
 
 
-    SECTION("contain - logical negation is false"){
+    SECTION("contain - logical negation is false")
+    {
         FinderFT finder_ft(mock_pi, filtras);
 
         finder_ft.process_message(msg_w_1);
@@ -152,7 +154,8 @@ TEST_CASE("FinderFT - Keys", "[finder_filtra]"){
     }
 
     filtras.at("logical_negation") = true;
-    SECTION("contain - logical negation is true"){
+    SECTION("contain - logical negation is true")
+    {
         FinderFT finder_ft(mock_pi, filtras);
 
         finder_ft.process_message(msg_w_1);
@@ -167,7 +170,8 @@ TEST_CASE("FinderFT - Keys", "[finder_filtra]"){
 }
 
 
-TEST_CASE("FinderFT - Value Key", "[finder_filtra]"){
+TEST_CASE("FinderFT - Value Key", "[finder_filtra]")
+{
     MockPipeline mock_pi;
 
     json filtras = {
@@ -176,7 +180,7 @@ TEST_CASE("FinderFT - Value Key", "[finder_filtra]"){
         {"msg_format", "json"},
         {"logical_negation", false},
         {"value_key", "temp"},
-        {"string", "correct value"}
+        {"text", "correct value"}
     };
 
     std::string oper = filtras.at("operator");
@@ -202,7 +206,8 @@ TEST_CASE("FinderFT - Value Key", "[finder_filtra]"){
     MessageWrapper msg_w_4(std::make_shared<Message>(std::move(msg_4)));
 
 
-    SECTION("contain - logical negation is false"){
+    SECTION("contain - logical negation is false")
+    {
         FinderFT finder_ft(mock_pi, filtras);
 
         finder_ft.process_message(msg_w_2);
@@ -215,7 +220,8 @@ TEST_CASE("FinderFT - Value Key", "[finder_filtra]"){
         REQUIRE_FALSE(msg_w_1.is_passed());
     }
 
-    SECTION("contain - logical negation is true"){
+    SECTION("contain - logical negation is true")
+    {
         filtras.at("logical_negation") = true;
         FinderFT finder_ft(mock_pi, filtras);
 
@@ -230,7 +236,8 @@ TEST_CASE("FinderFT - Value Key", "[finder_filtra]"){
     }
 
     filtras.at("operator") = "contained";
-    SECTION("contained - logical negation is false"){
+    SECTION("contained - logical negation is false")
+    {
         FinderFT finder_ft(mock_pi, filtras);
 
         finder_ft.process_message(msg_w_2);
@@ -246,7 +253,8 @@ TEST_CASE("FinderFT - Value Key", "[finder_filtra]"){
         REQUIRE(msg_w_4.is_passed());
     }
 
-    SECTION("contained - logical negation is true"){
+    SECTION("contained - logical negation is true")
+    {
         filtras.at("logical_negation") = true;
         FinderFT finder_ft(mock_pi, filtras);
 
@@ -264,7 +272,8 @@ TEST_CASE("FinderFT - Value Key", "[finder_filtra]"){
     }
 
     filtras.at("operator") = "match";
-    SECTION("match - logical negation is false"){
+    SECTION("match - logical negation is false")
+    {
         FinderFT finder_ft(mock_pi, filtras);
 
         finder_ft.process_message(msg_w_2);
@@ -277,7 +286,8 @@ TEST_CASE("FinderFT - Value Key", "[finder_filtra]"){
         REQUIRE_FALSE(msg_w_3.is_passed());
     }
 
-    SECTION("match - logical negation is true"){
+    SECTION("match - logical negation is true")
+    {
         filtras.at("logical_negation") = true;
         FinderFT finder_ft(mock_pi, filtras);
 

@@ -35,10 +35,13 @@ IN THE SOFTWARE.
 enum class SearchOperator {UNKN, CONTAIN, CONTAINED, MATCH};
 
 
-class FinderFT:public Filtra{
+class FinderFT: public Filtra
+{
 public:
-    FinderFT(PipelineIface const & pi, json const & config):Filtra(pi, config){
+    FinderFT(PipelineIface const & pi, json const & config): Filtra(pi, config)
+    {
         std::string const & oper = config.value("operator", "match");
+        
         if(oper == "contain"){
             operator_ = SearchOperator::CONTAIN;
         }else if (oper == "contained"){
@@ -61,10 +64,13 @@ public:
         }
     }
 
-    string process_message(MessageWrapper & msg_w)override{
-        bool res {true};
-        bool checked {false};
-        if(res && text_.size() > 0){
+    string process_message(MessageWrapper & msg_w) override
+    {
+        bool res{ true };
+        bool checked{ false };
+
+        if( res && text_.size() > 0 )
+        {
             checked = true;
             if(value_key_.size() > 0){
                 res &= find_in_value(msg_w);

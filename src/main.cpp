@@ -53,8 +53,8 @@ IN THE SOFTWARE.
 
 using namespace std;
 
-GlobalConfig gc;
-GlobalState gs;
+extern GlobalConfig gc;
+extern GlobalState gs;
 
 std::atomic<bool> g_running(true);
 

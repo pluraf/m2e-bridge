@@ -1,0 +1,11 @@
+{
+    "//pipelines_dir_path": "pipelines",
+    "api_authentication": true,
+    "auth_on": false,
+    "authbundles_db_path": "db/authbundles.sqlite",
+    "converters_db_path": "db/gnode.sqlite",
+    "http_gate_path": "http-gate.json",
+    "jwt_public_key_path": "public_key.pem",
+    "pipelines_path": "pipelines.json",
+    "shared_objects_path": "shared_objects.json"
+}
