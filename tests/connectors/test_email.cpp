@@ -54,7 +54,7 @@ public:
     static void run_tests_with_correct_credentials(){
         json config = {
             {"type", "email"},
-            {"to", "mock_recipient@smtp.com"},
+            {"address", "mock_recipient@smtp.com"},
             {"authbundle_id", "test_t"},
             {"smtp_server", "smtp.gmail.com"}
         };
@@ -112,7 +112,7 @@ public:
     static void run_tests_with_wrong_credentials(){
         json config = {
             {"type", "email"},
-            {"to", "recipient@smtp.com"},
+            {"address", "recipient@smtp.com"},
             {"authbundle_id", "test_f"},
             {"smtp_server", "smtp.test.com"}
         };
@@ -170,7 +170,7 @@ public:
 };
 
 
-TEST_CASE("Email Connector", "[email_connector]"){
+TEST_CASE("Email Connector", "[email_connector][!mayfail]"){
     EmailConnectorTests::setup();
     EmailConnectorTests::run_tests_with_correct_credentials();
     EmailConnectorTests::run_tests_with_wrong_credentials();

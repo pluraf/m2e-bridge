@@ -39,3 +39,5 @@ build/
 /vcpkg_installed
 
 .vscode/
+
+for_removal/

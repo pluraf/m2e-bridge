@@ -1,0 +1,17 @@
+{
+    "STATE1": {
+        "readonly": true,
+        "value": {
+            "fsds": 1
+        }
+    },
+
+    "NODE_ID": {
+        "value": "2-1"
+    },
+
+    "STATE3": {
+        "type": "memory",
+        "size": 1024
+    }
+}

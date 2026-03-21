@@ -207,14 +207,19 @@ bool HTTPChannel::verify_token(char const * token)const
 
 HTTPListener::HTTPListener():channel_iterator_(channels_)
 {
-    json const & config = gc.get_http_gate_config();
-    if(config.contains("channels")){
+    json const & config = gc.get_http_listener_config();
+    if( config.contains("channels") )
+    {
         auto config_channels = config["channels"];
-        for(auto it = config_channels.cbegin(); it != config_channels.cend(); ++it){
-            try{
+        for( auto it = config_channels.cbegin(); it != config_channels.cend(); ++it )
+        {
+            try
+            {
                 HTTPChannel ch {it.key(), * it, false};
                 channels_[it.key()] = std::move(ch);
-            }catch(...){
+            }
+            catch(...)
+            {
                 continue;
             }
         }

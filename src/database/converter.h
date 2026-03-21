@@ -48,7 +48,7 @@ struct Converter {
 
 class ConverterTable {
     sqlite3 * db_;
-    std::string db_path_;
+    fs::path db_path_;
 public:
     ConverterTable() {
         db_path_ = gc.get_converters_db_path();

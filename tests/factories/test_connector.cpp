@@ -139,7 +139,7 @@ TEST_CASE("ConnectorF", "[connector_factory]"){
     SECTION("email"){
         json email_config = {{"type", "email"},
                                        {"smtp_server", "smtp.test.com"},
-                                       {"to", "mock@pluraf.com"},
+                                       {"address", "mock@pluraf.com"},
                                        {"authbundle_id", "test_email"}
                                       };
 

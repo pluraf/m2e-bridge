@@ -54,7 +54,6 @@ private:
     gcloud::storage::Client client_;
     std::string service_key_data_;
     std::string object_name_template_;
-    bool is_object_template_ {false};
     bool delete_after_processing_ {false};
 
     gcloud::Options auth_options_;
@@ -107,23 +106,18 @@ public:
         if(json_descr.contains("delete_after_processing")){
             delete_after_processing_ = json_descr.at("delete_after_processing").get<bool>();
         }
+    }
 
+    void do_connect( )override
+    {
         auth_options_ = gcloud::Options{}
-                        .set<gcloud::UnifiedCredentialsOption>(
-                            gcloud::MakeServiceAccountCredentials(service_key_data_))
-                        .set<gcloud::UserProjectOption>(project_id_);
+                .set<gcloud::UnifiedCredentialsOption>(
+                    gcloud::MakeServiceAccountCredentials(service_key_data_)
+                )
+                .set<gcloud::UserProjectOption>(project_id_);
 
         client_ = gcloud::storage::Client(auth_options_);
 
-        std::smatch match;
-        std::regex pattern("\\{\\{(.*?)\\}\\}");
-        is_object_template_ = std::regex_search(object_name_template_.cbegin(),
-                                                object_name_template_.cend(),
-                                                match,
-                                                pattern);
-    }
-
-    void do_connect()override{
         std::cout << "Connecting to GCP Bucket: " << bucket_name_ << std::endl;
 
         auto metadata = client_.GetBucketMetadata(bucket_name_);

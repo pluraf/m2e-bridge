@@ -55,14 +55,16 @@ public:
 
     Message const & orig()const{return * orig_.get();}
 
-    Message & msg(){
+    Message & msg()
+    {
         if(! * alt_){
             alt_ = std::make_shared<Message>(* orig_.get());
         }
         return * alt_.get();
     }
 
-    void set_message(Message && msg){
+    void set_message(Message && msg)
+    {
         alt_ = std::make_shared<Message>(msg);
     }
 

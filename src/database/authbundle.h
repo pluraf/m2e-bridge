@@ -88,7 +88,7 @@ void print_authbundle(const AuthBundle& bundle);
 
 class AuthbundleTable {
     sqlite3* db_;
-    std::string db_path_;
+    fs::path db_path_;
 public:
     AuthbundleTable() {
         db_path_ = gc.get_authbundles_db_path();

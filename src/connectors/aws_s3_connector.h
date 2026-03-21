@@ -57,10 +57,9 @@ private:
     std::string secret_key_;
     std::string object_name_template_;
 
-    bool is_object_template_ {false};
     bool delete_after_processing_ {false};
 
-    Aws::S3::S3Client client_;
+    std::unique_ptr<Aws::S3::S3Client> client_{ nullptr };
 
     void parse_authbundle(){
         AuthbundleTable db;
@@ -105,27 +104,18 @@ public:
         }else{
             parse_authbundle();
         }
-
-        auto provider = Aws::MakeShared<Aws::Auth::SimpleAWSCredentialsProvider>
-                                        ("S3Connector", access_key_, secret_key_);
-
-        Aws::Client::ClientConfiguration client_config;
-
-        client_ = Aws::S3::S3Client(provider, nullptr, client_config);
-
-        std::smatch match;
-        std::regex pattern("\\{\\{(.*?)\\}\\}");
-        is_object_template_ = std::regex_search(object_name_template_.cbegin(),
-                                                object_name_template_.cend(),
-                                                match,
-                                                pattern);
     }
 
-    void do_connect()override{
+    void do_connect( )override
+    {
+        auto provider = Aws::MakeShared<Aws::Auth::SimpleAWSCredentialsProvider>(
+            "S3Connector", access_key_, secret_key_
+        );
+        Aws::Client::ClientConfiguration client_config;
+        client_ = std::make_unique<Aws::S3::S3Client>(provider, nullptr, client_config);
         Aws::S3::Model::ListObjectsRequest request;
         request.SetBucket(bucket_name_);
-
-        auto outcome = client_.ListObjects(request);
+        auto outcome = client_->ListObjects(request);
         if(!outcome.IsSuccess()){
             if(mode_ == ConnectorMode::IN){
                 throw std::runtime_error("Bucket '" + bucket_name_ + "' does not exist!");
@@ -133,12 +123,12 @@ public:
                 Aws::S3::Model::CreateBucketRequest create_request;
                 create_request.SetBucket(bucket_name_);
 
-                auto create_outcome = client_.CreateBucket(create_request);
+                auto create_outcome = client_->CreateBucket(create_request);
                 if(! create_outcome.IsSuccess()){
                     throw std::runtime_error("Error creating bucket: " +
                                              create_outcome.GetError().GetMessage());
                 }else{
-                    outcome = client_.ListObjects(request);
+                    outcome = client_->ListObjects(request);
                 }
             }
         }else{
@@ -215,7 +205,7 @@ public:
         auto input_data = Aws::MakeShared<Aws::StringStream>("", file_content);
         request.SetBody(input_data);
 
-        auto outcome = client_.PutObject(request);
+        auto outcome = client_->PutObject(request);
         if (!outcome.IsSuccess()) {
             throw std::runtime_error("Failed to upload file to S3: " + outcome.GetError().GetMessage());
         }
@@ -226,7 +216,7 @@ public:
         request.SetBucket(bucket_name_);
         request.SetKey(object_name_template_);
 
-        auto outcome = client_.GetObject(request);
+        auto outcome = client_->GetObject(request);
         if (!outcome.IsSuccess()) {
             throw std::runtime_error("Failed to read file from S3: " + outcome.GetError().GetMessage());
         }
@@ -240,7 +230,7 @@ public:
             delete_request.SetBucket(bucket_name_);
             delete_request.SetKey(object_name_template_);
 
-            auto delete_outcome = client_.DeleteObject(delete_request);
+            auto delete_outcome = client_->DeleteObject(delete_request);
             if(!delete_outcome.IsSuccess()){
                 std::cerr << "Failed to delete object after processing: "
                           << delete_outcome.GetError().GetMessage() << std::endl;

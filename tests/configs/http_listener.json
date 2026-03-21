@@ -1,0 +1,20 @@
+{
+    "channels": {
+        "22323": {
+            "authtype": "none",
+            "enabled": false,
+            "queue_name": "1fs"
+        },
+        "channel2": {
+            "authtype": "none",
+            "enabled": true,
+            "queue_name": "queue1"
+        },
+        "fff": {
+            "authtype": "none",
+            "enabled": false,
+            "queue_name": "f"
+        }
+    },
+    "enabled": true
+}

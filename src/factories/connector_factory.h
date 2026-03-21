@@ -72,7 +72,7 @@ public:
             return new EmailConnector(pipeid, mode, config);
         }
 #endif
-#ifdef WITH_ASW_S3_CONNECTOR
+#ifdef WITH_AWS_S3_CONNECTOR
         else if(conn_type == "aws_s3")
         {
             AwsSdkManager::Instance();

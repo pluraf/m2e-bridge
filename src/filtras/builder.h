@@ -51,13 +51,15 @@ public:
         }
     }
 
-    string process_message( MessageWrapper &msg_w ) override
+    string process_message( MessageWrapper & msg_w )override
     {
-        if( ! payload_.empty() )
+        if( !payload_.empty() )
         {
             json payload = payload_;
             build(payload, msg_w);
-            msg_w.msg().get_json() = payload;
+            msg_w.set_message(
+                Message(payload, MessageFormat::Type::JSON, msg_w.msg().get_topic())
+            );
         }
 
         if( ! extra_.empty() )

@@ -75,7 +75,10 @@ public:
     void do_send(MessageWrapper & msg_w) override
     {
         int res = sqlite3_open_v2(config_.db_path.c_str(), &db_, SQLITE_OPEN_READWRITE, nullptr);
-        if(res != SQLITE_OK){ throw std::runtime_error("Can't open database"); }
+        if( res != SQLITE_OK )
+        {
+            throw std::runtime_error("Can't open database: " + config_.db_path);
+        }
 
         sqlite3_stmt *stmt;
         res = sqlite3_prepare_v2(db_, statement_.c_str(), -1, &stmt, nullptr);

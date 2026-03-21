@@ -37,7 +37,8 @@ TEST_CASE("BuilderFT", "[builder_filtra]"){
         make_shared<Message>(initial_msg, MessageFormat::Type::RAW, std::string("/topc/test"))
     );
 
-    SECTION("Msg format is json"){
+    SECTION( "Msg format is json" )
+    {
         BuilderFT builder_ft(mock_pi, filtras);
 
         builder_ft.process_message(msg_w_j);
@@ -45,10 +46,14 @@ TEST_CASE("BuilderFT", "[builder_filtra]"){
         REQUIRE(msg_w_j.is_passed());
     }
 
-    filtras.at("msg_format") = "raw";
-    SECTION("Msg format is not json"){
+    SECTION( "Msg format is not json" )
+    {
+        filtras.at("msg_format") = "raw";
+
         BuilderFT builder_ft(mock_pi, filtras);
-        REQUIRE_THROWS_AS(builder_ft.process_message(msg_w), std::runtime_error);
+        builder_ft.process_message(msg_w_j);
+        REQUIRE(msg_w_j.msg().get_json() == payload);
+        REQUIRE(msg_w_j.is_passed());
     }
 }
 

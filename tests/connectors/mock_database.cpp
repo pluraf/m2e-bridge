@@ -15,7 +15,7 @@ void create_test_database(std::string config_path)
     sqlite3* db_;
     int res = sqlite3_open(db_path.c_str(), &db_);
     if (res != SQLITE_OK) {
-        std::cerr << "Failed to open test database: " << sqlite3_errmsg(db_) << std::endl;
+        std::cerr << sqlite3_errmsg(db_) << ": " << db_path << std::endl;
         return;
     }
     const char* create_table_sql = R"(
