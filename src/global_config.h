@@ -99,14 +99,15 @@ class PipelineConfigsIterator
 };
 
 
-class PipelineConfigs{
+class PipelineConfigs
+{
     map<fs::path, ordered_json> configs_;
     fs::path default_path_;
 public:
     void load_config(fs::path const & p, bool default_path = false)
     {
         std::ifstream file(p);
-        if(! file)
+        if( !file )
         {
             std::cerr << "Failed to open file: " << p << std::endl;
             throw std::runtime_error("");
@@ -177,13 +178,16 @@ public:
             if(config.second.contains(pipeid)) { return config.second[pipeid]; }
         }
 
+        if( default_path_.empty() ){ default_path_ = configs_.cbegin()->first; }
+
         return configs_[default_path_][pipeid];
     }
 
     ordered_json & at(string const & pipeid)
     {
-        for(auto & config : configs_){
-            if(config.second.contains(pipeid)) { return config.second[pipeid]; }
+        for( auto & config : configs_ )
+        {
+            if( config.second.contains(pipeid) ){ return config.second[pipeid]; }
         }
 
         throw std::out_of_range(pipeid);
@@ -191,35 +195,25 @@ public:
 };
 
 
-class GlobalConfig{
+class GlobalConfig
+{
 public:
-    string get_jwt_public_key_path(){
+    string get_jwt_public_key_path()
+    {
         return config_.at("jwt_public_key_path").get<std::string>();
     }
 
-    string const & get_authbundles_db_path(){
-        return authbundles_db_path_;
-    }
+    fs::path const & get_authbundles_db_path(){ return authbundles_db_path_; }
 
-    string const & get_converters_db_path(){
-        return converters_db_path_;
-    }
+    fs::path const & get_converters_db_path(){ return converters_db_path_; }
 
-    PipelineConfigs & get_pipelines_config(){
-        return pipelines_;
-    }
+    PipelineConfigs & get_pipelines_config(){ return pipelines_; }
 
-    ordered_json const & get_http_gate_config(){
-        return http_gate_;
-    }
+    ordered_json const & get_http_listener_config(){ return http_listener_; }
 
-    json const & get_shared_objects_config(){
-        return shared_objects_;
-    }
+    json const & get_shared_objects_config(){ return shared_objects_; }
 
-    bool get_api_authentication(){
-        return config_.value("api_authentication", true);
-    }
+    bool get_api_authentication(){ return config_.value("api_authentication", true); }
 
     string const & get_ca_storage(){
         static string ca_storage {"/gnode/storage/ca/"};
@@ -297,12 +291,22 @@ public:
 
         /////////////////
         // Load pipelines
-        std::string pipelines_path = config_.at("pipelines_path").get<std::string>();
+        fs::path pipelines_path{ config_.at("pipelines_path").get<std::string>() };
+        if( pipelines_path.is_relative() )
+        {
+            pipelines_path = config_path_.parent_path() / pipelines_path;
+        }
         pipelines_.load_config(pipelines_path, true);
 
         // If pipelines directory is specified, load all pipelines from it as well
-        if(config_.contains("pipelines_dir_path")){
-            std::string pipelines_dir_path = config_.at("pipelines_dir_path").get<std::string>();
+        if( config_.contains("pipelines_dir_path") )
+        {
+            fs::path pipelines_dir_path = config_.at("pipelines_dir_path").get<std::string>();
+            if( pipelines_dir_path.is_relative() )
+            {
+                pipelines_dir_path = config_path_.parent_path() / pipelines_dir_path;
+            }
+
             try{
                 for(auto const & file_entry : fs::directory_iterator(pipelines_dir_path)){
                     if(file_entry.is_regular_file()){
@@ -318,7 +322,7 @@ public:
 
         //////////////////////
         // Load shared objects
-        std::string shared_objects_path = config_.at("shared_objects_path").get<std::string>();
+        fs::path shared_objects_path = _get_config_path("shared_objects_path");
         file = std::ifstream(shared_objects_path);
         if(!file){
             std::cerr << "Failed to open file: " << shared_objects_path << std::endl;
@@ -330,34 +334,41 @@ public:
         shared_objects_ = json::parse(buffer.str());
 
         /////////////////
-        // Load HTTP Gate
-        std::string http_gate_path = config_.at("http_gate_path").get<std::string>();
-        file = std::ifstream(http_gate_path);
+        // Load HTTP Listener
+        auto http_listener_path = _get_config_path("http_listener_path");
+        file = std::ifstream(http_listener_path);
         if(! file){
-            std::cerr << "Failed to open file: " << http_gate_path << std::endl;
+            std::cerr << "Failed to open file: " << http_listener_path << std::endl;
             throw std::runtime_error("");
         }
         buffer = std::stringstream();
         buffer << file.rdbuf();
         file.close();
-        http_gate_ = ordered_json::parse(buffer.str());
+        http_listener_ = ordered_json::parse(buffer.str());
 
         ///////////////////////////
         // Load authbundles_db_path
-        authbundles_db_path_ = config_.at("authbundles_db_path").get<std::string>();
+        authbundles_db_path_ = _get_config_path("authbundles_db_path");
 
         //////////////////////////
         // Load converters_db_path
-        converters_db_path_ = config_.at("converters_db_path").get<std::string>();
+        converters_db_path_ = _get_config_path("converters_db_path");
     }
+private:
+    fs::path _get_config_path(std::string const & config_path)
+    {
+        fs::path fs_path = config_.at(config_path).get<std::string>();
+        return fs_path.is_relative() ? config_path_.parent_path() / fs_path : fs_path;
+    }
+
 private:
     json config_;
     PipelineConfigs pipelines_;
-    ordered_json http_gate_;
+    ordered_json http_listener_;
     json shared_objects_;
-    std::string authbundles_db_path_;
-    std::string converters_db_path_;
-    std::string config_path_;
+    fs::path authbundles_db_path_;
+    fs::path converters_db_path_;
+    fs::path config_path_;
 };
 
 
