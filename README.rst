@@ -1,4 +1,4 @@
-M2E-Bridge is an IoT processing unit designed for real-time data collection,
+**M2E-Bridge** is an IoT processing unit designed for real-time data collection,
 transformation, and routing. It ensures efficient information flow between
 connected systems and supports data filtering, protocol conversion, and data generation.
 
