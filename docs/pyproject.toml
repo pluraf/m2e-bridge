@@ -1,0 +1,13 @@
+[tool.poetry]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.11"
+alabaster = "^1.0.0"
+breathe = "*"
+sphinx-book-theme = "*"
+sphinx-copybutton = "*"
+sphinxcontrib-doxylink = "*"
+sphinxcontrib-spelling = "*"
+pydata-sphinx-theme = "*"
+Sphinx = "*"

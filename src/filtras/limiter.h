@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 
 /*
-Copyright (c) 2024 Pluraf Embedded AB <code@pluraf.com>
+Copyright (c) 2024-2026 Pluraf Embedded AB <code@pluraf.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the “Software”), to deal in
@@ -33,7 +33,19 @@ IN THE SOFTWARE.
 #include "filtra.h"
 
 
-class LimiterFT:public Filtra{
+//_DOCS: SECTION_START limiter_filtra Limiter Filtra
+/*!
+Rejects messages that exceed the specified size::
+
+      {
+          "type": "limiter",
+          "size": <bytes>
+      }
+*/
+//_DOCS: END
+
+class LimiterFT: public Filtra
+{
 public:
     LimiterFT(PipelineIface const & pi, json const & json_descr):
             Filtra(pi, json_descr){
@@ -47,13 +59,16 @@ public:
     }
 
     static pair<string, json> get_schema(){
-        json schema = Filtra::get_schema();
-        schema.merge_patch({
+        //_DOCS: SCHEMA_START limiter_filtra
+        //_DOCS: SCHEMA_INCLUDE filtra
+        static json schema = Filtra::get_schema({
             {"size", {
                 {"type", "integer"},
-                {"required", true}
+                {"required", true},
+                {"description", "Size limit in bytes for the message. Messages exceeding this limit are rejected."}
             }}
         });
+        //_DOCS: END
         return {"limiter", schema};
     }
 

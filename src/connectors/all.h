@@ -48,7 +48,7 @@ IN THE SOFTWARE.
 #endif
 
 #ifdef WITH_GCP_CLOUD_STORAGE_CONNECTOR
-    #include "connectors/gcp_bucket_connector.h"
+    #include "connectors/gcp_cloud_storage_connector.h"
 #endif
 
 #ifdef WITH_GCP_PUBSUB_CONNECTOR

@@ -37,6 +37,24 @@ IN THE SOFTWARE.
 #include "database/authbundle.h"
 
 
+/*
+//_DOCS: SECTION_START slack_connector Slack Connector
+
+.. _Slack: https://slack.com
+
+Connects to `Slack`_::
+
+    {
+      "type":"slack",
+      "authbundle_id":"<authbundle_id>"
+    }
+
+Slack webhook URL must be stored in Authbundle.
+
+//_DOCS: END
+*/
+
+
 class SlackConnector: public Connector {
     std::string webhook_url_;
     std::string oauth_token_;
@@ -126,17 +144,15 @@ public:
     }
 
     static pair<string, json> get_schema(){
-        json schema = Connector::get_schema();
-        schema.merge_patch({
-            {"authbundle_id", {
-                {"options", {
-                    {"filter", {
-                        {"key", "service_type"},
-                        {"value", "slack"}
-                    }}
-                }}
-            }}
-        });
+        //_DOCS: SCHEMA_START slack_connector
+        //_DOCS: SCHEMA_INCLUDE connector
+        static json schema = Connector::get_schema(
+            {
+                {"tags", {"slack"}},
+                {"modes", {"out"}}
+            }
+        );
+        //_DOCS: END
         return {"slack", schema};
     }
 };

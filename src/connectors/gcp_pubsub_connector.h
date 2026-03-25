@@ -60,6 +60,43 @@ using std::string;
 using std::map;
 
 
+namespace
+{
+    //_DOCS: STRINGS_START
+    constexpr std::string_view _DOCS_PR_DESC_TOPIC_ID =
+        "PubSub topic. The connector-in publishes to this topic."
+        " The connector-out creates a subscription to this topic if"
+        " *subscription_id* is not specified.";
+
+    constexpr std::string_view _DOCS_PR_DESC_SUBSCRIPTION_ID =
+        "Subscription that the connector-in subscribes to."
+        " If the subscription does not exist, it is created."
+        " The connector-out ignores this property.";
+    //_DOCS: END
+}
+
+
+/*
+//_DOCS: SECTION_START gcp_pubsub_connector GCP Pub/Sub Connector
+
+.. _Pub/Sub service: https://cloud.google.com/pubsub/docs/overview
+
+Connects to the Google Cloud `Pub/Sub service`_::
+
+    {
+      "type":"gcp_pubsub",
+      "authbundle_id":"my_authbundle_id",
+      "project_id":"my_project_id",
+      "topic_id":"my_topic_id",
+      "attributes":{
+        "deviceId":"{{topic[2]}}",
+        "projectId": "G-NODE"
+      }
+    }
+
+//_DOCS: END
+*/
+
 class PubSubConnector: public Connector{
 private:
     string project_id_;
@@ -250,33 +287,37 @@ public:
     }
 
     static pair<string, json> get_schema(){
-        json schema = Connector::get_schema();
-        schema.merge_patch({
-            {"authbundle_id", {
-                {"options", {
-                    {"filter", {
-                        {"key", "service_type"},
-                        {"value", "gcp"}
+        //_DOCS: SCHEMA_START gcp_pubsub_connector
+        //_DOCS: SCHEMA_INCLUDE connector
+        static json schema = Connector::get_schema(
+            {
+                {"tags", {"gcp", "pubsub"}},
+                {"modes", {"in", "out"}},
+                {"type_properties", {
+                    {"project_id", {
+                        {"type", "string"},
+                        {"required", true},
+                        {"description", "GCP project identifier."}
+                    }},
+                    {"subscription_id", {
+                        {"type", "string"},
+                        {"required", false},
+                        {"description", _DOCS_PR_DESC_SUBSCRIPTION_ID}
+                    }},
+                    {"topic_id", {
+                        {"type", "string"},
+                        {"required", {{"in", false}, {"out", true}}},
+                        {"description", _DOCS_PR_DESC_TOPIC_ID}
+                    }},
+                    {"attributes", {
+                        {"type", "object"},
+                        {"required", false},
+                        {"description", "Map of Pub/Sub message attributes."}
                     }}
                 }}
-            }},
-            {"project_id", {
-                {"type", "string"},
-                {"required", true}
-            }},
-            {"subscription_id", {
-                {"type", "string"},
-                {"required", false}
-            }},
-            {"topic_id", {
-                {"type", "string"},
-                {"required", {{"in", false}, {"out", true}}}
-            }},
-            {"attributes", {
-                {"type", "string"},
-                {"required", false}
-            }}
-        });
+            }
+        );
+        //_DOCS: END
         return {"gcp_pubsub", schema};
     }
 

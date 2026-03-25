@@ -83,6 +83,30 @@ inline bool is_valid_http_url(const std::string& url) {
     return std::regex_match(url, url_pattern);
 }
 
+
+//_DOCS: SECTION_START http_connector HTTP Connector
+/*!
+Connects to HTTP server::
+
+    {
+      "type": "http",
+      "url": "<url>",
+      "method": "<method>",
+      "header": {
+        "<name1>": "<value1>",
+        "<name2>": "<value2>"
+      },
+      "payload": {
+        "<key1>": "<val1>",
+        "<key2>": "<val2>"
+      },
+      "polling_period": <seconds>,
+      "https_verify_cert": true
+    }
+*/
+//_DOCS: END
+
+
 class HttpConnector: public Connector {
 private:
     std::string url_;
@@ -276,43 +300,48 @@ public:
     }
 
     static pair<string, json> get_schema(){
-        json schema = Connector::get_schema();
-        schema.merge_patch({
-            {"authbundle_id", {
-                {"options", {
-                    {"filter", {
-                        {"key", "service_type"},
-                        {"value", "http"}
+        //_DOCS: SCHEMA_START http_connector
+        //_DOCS: SCHEMA_INCLUDE connector
+        static json schema = Connector::get_schema(
+            {
+                {"tags", {"http"}},
+                {"modes", {"in", "out"}},
+                {"type_properties", {
+                    {"url", {
+                        {"type", "string"},
+                        {"required", true},
+                        {"description", "URL of HTTP server."}
+                    }},
+                    {"https_verify_cert", {
+                        {"type", "boolean"},
+                        {"default", true},
+                        {"required", false},
+                        {"description", "Verify HTTP server certificate."}
+                    }},
+                    {"method", {
+                        {"type", "string"},
+                        {"required", true},
+                        {"description", "HTTP method (GET, POST, PUT, etc.)."}
+                    }},
+                    {"header", {
+                        {"type", "object"},
+                        {"required", false},
+                        {"description", "Map of HTTP headers."}
+                    }},
+                    {"payload", {
+                        {"type", "string|object|array"},
+                        {"required", false},
+                        {"description", "Payload of HTTP request."}
+                    }},
+                    {"polling_period", {
+                        {"type", "integer"},
+                        {"required", true},
+                        {"description", "Polling period when connector is in IN mode."}
                     }}
                 }}
-            }},
-            {"url", {
-                {"type", "string"},
-                {"required", true}
-            }},
-            {"https_verify_cert", {
-                {"type", "boolean"},
-                {"default", true},
-                {"required", false}
-            }},
-            {"method", {
-                {"type", "string"},
-                {"required", true}
-            }},
-            {"header", {
-                {"type", "string"},
-                {"required", false}
-            }},
-            {"payload", {
-                {"type", "string"},
-                {"default", ""},
-                {"required", false}
-            }},
-            {"polling_period", {
-                {"type", "integer"},
-                {"required", true}
-            }}
-        });
+            }
+        );
+        //_DOCS: END
         return {"http", schema};
     }
 };

@@ -34,10 +34,19 @@ Thumbs.db
 *.exe
 *.war
 
+# Databases
+*.sqlite
+
 build/
 
-/vcpkg_installed
+vcpkg_installed/
 
-.vscode/
+latex/
+html/
+xml/
+docs/build/
+
+
+
 
 for_removal/

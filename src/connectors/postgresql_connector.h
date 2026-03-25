@@ -49,12 +49,36 @@ struct PostgreSQLConnectorConfig
 };
 
 
+//_DOCS: SECTION_START postgresql_connector PostgreSQL Connector
+/*!
+.. _PostgreSQL: https://www.postgresql.org
+
+Connects to a `PostgreSQL`_ database::
+
+    {
+        "type": "postgresql",
+        "db_name": "<database>",
+        "db_host": "<IP>",
+        "db_port": <PORT>,
+        "authbundle_id": "<authbundle_id>",
+        "table": "<table>",
+        "columns": [
+            "<column1>",
+            "<colimn2>"
+        ],
+        "values": [
+            "<value1>",
+            "<value1>"
+        ]
+    }
+*/
+//_DOCS: END
+
 class PostgreSQLConnector: public Connector
 {
     PostgreSQLConnectorConfig config_;
     std::unique_ptr<pqxx::connection> db_conn_;
     string statement_;
-
 public:
     PostgreSQLConnector(std::string pipeid, ConnectorMode mode, json const & config)
         :Connector(pipeid, mode, config)
@@ -174,29 +198,47 @@ public:
     }
 
     static pair<string, json> get_schema(){
-        json schema = Connector::get_schema();
-        schema.merge_patch({
-           {"authbundle_id", {
-                {"options", {
-                    {"filter", {
-                        {"key", "service_type"},
-                        {"value", "database"}
+        //_DOCS: SCHEMA_START postgresql_connector
+        //_DOCS: SCHEMA_INCLUDE connector
+        static json schema = Connector::get_schema(
+            {
+                {"tags", {"database", "postgresql"}},
+                {"modes", {"out"}},
+                {"type_properties", {
+                    {"db_host", {
+                        {"type", "string"},
+                        {"required", true},
+                        {"description", "Database server host."}
+                    }},
+                    {"db_port", {
+                        {"type", "string"},
+                        {"required", true},
+                        {"description", "Database server port."}
+                    }},
+                    {"db_name", {
+                        {"type", "string"},
+                        {"required", true},
+                        {"description", "Database name."}
+                    }},
+                    {"table", {
+                        {"type", "string"},
+                        {"required", true},
+                        {"description", "Database table."}
+                    }},
+                    {"columns", {
+                        {"type", "array"},
+                        {"required", true},
+                        {"description", "Columns where values will be inserted."}
+                    }},
+                    {"values", {
+                        {"type", "array"},
+                        {"required", true},
+                        {"description", "Values to be inserted into the table."}
                     }}
                 }}
-            }},
-            {"table", {
-                {"type", "string"},
-                {"required", true}
-            }},
-            {"columns", {
-                {"type", "array"},
-                {"required", true}
-            }},
-            {"values", {
-                {"type", "array"},
-                {"required", true}
-            }}
-        });
+            }
+        );
+        //_DOCS: END
         return {"postgresql", schema};
     }
 };

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 
 /*
-Copyright (c) 2024 Pluraf Embedded AB <code@pluraf.com>
+Copyright (c) 2024-2026 Pluraf Embedded AB <code@pluraf.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the “Software”), to deal in
@@ -30,7 +30,19 @@ IN THE SOFTWARE.
 #include "filtra.h"
 
 
-class ThrottleFT:public Filtra{
+//_DOCS: SECTION_START throttle_filtra Throttle Filtra
+/*!
+Limits messages rate::
+
+    {
+      "type": "throttle",
+      "rate": <messages per second>
+    }
+*/
+//_DOCS: END
+
+class ThrottleFT: public Filtra
+{
 public:
     ThrottleFT(PipelineIface const & pi, json const & json_descr):Filtra(pi, json_descr){
         rate_ = json_descr["rate"];
@@ -52,14 +64,21 @@ public:
         }
     }
 
-    static pair<string, json> get_schema(){
-        json schema = Filtra::get_schema();
-        schema.merge_patch({
-            {"rate", {
-                {"type", "integer"},
-                {"required", true}
+    static pair<string, json> get_schema()
+    {
+        //_DOCS: SCHEMA_START throttle_filtra
+        //_DOCS: SCHEMA_INCLUDE filtra
+        static json schema = Filtra::get_schema({
+            {"tags", {"throttle"}},
+            {"type_properties", {
+                {"rate", {
+                    {"type", "integer"},
+                    {"required", true},
+                    {"description", "Messages maximum rate, after which they start to be rejected."}
+                }}
             }}
         });
+        //_DOCS: END
         return {"throttle", schema};
 };
 

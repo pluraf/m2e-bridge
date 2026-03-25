@@ -32,6 +32,18 @@ IN THE SOFTWARE.
 #include "connector.h"
 
 
+//_DOCS: SECTION_START generator_connector Genrator Connector
+/*!
+Connects to internal message generator::
+
+    {
+      "type": "generator",
+      "period": <seconds>,
+      "payload": {}
+    }
+*/
+//_DOCS: END
+
 class GeneratorConnector: public Connector{
     unsigned long period_;  // milliseconds
     string payload_;
@@ -60,17 +72,27 @@ public:
         throw std::underflow_error("No messages");
     }
 
-    static pair<string, json> get_schema(){
-        json schema = {
-            {"period", {
-                {"type", "integer"},
-                {"required", true}
-            }},
-            {"payload", {
-                {"type", "string"},
-                {"required", true}
-            }}
-        };
+    static pair<string, json> get_schema()
+    {
+        //_DOCS: SCHEMA_START generator_connector
+        //_DOCS: SCHEMA_INCLUDE connector
+        static json schema = Connector::get_schema(
+            {
+                {"tags", {"generator"}},
+                {"modes", {"out"}},
+                {"type_properties", {
+                    {"period", {
+                        {"type", "integer"},
+                        {"required", true}
+                    }},
+                    {"payload", {
+                        {"type", "object"},
+                        {"required", true}
+                    }}
+                }}
+            }
+        );
+        //_DOCS: END
         return {"generator", schema};
     }
 };

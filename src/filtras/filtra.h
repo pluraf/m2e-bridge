@@ -65,9 +65,12 @@ public:
         msg_w.add_metadata(metadata_);
         return process_message(msg_w);
     }
-    Message process(){
+
+    Message process()
+    {
         return generate_message();
     }
+
     vector<string> const & get_destinations(){return queue_ids_;}
     string const & get_name(){return name_;}
     hops_t const & get_hops(){return hops_;}
@@ -75,49 +78,49 @@ public:
     virtual void start() {}
     virtual void stop() {}
 
-    static json get_schema(){
-        return json {
-            {"name", {
-                {"type", "string"},
-                {"default", ""},
-                {"required", false}
-            }},
-            {"msg_format", {
-                {"type", "string"},
-                {"options", {"json", "raw"}},
-                {"default", "raw"},
-                {"required", false}
-            }},
-            {"logical_negation", {
-                {"type", "boolean"},
-                {"default", false},
-                {"required", false}
-            }},
-            {"queues", {
-                {"type", "array"},
-                {"items", {{"type", "string"}}},
-                {"required", false}
-            }},
-            {"metadata", {
-                {"type", "object"},
-                {"required", false}
-            }},
-            {"goto", {
-                {"type", "string"},
-                {"default", ""},
-                {"required", false}
-            }},
-            {"goto_passed", {
-                {"type", "string"},
-                {"default", ""},
-                {"required", false}
-            }},
-            {"goto_rejected", {
-                {"type", "string"},
-                {"default", ""},
-                {"required", false}
-            }}
-        };
+    static json get_schema(json specific = {})
+    {
+        //_DOCS: SCHEMA_START filtra
+        specific.merge_patch(
+            {
+                {"name", {
+                    {"type", "string"},
+                    {"default", ""},
+                    {"required", false}
+                }},
+                {"logical_negation", {
+                    {"type", "boolean"},
+                    {"default", false},
+                    {"required", false}
+                }},
+                {"queues", {
+                    {"type", "array"},
+                    {"items", {{"type", "string"}}},
+                    {"required", false}
+                }},
+                {"metadata", {
+                    {"type", "object"},
+                    {"required", false}
+                }},
+                {"goto", {
+                    {"type", "string"},
+                    {"default", ""},
+                    {"required", false}
+                }},
+                {"goto_accepted", {
+                    {"type", "string"},
+                    {"default", ""},
+                    {"required", false}
+                }},
+                {"goto_rejected", {
+                    {"type", "string"},
+                    {"default", ""},
+                    {"required", false}
+                }}
+            }
+        );
+        return specific;
+        //_DOCS: END
     }
 
 protected:

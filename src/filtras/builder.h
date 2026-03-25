@@ -31,6 +31,24 @@ IN THE SOFTWARE.
 #include "substitutions/subs.hpp"
 
 
+//_DOCS: SECTION_START builder_filtra Builder Filtra
+/*!
+Creates a new message::
+
+    {
+      "type": "builder",
+      "encoder": "json",
+      "payload": {
+        "<key1>": "<value1>"
+      }
+      "extra": {
+        "<key1>": "<value1>"
+      }
+    }
+
+*/
+//_DOCS: END
+
 class BuilderFT: public Filtra
 {
     json payload_;
@@ -79,24 +97,32 @@ public:
         return "";
     }
 
-    static pair<string, json> get_schema(){
-        json schema = Filtra::get_schema();
-        schema.merge_patch({
-            {"encoder", {
-                {"type", "string"},
-                {"options", {"json"}},
-                {"default", "json"},
-                {"required", true}
-            }},
-            {"payload", {
-                {"type", "object"},
-                {"required", false}
-            }},
-            {"extra", {
-                {"type", "object"},
-                {"required", false}
-            }}
-        });
+    static pair<string, json> get_schema()
+    {
+        //_DOCS: SCHEMA_START builder_filtra
+        //_DOCS: SCHEMA_INCLUDE filtra
+        static json schema = Filtra::get_schema(
+            {
+                {"tags", {"builder"}},
+                {"type_properties", {
+                    {"encoder", {
+                        {"type", "string"},
+                        {"options", {"json"}},
+                        {"default", "json"},
+                        {"required", true}
+                    }},
+                    {"payload", {
+                        {"type", "object"},
+                        {"required", false}
+                    }},
+                    {"extra", {
+                        {"type", "object"},
+                        {"required", false}
+                    }}
+                }}
+            }
+        );
+        //_DOCS: END
         return {"builder", schema};
     }
 

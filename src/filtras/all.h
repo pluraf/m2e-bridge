@@ -35,7 +35,6 @@ IN THE SOFTWARE.
 #include "filtras/limiter.h"
 #include "filtras/nop.h"
 #include "filtras/throttle.h"
-#include "filtras/extractor.h"
 
 #ifdef WITH_LUA
     #include "filtras/converter_lua.h"

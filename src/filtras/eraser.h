@@ -30,6 +30,18 @@ IN THE SOFTWARE.
 #include "filtra.h"
 
 
+//_DOCS: SECTION_START eraser_filtra Eraser Filtra
+/*!
+
+Removes specified keys from the payload::
+
+    {
+      "type": "eraser",
+      "keys": ["<key1>", "<key2>"]
+    }
+
+*/
+//_DOCS: END
 class EraserFT:public Filtra{
 public:
     EraserFT(PipelineIface const & pi, json const & json_descr):
@@ -54,14 +66,22 @@ public:
     }
 
     static pair<string, json> get_schema(){
-        json schema = Filtra::get_schema();
-        schema.merge_patch({
-            {"keys", {
-                {"type", "array"},
-                {"items", {{"type", "string"}}},
-                {"required", true}
-            }}
-        });
+        //_DOCS: SCHEMA_START eraser_filtra
+        //_DOCS: SCHEMA_INCLUDE filtra
+        static json schema = Filtra::get_schema(
+            {
+                {"tags", {"eraser"}},
+                {"type_properties", {
+                    {"keys", {
+                        {"type", "array"},
+                        {"items", {{"type", "string"}}},
+                        {"required", true},
+                        {"description", "Keys to be removed from the message payload."}
+                    }}
+                }}
+            }
+        );
+        //_DOCS: END
         return {"eraser", schema};
     }
 

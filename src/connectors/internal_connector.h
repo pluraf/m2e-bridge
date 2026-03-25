@@ -31,6 +31,18 @@ IN THE SOFTWARE.
 #include "internal_queue.h"
 
 
+//_DOCS: SECTION_START internal_connector Internal Queue Connector
+/*!
+Connects to internal message queue::
+
+    {
+      "type": "queue",
+      "name": "<queue name>",
+      "buffer_size": <number>
+    }
+*/
+//_DOCS: END
+
 class InternalConnector: public Connector{
     string queuid_;
     InternalQueue & queue_;
@@ -70,17 +82,30 @@ public:
         incoming_.exit_blocking_calls();
     }
 
-    static pair<string, json> get_schema(){
-        json schema = {
-            {"name", {
-                {"type", "string"},
-                {"required", true}
-            }},
-            {"buffer_size", {
-                {"type", "integer"},
-                {"required", false}
-            }}
-        };
+    static pair<string, json> get_schema()
+    {
+        //_DOCS: SCHEMA_START internal_connector
+        //_DOCS: SCHEMA_INCLUDE connector
+        static json schema = Connector::get_schema(
+            {
+                {"tags", {"queue"}},
+                {"modes", {"in", "out"}},
+                {"type_properties", {
+                    {"name", {
+                        {"type", "string"},
+                        {"required", true},
+                        {"description", "Internal queue name."}
+                    }},
+                    {"buffer_size", {
+                        {"type", "integer"},
+                        {"required", false},
+                        {"default", 100},
+                        {"description", "Buffer size for messages."}
+                    }}
+                }}
+            }
+        );
+        //_DOCS: END
         return {"queue", schema};
     }
 };

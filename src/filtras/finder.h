@@ -35,13 +35,69 @@ IN THE SOFTWARE.
 enum class SearchOperator {UNKN, CONTAIN, CONTAINED, MATCH};
 
 
+namespace
+{
+    //_DOCS: STRINGS_START
+    constexpr std::string_view _DOCS_PR_DESC_TEXT =
+        "Specifies a string that can either be searched as a substring within"
+        " the payload or used to search for the payload as a substring.";
+
+    constexpr std::string_view _DOCS_PR_DESC_KEYS =
+        "Specifies the keys in the decoded payload dictionary. All keys must"
+        " be present in the payload; otherwise, the message is rejected.";
+
+    constexpr std::string_view _DOCS_PR_DESC_VALUE_KEY =
+        "Specifies a key in the decoded payload whose value is used"
+        " for the text search.";
+    //_DOCS: END
+}
+
+
+//_DOCS: SECTION_START finder_filtra Finder Filtra
+/*!
+Searches for a specific part in the message based on the finder configuration.
+Three variants are supported:
+
+.. __:
+
+1. Searches for text within the payload or searches for the payload within the text.
+   Properties *text* and *operator* must be specified::
+
+      {
+          "type": "finder",
+          "operator": "contain",
+          "text": "LOG"
+      }
+
+2. Searches for specified keys in the decoded payload. A property *keys* must be specified.
+
+   ::
+
+      {
+          "type": "finder",
+          "keys": ["key1", "keyN"]
+      }
+
+3. Performs the same type of search as in `Variant 1`__, but instead of analyzing
+   the entire payload, it examines the value of a specified key in
+   the decoded payload. Properties *text*, *operator*, *value_key* must be specified::
+
+      {
+          "type": "finder",
+          "operator": "contain",
+          "text": "LOG",
+          "value_key": "key1"
+      }
+*/
+//_DOCS: END
+
 class FinderFT: public Filtra
 {
 public:
     FinderFT(PipelineIface const & pi, json const & config): Filtra(pi, config)
     {
         std::string const & oper = config.value("operator", "match");
-        
+
         if(oper == "contain"){
             operator_ = SearchOperator::CONTAIN;
         }else if (oper == "contained"){
@@ -130,34 +186,48 @@ public:
     }
 
     static pair<string, json> get_schema(){
-        json schema = Filtra::get_schema();
-        schema.merge_patch({
-            {"operator", {
-                {"type", "string"},
-                {"options", {"contain", "contained", "match"}},
-                {"default", "match"},
-                {"required", true}
-            }},
-            {"text", {
-                {"type", "string"},
-                {"required", false}
-            }},
-            {"keys", {
-                {"type", "array"},
-                {"items", {{"type", "string"}}},
-                {"required", false}
-            }},
-            {"value_key", {
-                {"type", "string"},
-                {"required", false}
-            }},
-            {"decoder", {
-                {"type", "string"},
-                {"options", {"json", "raw"}},
-                {"default", "raw"},
-                {"required", false}
+        //_DOCS: SCHEMA_START finder_filtra
+        //_DOCS: SCHEMA_INCLUDE filtra
+        static json schema = Filtra::get_schema({
+            {"tags", {"finder"}},
+            {"type_properties", {
+                {"operator", {
+                    {"type", "string"},
+                    {"options", json::array_t{
+                        {"contain", "searches for *text* within the payload"},
+                        {"contained", "searches for the payload within *text*"},
+                        {"match", "checks if *text* exactly matches the payload"}
+                    }},
+                    {"default", "match"},
+                    {"required", true},
+                    {"description", "Method for searching for a substring."}
+                }},
+                {"text", {
+                    {"type", "string"},
+                    {"required", false},
+                    {"description", _DOCS_PR_DESC_TEXT}
+                }},
+                {"keys", {
+                    {"type", "array"},
+                    {"items", {{"type", "string"}}},
+                    {"required", false},
+                    {"description", _DOCS_PR_DESC_KEYS}
+                }},
+                {"value_key", {
+                    {"type", "string"},
+                    {"required", false},
+                    {"description", _DOCS_PR_DESC_VALUE_KEY}
+                }},
+                {"decoder", {
+                    {"type", "string"},
+                    {"options", {"json", "raw"}},
+                    {"default", "raw"},
+                    {"required", false},
+                    {"description", "Decoder for decoding the message."}
+                }}
             }}
         });
+        //_DOCS: END
         return {"finder", schema};
     }
 

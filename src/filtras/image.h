@@ -59,6 +59,18 @@ struct ImageFTOperation
 };
 
 
+//_DOCS: SECTION_START image_filtra Image Filtra
+/*!
+Creates a new message::
+
+    {
+      "type": "image",
+      "operation": "<operation>"
+    }
+
+*/
+//_DOCS: END
+
 class ImageFT: public Filtra
 {
     ImageFTOperation::Type operation_;
@@ -99,7 +111,24 @@ public:
 
     static pair<string, json> get_schema()
     {
-        json schema = Filtra::get_schema();
+        //_DOCS: SCHEMA_START image_filtra
+        //_DOCS: SCHEMA_INCLUDE filtra
+        static json schema = Filtra::get_schema({
+            {"tags", {"image"}},
+            {"type_properties", {
+                {"operation", {
+                    {"type", "string"},
+                    {"options", {"resize"}},
+                    {"required", true},
+                    {"description", "Image transformation operation."}
+                }},
+                {"extra", {
+                    {"type", "object"},
+                    {"required", false}
+                }}
+            }}
+        });
+        //_DOCS: END
         return {"image", schema};
     }
 };

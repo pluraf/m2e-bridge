@@ -47,6 +47,28 @@ struct SQLiteConnectorConfig
 };
 
 
+//_DOCS: SECTION_START sqlite_connector SQLite Connector
+/*!
+.. _SQLite: https://sqlite.org
+
+Connects to a `SQLite`_ database::
+
+    {
+        "type": "sqlite",
+        "db_path": "<path>",
+        "table": "<table>",
+        "columns": [
+            "<column1>",
+            "<colimn2>"
+        ],
+        "values": [
+            "<value1>",
+            "<value1>"
+        ]
+    }
+*/
+//_DOCS: END
+
 class SQLiteConnector: public Connector
 {
     SQLiteConnectorConfig config_;
@@ -166,30 +188,39 @@ public:
         return into.str() + values.str();
     }
 
-    static pair<string, json> get_schema(){
-        json schema = Connector::get_schema();
-        schema.merge_patch({
-           {"authbundle_id", {
-                {"options", {
-                    {"filter", {
-                        {"key", "service_type"},
-                        {"value", "database"}
+    static pair<string, json> get_schema()
+    {
+        //_DOCS: SCHEMA_START sqlite_connector
+        //_DOCS: SCHEMA_INCLUDE connector
+        static json schema = Connector::get_schema(
+            {
+                {"tags", {"database", "sqlite"}},
+                {"modes", {"out"}},
+                {"type_properties", {
+                    {"db_path", {
+                        {"type", "string"},
+                        {"required", true},
+                        {"description", "Database file."}
+                    }},
+                    {"table", {
+                        {"type", "string"},
+                        {"required", true},
+                        {"description", "Database table."}
+                    }},
+                    {"columns", {
+                        {"type", "array"},
+                        {"required", true},
+                        {"description", "Columns where values will be inserted."}
+                    }},
+                    {"values", {
+                        {"type", "array"},
+                        {"required", true},
+                        {"description", "Values to be inserted into the table."}
                     }}
                 }}
-            }},
-            {"table", {
-                {"type", "string"},
-                {"required", true}
-            }},
-            {"columns", {
-                {"type", "array"},
-                {"required", true}
-            }},
-            {"values", {
-                {"type", "array"},
-                {"required", true}
-            }}
-        });
+            }
+        );
+        //_DOCS: END
         return {"sqlite", schema};
     }
 };

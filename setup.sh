@@ -1,8 +1,8 @@
 #!/bin/bash
 
-cmake -S . -B build \
-  -DCMAKE_BUILD_TYPE=Debug \
-  -DENABLE_TESTS=ON \
+cmake --preset default -S . -B build \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DENABLE_TESTS=OFF \
   -DWITH_GCP_CLOUD_STORAGE_CONNECTOR=ON \
   -DWITH_GCP_PUBSUB_CONNECTOR=ON \
   -DWITH_AWS_S3_CONNECTOR=ON \

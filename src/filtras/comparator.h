@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 
 /*
-Copyright (c) 2024 Pluraf Embedded AB <code@pluraf.com>
+Copyright (c) 2024-2026 Pluraf Embedded AB <code@pluraf.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the “Software”), to deal in
@@ -35,7 +35,22 @@ IN THE SOFTWARE.
 enum class ComparatorOperator {UNKN, EQ, GT, GTE, LT, LTE};
 
 
-class ComparatorFT:public Filtra{
+//_DOCS: SECTION_START comparator_filtra Comparator Filtra
+/*!
+Creates a new message::
+
+    {
+      "type": "comparator",
+      "operator": "gt",
+      "value_key": "temp",
+      "comparand": 5.4
+    }
+
+*/
+//_DOCS: END
+
+class ComparatorFT: public Filtra
+{
 public:
     ComparatorFT(PipelineIface const & pi, json const & json_descr):Filtra(pi, json_descr){
         std::string const & oper = json_descr["operator"];
@@ -94,22 +109,38 @@ public:
     }
 
     static pair<string, json> get_schema(){
-        json schema = Filtra::get_schema();
-        schema.merge_patch({
-            {"operator", {
-                {"type", "string"},
-                {"options", {"eq", "gt", "gte", "lt", "lte"}},
-                {"required", true}
-            }},
-            {"value_key", {
-                {"type", "string"},
-                {"required", true}
-            }},
-            {"comparand", {
-                {"type", "float"},
-                {"required", true}
-            }}
-        });
+        //_DOCS: SCHEMA_START comparator_filtra
+        //_DOCS: SCHEMA_INCLUDE filtra
+        static json schema = Filtra::get_schema(
+            {
+                {"tags", {"comparator"}},
+                {"type_properties", {
+                    {"operator", {
+                        {"type", "string"},
+                        {"options", json::array_t{
+                            {"eq", "equal"},
+                            {"gt", "greater than"},
+                            {"gte", "greater than or equal"},
+                            {"lt", "less than"},
+                            {"lte", "less than or equal"}
+                        }},
+                        {"required", true},
+                        {"description", "Comparison operator."}
+                    }},
+                    {"value_key", {
+                        {"type", "string"},
+                        {"required", true},
+                        {"description", "Key in the payload whose value is compared with the comparand."}
+                    }},
+                    {"comparand", {
+                        {"type", "float"},
+                        {"required", true},
+                        {"description", "Numerical constant to be compared with a value in the payload."}
+                    }}
+                }}
+            }
+        );
+        //_DOCS: END
         return {"comparator", schema};
     }
 

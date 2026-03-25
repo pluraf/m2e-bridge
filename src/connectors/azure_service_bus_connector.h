@@ -46,6 +46,26 @@ IN THE SOFTWARE.
 #include "database/authbundle.h"
 
 
+/*
+//_DOCS: SECTION_START azure_service_bus_connector Azure Service Bus Connector
+
+.. _Service Bus: https://learn.microsoft.com/en-us/connectors/servicebus
+
+Connects to the Microsoft Azure `Service Bus`_::
+
+    {
+      "type":"azure_sbc",
+      "authbundle_id": "<authbundle_id>",
+      "entity_path": "<entity_path>",
+      "expire_in": <seconds>,
+      "is_topic": "<is_topic>",
+      "subscription_name": "<subscription_name>",
+      "delete_after_processing": "<delete_after_processing>"
+    }
+
+//_DOCS: END
+*/
+
 class ServiceBusConnector: public Connector{
     std::string connection_string_;
     std::string endpoint_;
@@ -311,38 +331,40 @@ public:
     }
 
     static pair<string, json> get_schema(){
-        json schema = Connector::get_schema();
-        schema.merge_patch({
-           {"authbundle_id", {
-                {"options", {
-                    {"filter", {
-                        {"key", "service_type"},
-                        {"value", "azure"}
+        //_DOCS: SCHEMA_START azure_service_bus_connector
+        //_DOCS: SCHEMA_INCLUDE connector
+        static json schema = Connector::get_schema(
+            {
+                {"tags", {"azure"}},
+                {"modes", {"in", "out"}},
+                {"type_properties", {
+                    {"entity_path", {
+                        {"type", "string"},
+                        {"required", true},
+                        {"description", "Entity path."}
+                    }},
+                    {"expire_in", {
+                        {"type", "integer"},
+                        {"default", 3600},
+                        {"required", false},
+                        {"description", "Validity of sas token."}
+                    }},
+                    {"is_topic", {
+                        {"type", "boolean"},
+                        {"required", true}
+                    }},
+                    {"subscription_name", {
+                        {"type", "string"},
+                        {"required", {{"in", true}, {"out", false}}}
+                    }},
+                    {"delete_after_processing", {
+                        {"type", "boolean"},
+                        {"required", false}
                     }}
                 }}
-            }},
-            {"entity_path", {
-                {"type", "string"},
-                {"required", true}
-            }},
-            {"expire_in", {
-                {"type", "integer"},
-                {"default", 3600},
-                {"required", false}
-            }},
-            {"is_topic", {
-                {"type", "boolean"},
-                {"required", true}
-            }},
-            {"subscription_name", {
-                {"type", "string"},
-                {"required", {{"key", "mode"}, {"value", "in"}}}
-            }},
-            {"delete_after_processing", {
-                {"type", "boolean"},
-                {"required", false}
-            }}
-        });
+            }
+        );
+        //_DOCS: END
         return {"azure_service_bus", schema};
     }
 };

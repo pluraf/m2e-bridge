@@ -1,0 +1,13 @@
+/*body, p {
+  word-break: normal !important;
+  overflow-wrap: normal  !important;
+  hyphens: none  !important;
+  white-space: normal  !important;
+}
+*/
+
+.screenshot {
+  margin-bottom: 1.5rem;
+  margin-top: 1.3rem;
+  box-shadow: none !important;
+}

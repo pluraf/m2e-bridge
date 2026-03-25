@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 
 /*
-Copyright (c) 2025 Pluraf Embedded AB <code@pluraf.com>
+Copyright (c) 2025-2026 Pluraf Embedded AB <code@pluraf.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the “Software”), to deal in
@@ -36,6 +36,18 @@ extern "C" {
     extern int luaopen_cjson(lua_State *L);
 }
 
+
+//_DOCS: SECTION_START lua_converter_filtra Lua Converter Filtra
+/*!
+Converts messages with a custom Lua script::
+
+    {
+      "type": "lua_converter",
+      "converter_id": "<converter_id>"
+    }
+
+*/
+//_DOCS: END
 
 class LuaConverterFT: public Filtra
 {
@@ -90,18 +102,22 @@ public:
     }
 
     static pair<string, json> get_schema(){
-        json schema = Filtra::get_schema();
-        schema.merge_patch({
-            {"converter_id", {
-                {"type", "string"},
-                {"options", {
-                    {"url", "api/converter/"},
-                    {"key", "converter_id"},
-                }},
-                {"required", true}
-            }}
-        });
-        return {"converter", schema};
+        //_DOCS: SCHEMA_START lua_converter_filtra
+        //_DOCS: SCHEMA_INCLUDE filtra
+        static json schema = Filtra::get_schema(
+            {
+                {"tags", {"converter"}},
+                {"type_properties", {
+                    {"converter_id", {
+                        {"type", "string"},
+                        {"options", "api/converter/id"},
+                        {"required", true}
+                    }}
+                }}
+            }
+        );
+        //_DOCS: END
+        return {"lua_converter", schema};
     }
 };
 

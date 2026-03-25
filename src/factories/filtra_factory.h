@@ -69,10 +69,6 @@ public:
         {
             return new ThrottleFT(pi, json_descr);
         }
-        else if(json_descr["type"] == "extractor")
-        {
-            return new ExtractorFT(pi, json_descr);
-        }
 #ifdef WITH_LUA
         else if(json_descr["type"] == "converter_lua")
         {

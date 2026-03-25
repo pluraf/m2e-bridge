@@ -61,7 +61,7 @@ public:
         }
 #endif
 #ifdef WITH_GCP_CLOUD_STORAGE_CONNECTOR
-        else if( conn_type == "gcp_bucket" )
+        else if( conn_type == "gcp_cloud_storage" )
         {
             return new CloudStorageConnector(pipeid, mode, config);
         }

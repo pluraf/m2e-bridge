@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 
 /*
-Copyright (c) 2024 Pluraf Embedded AB <code@pluraf.com>
+Copyright (c) 2024-2026 Pluraf Embedded AB <code@pluraf.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the “Software”), to deal in
@@ -99,6 +99,37 @@ class ActionListener : public virtual mqtt::iaction_listener
 public:
     ActionListener(const std::string& name) : name_(name) {}
 };
+
+
+namespace
+{
+    //_DOCS: STRINGS_START
+    constexpr std::string_view _DOCS_PR_DESC_TOPIC =
+        "The MQTT topic to subscribe to for connector-in"
+        " or to publish to for connector-out.";
+
+    constexpr std::string_view _DOCS_PR_DESC_P =
+        "The name of the bucket object where the message will be stored. If it is"
+        "a plain string, it will be overwritten with each new message.";
+    //_DOCS: END
+}
+
+
+/*
+//_DOCS: SECTION_START mqtt_connector MQTT Connector
+
+.. _MQTT: https://mqtt.org/
+
+Connects to an `MQTT`_ Broker::
+
+    {
+      "type": "mqtt",
+      "topic": "/topic/+/event",
+      "server": "mqtt://mqtt.iotplan.io:1883"
+    }
+
+//_DOCS: END
+*/
 
 
 class MqttConnector: public Connector{
@@ -248,67 +279,79 @@ public:
         return std::get<string>(SubsEngine(msg_w).substitute(topic_template_));
     }
 
-    static pair<string, json> get_schema(){
-        json schema = Connector::get_schema();
-        schema.merge_patch({
-            {"authbundle_id", {
-                {"options", {
-                    {"filter", {
-                        {"key", "service_type"},
-                        {"value", "mqtt"}
+    static pair<string, json> get_schema()
+    {
+        //_DOCS: SCHEMA_START mqtt_connector
+        //_DOCS: SCHEMA_INCLUDE connector
+        static json schema = Connector::get_schema(
+            {
+                {"tags", {"mqtt"}},
+                {"modes", {"in", "out"}},
+                {"type_properties", {
+                    {"server", {
+                        {"type", "string"},
+                        {"default", "tcp://mqtt.iotplan.io:1883"},
+                        {"required", false},
+                        {"description", "URL of the MQTT Broker."}
+                    }},
+                    {"version", {
+                        {"type", "string"},
+                        {"options", {"5", "3.11"}},
+                        {"default", "5"},
+                        {"required", false},
+                        {"description", "MQTT protocol version."}
+                    }},
+                    {"topic", {
+                        {"type", "string"},
+                        {"required", true},
+                        {"description", _DOCS_PR_DESC_TOPIC}
+                    }},
+                    {"client_id", {
+                        {"type", "string"},
+                        {"required", false},
+                        {"description", _DOCS_PR_DESC_P}
+                    }},
+                    {"retry_attempts", {
+                        {"type", "integer"},
+                        {"default", 10},
+                        {"required", false},
+                        {"description", "Number of connection attempts."}
+                    }},
+                    {"qos", {
+                        {"type", "integer"},
+                        {"options", {
+                            {0, "At Most Once"},
+                            {1, "At Least Once"},
+                            {2, "Exactly Once"}
+                        }},
+                        {"default", 1},
+                        {"required", false},
+                        {"description", "MQTT Quality of Service (QoS) level."}
+                    }},
+                    {"ca_certificate", {
+                        {"type", "string"},
+                        {"options", "api/ca/id/"},
+                        {"required", false},
+                        {"description", "CA certificate (should be uploaded in advance)."}
+                    }},
+                    {"verify_server_hostname", {
+                        {"type", "string"},
+                        {"options", {"yes", "no"}},
+                        {"default", "yes"},
+                        {"required", false},
+                        {"description", "Verifies that server certificate matches its hostname."}
+                    }},
+                    {"verify_server_certificate", {
+                        {"type", "string"},
+                        {"options", {"yes", "no"}},
+                        {"default", "yes"},
+                        {"required", false},
+                        {"description", "Verifies server certificate."}
                     }}
                 }}
-            }},
-            {"server", {
-                {"type", "string"},
-                {"default", "tcp://mqtt.iotplan.io:1883"},
-                {"required", false}
-            }},
-            {"version", {
-                {"type", "string"},
-                {"options", {"5", "3.11"}},
-                {"default", "5"},
-                {"required", false}
-            }},
-            {"topic", {
-                {"type", "string"},
-                {"required", true}
-            }},
-            {"client_id", {
-                {"type", "string"},
-                {"required", false}
-            }},
-            {"retry_attempts", {
-                {"type", "integer"},
-                {"default", 10},
-                {"required", false}
-            }},
-            {"qos", {
-                {"type", "integer"},
-                {"default", 1},
-                {"required", false}
-            }},
-            {"ca_certificate", {
-                {"type", "string"},
-                {"options", {
-                    {"url", "api/ca/"},
-                    {"key", "id"}
-                }},
-                {"required", false}
-            }},
-            {"verify_server_hostname", {
-                {"type", "string"},
-                {"options", {"yes", "no"}},
-                {"default", "yes"},
-                {"required", false}
-            }},
-            {"verify_server_certificate", {
-                {"type", "string"},
-                {"options", {"yes", "no"}},
-                {"default", "yes"},
-                {"required", false}
-            }}
-        });
+            }
+        );
+        //_DOCS: END
         return {"mqtt", schema};
     }
 

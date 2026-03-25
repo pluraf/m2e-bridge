@@ -50,6 +50,22 @@ IN THE SOFTWARE.
 #include "database/authbundle.h"
 
 
+//_DOCS: SECTION_START aws_s3_connector AWS S3 Connector
+/*!
+.. _Simple Storage Service: https://aws.amazon.com/s3/
+
+Connects to Amazon Web Services `Simple Storage Service`_ (S3)::
+
+    {
+      "type": "aws_s3",
+      "authbundle_id": "<authbundle_id>",
+      "bucket_name": "<bucket_name>",
+      "object_name": "<object_name>"
+    }
+*/
+//_DOCS: END
+
+
 class S3Connector: public Connector {
 private:
     Aws::String bucket_name_;
@@ -243,30 +259,33 @@ public:
     }
 
     static pair<string, json> get_schema(){
-        json schema = Connector::get_schema();
-        schema.merge_patch({
-           {"authbundle_id", {
-                {"options", {
-                    {"filter", {
-                        {"key", "service_type"},
-                        {"value", "aws"}
+        //_DOCS: SCHEMA_START aws_s3_connector
+        //_DOCS: SCHEMA_INCLUDE connector
+        static json schema = Connector::get_schema(
+            {
+                {"tags", {"aws"}},
+                {"modes", {"in", "out"}},
+                {"type_properties", {
+                    {"bucket_name", {
+                        {"type", "string"},
+                        {"required", true},
+                        {"description", "Cloud Storage bucket name."}
+                    }},
+                    {"object_name", {
+                        {"type", "string"},
+                        {"required", true},
+                        {"description", "Object name inside the bucket."}
+                    }},
+                    {"delete_received", {
+                        {"type", "boolean"},
+                        {"default", false},
+                        {"required", false},
+                        {"description", "Deletes the object after downloading."}
                     }}
                 }}
-            }},
-            {"bucket_name", {
-                {"type", "string"},
-                {"required", true}
-            }},
-            {"object_name", {
-                {"type", "string"},
-                {"required", true}
-            }},
-            {"delete_received", {
-                {"type", "boolean"},
-                {"default", false},
-                {"required", false}
-            }}
-        });
+            }
+        );
+        //_DOCS: END
         return {"aws_s3", schema};
     }
 };

@@ -123,18 +123,25 @@ public:
         return stat_;
     }
 
-    static json get_schema(){
-        json schema = {
-            {"authbundle_id", {
-                {"type", "string"},
-                {"options", {
-                    {"url", "api/authbundle/"},
-                    {"key", "authbundle_id"},
-                }},
-                {"required", false},
-            }}
-        };
-        return schema;
+    static json get_schema(json specific = {})
+    {
+        //_DOCS: SCHEMA_START connector
+        specific.merge_patch(
+            {
+                {"type", {
+                    {"type", "string"},
+                    {"required", true},
+                    {"options", "api/connector/type/"}}
+                },
+                {"authbundle_id", {
+                    {"type", "string"},
+                    {"required", false},
+                    {"options", "api/authbundle/id/"}}
+                }
+            }
+        );
+        //_DOCS: END
+        return specific;
     }
 /*
     static bool validate_config(json const & config){

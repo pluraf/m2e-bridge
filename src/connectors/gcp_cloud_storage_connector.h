@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 
 /*
-Copyright (c) 2024 Pluraf Embedded AB <code@pluraf.com>
+Copyright (c) 2024-2026 Pluraf Embedded AB <code@pluraf.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the “Software”), to deal in
@@ -23,8 +23,8 @@ IN THE SOFTWARE.
 */
 
 
-#ifndef __M2E_BRIDGE_GCP_BUCKET_CONNECTOR_H__
-#define __M2E_BRIDGE_GCP_BUCKET_CONNECTOR_H__
+#ifndef __M2E_BRIDGE_GCP_CLOUD_STORAGE_CONNECTOR_H__
+#define __M2E_BRIDGE_GCP_CLOUD_STORAGE_CONNECTOR_H__
 
 
 #include <string>
@@ -46,9 +46,41 @@ IN THE SOFTWARE.
 
 namespace gcloud = ::google::cloud;
 
+namespace
+{
+    //_DOCS: STRINGS_START
+    constexpr std::string_view _DOCS_PR_DESC_BUCKET_NAME =
+        "The bucket name to which the connector-out uploads messages"
+        " or from which the connector-in downloads messages. If the bucket does not"
+        " exist, the connector-out creates it, whereas the connector-in does not.";
 
-class CloudStorageConnector: public Connector {
-private:
+    constexpr std::string_view _DOCS_PR_DESC_OBJECT_NAME =
+        "The name of the bucket object where the message will be stored."
+        " If it is a plain string, it will be overwritten with each new message.";
+    //_DOCS: END
+}
+
+
+/*
+//_DOCS: SECTION_START gcp_cloud_storage_connector GCP Cloud Storage Connector
+
+.. _Cloud Storage service: https://cloud.google.com/storage/docs/introduction
+
+Connects to the Google Cloud `Cloud Storage service`_::
+
+    {
+      "type":"gcp_storage",
+      "authbundle_id":"my_service_key",
+      "project_id":"my_project_id",
+      "bucket_name":"my_bucket_name",
+      "object_name": "my_object_name"
+    }
+
+//_DOCS: END
+*/
+
+class CloudStorageConnector: public Connector
+{
     std::string project_id_;
     std::string bucket_name_;
     gcloud::storage::Client client_;
@@ -74,7 +106,6 @@ private:
             throw std::runtime_error("Not able to retreive bundle");
         }
     }
-
 public:
     CloudStorageConnector(std::string pipeid, ConnectorMode mode, json const & json_descr):
             Connector(pipeid, mode, json_descr)
@@ -246,36 +277,40 @@ public:
     }
 
     static pair<string, json> get_schema(){
-        json schema = Connector::get_schema();
-        schema.merge_patch({
-           {"authbundle_id", {
-                {"options", {
-                    {"filter", {
-                        {"key", "service_type"},
-                        {"value", "gcp"}
+        //_DOCS: SCHEMA_START gcp_cloud_storage_connector
+        //_DOCS: SCHEMA_INCLUDE connector
+        static json schema = Connector::get_schema(
+            {
+                {"tags", {"gcp", "storage"}},
+                {"modes", {"in", "out"}},
+                {"type_properties", {
+                    {"project_id", {
+                        {"type", "string"},
+                        {"required", true},
+                        {"description", "The GCP project identifier."}
+                    }},
+                    {"bucket_name", {
+                        {"type", "string"},
+                        {"required", true},
+                        {"description", _DOCS_PR_DESC_BUCKET_NAME}
+                    }},
+                    {"object_name", {
+                        {"type", "string"},
+                        {"required", true},
+                        {"description", _DOCS_PR_DESC_OBJECT_NAME}
+                    }},
+                    {"delete_after_processing", {
+                        {"type", "boolean"},
+                        {"required", false},
+                        {"description", "Delete object from the bucket."}
                     }}
                 }}
-            }},
-            {"project_id", {
-                {"type", "string"},
-                {"required", true}
-            }},
-            {"bucket_name", {
-                {"type", "string"},
-                {"required", true}
-            }},
-            {"object_name", {
-                {"type", "string"},
-                {"required", true}
-            }},
-            {"delete_after_processing", {
-                {"type", "boolean"},
-                {"required", false}
-            }}
-        });
-        return {"gcp_bucket", schema};
+            }
+        );
+        //_DOCS: END
+        return {"gcp_cloud_storage", schema};
     }
 };
 
 
-#endif  // __M2E_BRIDGE_GCP_BUCKET_CONNECTOR_H__
+#endif  // __M2E_BRIDGE_GCP_CLOUD_STORAGE_CONNECTOR_H__

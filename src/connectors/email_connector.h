@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 
 /*
-Copyright (c) 2024 Pluraf Embedded AB <code@pluraf.com>
+Copyright (c) 2024-2026 Pluraf Embedded AB <code@pluraf.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the “Software”), to deal in
@@ -42,6 +42,22 @@ IN THE SOFTWARE.
 const int  SMTP_PORT = 587;  // Default SMTP port
 const int IMAP_PORT = 993;  // Default IMAP port
 
+
+//_DOCS: SECTION_START email_connector Email Connector
+/*!
+Sends email through SMTP or IMAP server::
+
+    {
+      "type": "email",
+      "smtp_server": "<smtp_server>",
+      "smtp_port": <smtp_port>,
+      "imap_server": "<imap_server>",
+      "imap_port": <imap_port>,
+      "subject": "<email subject>",
+      "address": "<to address>"
+    }
+*/
+//_DOCS: END
 
 class EmailConnector: public Connector {
     friend class EmailConnectorTests;
@@ -243,43 +259,43 @@ public:
     }
 
     static pair<string, json> get_schema(){
-        json schema = Connector::get_schema();
-        schema.merge_patch({
-           {"authbundle_id", {
-                {"options", {
-                    {"filter", {
-                        {"key", "service_type"},
-                        {"value", "email"}
+        //_DOCS: SCHEMA_START email_connector
+        //_DOCS: SCHEMA_INCLUDE connector
+        static json schema = Connector::get_schema(
+            {
+                {"tags", {"email"}},
+                {"modes", {"out"}},
+                {"type_properties", {
+                    {"address", {
+                        {"type", "string"},
+                        {"required", true}
+                    }},
+                    {"smtp_server", {
+                        {"type", "string"},
+                        {"required", {false}}
+                    }},
+                    {"smtp_port", {
+                        {"type", "integer"},
+                        {"default", 587},
+                        {"required", false}
+                    }},
+                    {"imap_server", {
+                        {"type", "string"},
+                        {"required", {false}}
+                    }},
+                    {"imap_port", {
+                        {"type", "integer"},
+                        {"default", 993},
+                        {"required", false}
+                    }},
+                    {"subject", {
+                        {"type", "string"},
+                        {"required", false}
                     }}
                 }}
-            }},
-            {"address", {
-                {"type", "string"},
-                {"required", true}
-            }},
-            {"smtp_server", {
-                {"type", "string"},
-                {"required", {{"in", false}, {"out", true}}}
-            }},
-            {"smtp_port", {
-                {"type", "integer"},
-                {"default", 587},
-                {"required", false}
-            }},
-            {"imap_server", {
-                {"type", "string"},
-                {"required", {{"in", true}, {"out", false}}}
-            }},
-            {"imap_port", {
-                {"type", "integer"},
-                {"default", 993},
-                {"required", false}
-            }},
-            {"subject", {
-                {"type", "string"},
-                {"required", false}
-            }}
-        });
+            }
+        );
+        //_DOCS: END
         return {"email", schema};
     }
 };

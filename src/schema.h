@@ -77,8 +77,7 @@ static json get_schemas(){
             SplitterFT::get_schema(),
             LimiterFT::get_schema(),
             NopFT::get_schema(),
-            ThrottleFT::get_schema(),
-            ExtractorFT::get_schema(),
+            ThrottleFT::get_schema()
         }}
     };
 }
