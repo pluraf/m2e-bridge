@@ -2,7 +2,7 @@
 transformation, and routing. It ensures efficient information flow between
 connected systems and supports data filtering, protocol conversion, and data generation.
 
-For detailed documentation, see the full `docs <https://docs.iotplan.io/gnode>`_.
+For detailed documentation, see the full `docs <https://docs.iotplan.io/m2e-bridge>`_.
 
 
 Building
